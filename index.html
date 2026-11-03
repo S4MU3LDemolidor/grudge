@@ -1,0 +1,2159 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Grudge</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one integer-scaled 320x180 canvas centered on a page that takes the current phase's background color. */
+:root {
+  --bg: #e9a23b;     /* current phase background (set from JS) */
+  --ink: #3a2213;    /* current phase ink: ground, spikes, doors */
+  --glow: #fbe7c0;   /* current phase highlight */
+  color-scheme: light;
+}
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-sizing: border-box;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: background-color .2s steps(2);
+}
+#game {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  max-width: 100%;
+  outline: none;
+  cursor: pointer;
+}
+#pad {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  pointer-events: none;
+}
+#pad .grp { display: flex; gap: 10px; align-items: flex-end; }
+#pad button {
+  pointer-events: auto;
+  width: 64px; height: 64px;
+  border: 0; border-radius: 0;
+  background: var(--ink);
+  color: var(--glow);
+  font: 700 18px/1 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  letter-spacing: .06em;
+  opacity: .82;
+  touch-action: none;
+}
+#pad button.small { width: 44px; height: 44px; font-size: 14px; }
+#pad button.wide { width: 84px; }
+#pad button.on { opacity: 1; transform: translateY(2px); }
+#pad button:focus-visible { outline: 2px solid var(--glow); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { body { transition: none; } }
+</style>
+
+<canvas id="game" width="320" height="180" tabindex="0" aria-label="Grudge, a troll platformer. Arrow keys or WASD to move, Space to jump, R to restart, Escape for menu, M to mute."></canvas>
+<div id="pad" hidden>
+  <div class="grp">
+    <button id="bL" aria-label="Move left">&#9664;</button>
+    <button id="bR" aria-label="Move right">&#9654;</button>
+  </div>
+  <div class="grp">
+    <button id="bX" class="small" aria-label="Restart level, or back in menus">R</button>
+    <button id="bJ" class="wide" aria-label="Jump, or select in menus">JUMP</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* =====================================================================
+   GRUDGE  -  a tiny troll platformer
+   "The level never forgets. Neither do you."
+   10 phases x 5 levels. Each phase has its own palette, backdrop and trick.
+
+   Sections:
+     1. CONFIG        6. LEVEL LOADING   11. MENUS
+     2. INPUT         7. PHYSICS         12. GAME STATES + LOOP
+     3. FONT          8. TRAPS
+     4. SPRITES       9. RENDERING
+     5. PHASES/LEVELS 10. AUDIO
+   ===================================================================== */
+
+/* ============================ 1. CONFIG ============================ */
+const W = 320, H = 180;          // native resolution
+const TS = 8;                    // tile size in pixels
+const COLS = 40, ROWS = 22;      // level grid (40x22 tiles = 320x176)
+const OY = H - ROWS * TS;        // 4px top margin
+const DT = 1 / 60;               // fixed timestep
+const PH = {                     // player physics (pixels, seconds)
+  run: 90, accG: 1100, accA: 800, accIdleAir: 160, fric: 1400,
+  grav: 820, jump: 195, cut: 0.45, maxFall: 320,
+  coyote: 0.09, buffer: 0.12,
+};
+const MAX_STONES = 3;            // grudge stones kept per level (oldest crumbles)
+const DEAD_PAUSE = 0.7;          // seconds before auto-respawn
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const SAVE_KEY = 'grudge-save-v2';
+
+/* ============================ 2. INPUT ============================= */
+// Held state for gameplay, plus one-shot "presses" for menus.
+const input = { left: false, right: false, jump: false, jumpPressed: false, restartPressed: false,
+                presses: new Set(), tap: null, hover: null };
+const KEYMAP = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
+                 Space: 'jump', ArrowUp: 'jump', KeyW: 'jump', KeyZ: 'jump' };
+const MENUKEYS = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
+                   ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down',
+                   Space: 'ok', Enter: 'ok', KeyZ: 'ok', Escape: 'back', Backspace: 'back' };
+addEventListener('keydown', e => {
+  initAudio();
+  const k = KEYMAP[e.code];
+  if (k) { if (k === 'jump' && !input.jump) input.jumpPressed = true; input[k] = true; }
+  if (MENUKEYS[e.code] || k) e.preventDefault();
+  if (!e.repeat && MENUKEYS[e.code]) input.presses.add(MENUKEYS[e.code]);
+  if (e.code === 'KeyR' && !e.repeat) input.restartPressed = true;
+  if (e.code === 'KeyM' && !e.repeat) cycleSound();
+});
+addEventListener('keyup', e => { const k = KEYMAP[e.code]; if (k) input[k] = false; });
+addEventListener('blur', () => { input.left = input.right = input.jump = false; });
+
+// On-screen touch pad (also drives menus)
+const pad = document.getElementById('pad');
+function bindButton(id, key, menuKey) {
+  const b = document.getElementById(id);
+  const on = e => {
+    e.preventDefault(); initAudio();
+    // In a level R only restarts; everywhere else it means "back"
+    if (key !== 'restart' || (state !== 'play' && state !== 'dead')) input.presses.add(menuKey);
+    if (key === 'restart') input.restartPressed = true;
+    else { if (key === 'jump' && !input.jump) input.jumpPressed = true; input[key] = true; }
+    b.classList.add('on');
+    try { b.setPointerCapture(e.pointerId); } catch (_) {}
+  };
+  const off = () => { if (key !== 'restart') input[key] = false; b.classList.remove('on'); };
+  b.addEventListener('pointerdown', on);
+  b.addEventListener('pointerup', off);
+  b.addEventListener('pointercancel', off);
+  b.addEventListener('lostpointercapture', off);
+  b.addEventListener('contextmenu', e => e.preventDefault());
+}
+bindButton('bL', 'left', 'left'); bindButton('bR', 'right', 'right');
+bindButton('bJ', 'jump', 'ok'); bindButton('bX', 'restart', 'back');
+function showPad() { if (pad.hidden) { pad.hidden = false; resize(); } }
+if (matchMedia('(hover: none) and (pointer: coarse)').matches) pad.hidden = false;
+addEventListener('touchstart', showPad, { passive: true });
+
+// Gamepad: d-pad or left stick moves, A jumps / confirms, B or Select backs out, X or Y restarts, Start confirms.
+let gpPrev = {};
+function pollGamepad() {
+  let gp = null;
+  try { gp = [...(navigator.getGamepads ? navigator.getGamepads() : [])].find(g => g && g.connected); } catch (_) {}
+  if (!gp) return;
+  const b = i => !!(gp.buttons[i] && gp.buttons[i].pressed), ax = gp.axes[0] || 0, ay = gp.axes[1] || 0;
+  const now = { left: b(14) || ax < -0.4, right: b(15) || ax > 0.4, up: b(12) || ay < -0.5, down: b(13) || ay > 0.5,
+                jump: b(0), back: b(1) || b(8), restart: b(2) || b(3), start: b(9) };
+  for (const k of ['left', 'right', 'jump']) if (now[k] !== !!gpPrev[k]) {     // only touch held keys on change
+    if (k === 'jump' && now.jump && !input.jump) input.jumpPressed = true;
+    input[k] = now[k];
+  }
+  const edge = k => now[k] && !gpPrev[k];
+  for (const k of ['left', 'right', 'up', 'down', 'back']) if (edge(k)) input.presses.add(k);
+  if (edge('jump') || edge('start')) input.presses.add('ok');
+  if (edge('restart')) input.restartPressed = true;
+  gpPrev = now;
+}
+
+/* ============================ 3. FONT ============================== */
+// 3x5 bitmap font. Each glyph = 5 rows, each row a 3-bit number (4 = left pixel, 1 = right pixel).
+const FONT = {
+  A:[2,5,7,5,5], B:[6,5,6,5,6], C:[3,4,4,4,3], D:[6,5,5,5,6], E:[7,4,6,4,7], F:[7,4,6,4,4],
+  G:[3,4,5,5,3], H:[5,5,7,5,5], I:[7,2,2,2,7], J:[1,1,1,5,2], K:[5,5,6,5,5], L:[4,4,4,4,7],
+  M:[5,7,7,5,5], N:[6,5,5,5,5], O:[2,5,5,5,2], P:[6,5,6,4,4], Q:[2,5,5,6,3], R:[6,5,6,5,5],
+  S:[3,4,2,1,6], T:[7,2,2,2,2], U:[5,5,5,5,7], V:[5,5,5,5,2], W:[5,5,7,7,5], X:[5,5,2,5,5],
+  Y:[5,5,2,2,2], Z:[7,1,2,4,7],
+  '0':[7,5,5,5,7], '1':[2,6,2,2,7], '2':[6,1,2,4,7], '3':[6,1,2,1,6], '4':[5,5,7,1,1],
+  '5':[7,4,6,1,6], '6':[3,4,7,5,7], '7':[7,1,2,2,2], '8':[7,5,7,5,7], '9':[7,5,7,1,6],
+  '.':[0,0,0,0,2], ',':[0,0,0,2,4], '!':[2,2,2,0,2], '?':[6,1,2,0,2], "'":[2,2,0,0,0],
+  '"':[5,5,0,0,0], '-':[0,0,7,0,0], ':':[0,2,0,2,0], '/':[1,1,2,4,4], '(':[1,2,2,2,1],
+  ')':[4,2,2,2,4], '<':[1,2,4,2,1], '>':[4,2,1,2,4], '+':[0,2,7,2,0], '#':[5,7,5,7,5],
+  '=':[0,7,0,7,0], '_':[0,0,0,0,7], ' ':[0,0,0,0,0],
+};
+const textW = (s, sc = 1) => String(s).length * 4 * sc - sc;
+function text(str, x, y, col, sc = 1, align = 'left') {
+  str = String(str).toUpperCase();
+  const w = textW(str, sc);
+  if (align === 'center') x = Math.round(x - w / 2); else if (align === 'right') x = x - w;
+  ctx.fillStyle = col;
+  for (const ch of str) {
+    const g = FONT[ch];
+    if (g) for (let r = 0; r < 5; r++) for (let c = 0; c < 3; c++)
+      if ((g[r] >> (2 - c)) & 1) ctx.fillRect(x + c * sc, y + r * sc, sc, sc);
+    x += 4 * sc;
+  }
+}
+
+/* ============================ 4. SPRITES =========================== */
+// Pixel maps: '.' transparent, '1' main color, '2' secondary color.
+const HERO = {
+  idle0: ['..1111..', '.111111.', '11111111', '11121121', '11121121', '11111111', '.111111.', '.11..11.'],
+  idle1: ['..1111..', '.111111.', '11111111', '11111111', '11121121', '11111111', '.111111.', '.11..11.'],
+  run0:  ['..1111..', '.111111.', '11111111', '11121121', '11121121', '11111111', '.111111.', '11....1.'],
+  run1:  ['..1111..', '.111111.', '11111111', '11121121', '11121121', '11111111', '.111111.', '..1111..'],
+  run2:  ['..1111..', '.111111.', '11111111', '11121121', '11121121', '11111111', '.111111.', '.1....11'],
+  jump:  ['..1111..', '.111111.', '11111111', '11121121', '11121121', '11111111', '11111111', '.1....1.'],
+  fall:  ['..1111..', '.111111.', '11111111', '11121121', '11121121', '11111111', '.111111.', '1......1'],
+};
+const RUN_CYCLE = ['run0', 'run1', 'run2', 'run1'];
+const STONE = ['.111111.', '11111111', '12122121', '11211211', '12122121', '11111111', '11111111', '11111111'];
+const SPIKE = ['........', '........', '.1....1.', '.1....1.', '111..111', '111..111', '11111111', '11111111'];
+const PLAT  = ['11111111', '11111111', '11111111', '11111111', '11111111', '11111111', '.111111.', '..1111..'];
+const DOOR  = ['.111111.', '11111111', '11222211', '11222211', '11222211', '11222211', '11222211', '11222211',
+               '11222211', '11221211', '11222211', '11222211', '11222211', '11222211', '11222211', '11111111'];
+const SKULL = ['.111.', '1.1.1', '11111', '.111.', '.1.1.'];
+const LOCK  = ['.111.', '1...1', '1...1', '11111', '11.11', '11.11', '11111'];
+const STAR  = ['..1..', '.111.', '11111', '.111.', '1...1'];
+
+/* Skins: an optional hat stacked above the 8x8 body, plus a color style.
+   Hat pixels: '1' body, '2' background, '4' phase highlight, '5' the skin's own color (c5).
+   Styles: outline (light body, dark edge), gold, ghost (see-through, wavy hem). */
+const SKINS = [
+  { id: 'blob',     name: 'BLOB' },
+  { id: 'tophat',   name: 'TOP HAT',  hat: ['..1111..', '..1111..', '..2222..', '.111111.'] },
+  { id: 'bunny',    name: 'BUNNY',    hat: ['.11..11.', '.14..41.', '.11..11.'] },
+  { id: 'cap',      name: 'CAP',      hat: ['..5555..', '..555555'], c5: '#d9443b',
+    need: { text: 'CLEAR 5 LEVELS', have: () => clearedCount(), goal: 5 } },
+  { id: 'sprout',   name: 'SPROUT',   hat: ['..55.55.', '...555..', '....1...'], c5: '#4f9a2c',
+    need: { text: 'CLEAR SHY GARDEN', have: () => phaseCleared(1), goal: 5 } },
+  { id: 'horns',    name: 'HORNS',    hat: ['5......5', '55....55'], c5: '#b8282a',
+    need: { text: 'DIE 50 TIMES', have: () => deaths, goal: 50 } },
+  { id: 'negative', name: 'NEGATIVE', style: 'outline',
+    need: { text: 'CLEAR MIRROR HALL', have: () => phaseCleared(6), goal: 5 } },
+  { id: 'ghost',    name: 'GHOST',    style: 'ghost',
+    need: { text: 'DIE 150 TIMES', have: () => deaths, goal: 150 } },
+  { id: 'halo',     name: 'HALO',     hat: ['..5555..', '........'], c5: '#f2c14e',
+    need: { text: 'FINISH THE GAME', have: () => isCleared(MAIN_LEVELS - 1) ? 1 : 0, goal: 1 } },
+  { id: 'crown',    name: 'CROWN',    hat: ['.5.55.5.', '.555555.'], c5: '#f2c14e',
+    need: { text: '10 DEATHLESS CLEARS', have: () => deathlessCount(), goal: 10 } },
+  { id: 'gold',     name: 'GOLD',     style: 'gold',
+    need: { text: '25 DEATHLESS CLEARS', have: () => deathlessCount(), goal: 25 } },
+  { id: 'party',    name: 'PARTY',    hat: ['...55...', '..5445..', '.555555.'], c5: '#e0508f',
+    need: { text: 'CLEAR GRUDGE MATCH', have: () => phaseCleared(10), goal: 5 } },
+];
+const skinUnlocked = s => !s.need || s.need.have() >= s.need.goal;
+const skinById = id => SKINS.find(s => s.id === id) || SKINS[0];
+
+let SPR = {};
+function bakeSprite(rows, cmap) {
+  const c = document.createElement('canvas');
+  c.width = rows[0].length; c.height = rows.length;
+  const g = c.getContext('2d');
+  rows.forEach((row, y) => [...row].forEach((ch, x) => {
+    if (ch === '.') return;
+    g.fillStyle = cmap[ch]; g.fillRect(x, y, 1, 1);
+  }));
+  return c;
+}
+// Body pixels on the silhouette's edge become '6' (drawn in the outline color).
+function edgeRows(rows) {
+  const at = (x, y) => (rows[y] || '')[x] || '.';
+  return rows.map((r, y) => [...r].map((ch, x) =>
+    ch === '1' && [at(x - 1, y), at(x + 1, y), at(x, y - 1), at(x, y + 1)].includes('.') ? '6' : ch).join(''));
+}
+// One hero frame in a given skin, for the current palette (sil = solid ink silhouette for locked skins).
+const skinCache = {};
+function skinSprite(skin, frame, sil = false) {
+  const key = skin.id + ':' + frame + ':' + palPhase + (sil ? ':sil' : '');
+  if (skinCache[key]) return skinCache[key];
+  let body = HERO[frame];
+  if (skin.style === 'ghost') body = body.slice(0, 7).concat(frame.startsWith('run') ? '.11.11.1' : '1.11.11.');
+  let rows = (skin.hat || []).concat(body);
+  const lit = skin.style === 'outline' || skin.style === 'gold';
+  if (lit) rows = edgeRows(rows);
+  const fill = skin.style === 'gold' ? '#f2c14e' : skin.style === 'outline' ? pal.glow
+             : skin.style === 'ghost' ? pal.hero + 'a8' : pal.hero;
+  const cmap = sil ? { 1: pal.ink, 2: pal.ink, 4: pal.ink, 5: pal.ink, 6: pal.ink }
+                   : { 1: fill, 2: lit ? pal.hero : pal.bg, 4: pal.glow, 5: skin.c5 || pal.hero, 6: pal.hero };
+  return (skinCache[key] = bakeSprite(rows, cmap));
+}
+function bakeSprites() {
+  SPR = {};
+  const sk = skinById(save.skin);
+  for (const k in HERO) SPR[k] = skinSprite(sk, k);
+  SPR.star = bakeSprite(STAR, { 1: pal.glow });
+  SPR.stone = bakeSprite(STONE, { 1: pal.ink, 2: pal.bg });
+  SPR.spike = bakeSprite(SPIKE, { 1: pal.ink });
+  SPR.spikeDown = bakeSprite([...SPIKE].reverse(), { 1: pal.ink });
+  SPR.plat = bakeSprite(PLAT, { 1: pal.ink });
+  SPR.door = bakeSprite(DOOR, { 1: pal.ink, 2: pal.glow });
+  SPR.skull = bakeSprite(SKULL, { 1: pal.ink });
+  SPR.lock = bakeSprite(LOCK, { 1: pal.bg });
+}
+
+/* ======================== 5. PHASES / LEVELS ======================= */
+/*  A PHASE = { name, tag, motif, pal:[background, backdrop, ink, hero, glow], levels:[5 levels] }
+    A LEVEL = { name, hint, pity, pityAt, quips, groups, map, traps }
+
+    Map tiles (rows are 40 wide; the map is centered vertically and its last row is extended
+    down to the screen edge, so write only the interesting part):
+      .  empty            #  ground           ^  spike (up)      v  spike (down)
+      P  player start     D  exit door        F  fake door (kills)
+      a-z (except v)  trap group tiles, configured in `groups`:
+          {}                     solid block drawn like ground (fake floor, falling ceiling...)
+          {spike:1}  {down:1}    spike tile (pointing down)    {hide:1}  starts sunk out of sight
+          {ghost:1}              solid but invisible until touched
+          {phantom:1}            visible but NOT solid
+          {plat:1} {cloud:1}     drawn as a floating platform
+          {airMove:n, airMax:m}  slides right n tiles/s, only while you're airborne
+          {patrol:{dx,dy,speed,wait,phase}}   moves back and forth forever (ferries, presses, lifts)
+          {blink:[period, phase]}             hidden spikes that pop in and out on a rhythm
+    Traps: { when:{...}, do:'action', g:'letters', say:'narrator line', delay, repeat }
+      when: x (player tile x >=), xl (<=), up (tiles above spawn >=), touch:'a', jump:true,
+            deaths:n, t:secs, after:trapIndex
+      do:   fall | pop | move(dx,dy,speed) | chase(speed) | show | vanish | say
+            door(x, dy, speed) | flee(speed, max) | reverse(time)                         */
+const G40 = '########################################';
+const E40 = '........................................';
+
+const PHASES = [
+ { name: 'THE LOBBY', tag: 'THE FLOOR HAS OPINIONS.', motif: 'sun',
+   pal: ['#e9a23b', '#df9631', '#3a2213', '#140b06', '#fbe7c0'],
+   levels: [
+  { name: 'WALK RIGHT', hint: 'JUST WALK RIGHT. EASY.', pity: 'STOP AT THE EDGE. THEN JUMP.',
+    quips: ['THE FLOOR WAS ON BREAK.'],
+    map: ['...P...............................D....',
+          '#########################aaaa###########',
+          '#########################aaaa###########'],
+    traps: [ { when: { x: 23 }, g: 'a', do: 'fall', shake: 0.06, say: 'WELL. MOSTLY RIGHT.' } ] },
+  { name: 'DROP ZONE', hint: 'TWO TINY SPIKES. YOU GOT THIS.', pity: 'SMALL JUMP OVER THE SPIKES. LAND EARLY.',
+    quips: ['OVERACHIEVER.'],
+    map: ['..P...........^^.....................D..',
+          '##################aaaa##################',
+          '##################aaaa##################'],
+    traps: [ { when: { x: 16 }, g: 'a', do: 'fall', say: 'SHOULD HAVE LANDED SOONER.' } ] },
+  { name: 'STAIRS', hint: 'STAIRS. YOU KNOW STAIRS.', pity: 'SKIP THE LAST STEP. JUMP STRAIGHT TO THE TOP.',
+    quips: ['THAT STEP WAS TEMPORARY.'],
+    map: ['..............................D.........',
+          '....................aaaa########........',
+          '................####aaaa########........',
+          '..P.........########aaaa########........',
+          '####################aaaa################',
+          '####################aaaa################'],
+    traps: [ { when: { touch: 'a' }, g: 'a', do: 'fall', shake: 0.3, say: 'MIND THE STEP.' } ] },
+  { name: 'DOMINOES', hint: 'A LONG, SAFE FLOOR.', pity: 'NEVER STOP RUNNING. JUMP THE LAST GAP.',
+    quips: ['TOO SLOW.'],
+    map: ['...P..................................D.',
+          '########aaaabbbbccccddddeeeeffff##gg####',
+          '########aaaabbbbccccddddeeeeffff##gg####'],
+    traps: [
+      { when: { x: 9 }, g: 'a', do: 'fall', delay: 0.3, say: 'KEEP UP.' },
+      { when: { x: 9 }, g: 'b', do: 'fall', delay: 0.7 },
+      { when: { x: 9 }, g: 'c', do: 'fall', delay: 1.1 },
+      { when: { x: 9 }, g: 'd', do: 'fall', delay: 1.5 },
+      { when: { x: 9 }, g: 'e', do: 'fall', delay: 1.9 },
+      { when: { x: 9 }, g: 'f', do: 'fall', delay: 2.3 },
+      { when: { x: 33 }, g: 'g', do: 'fall', say: 'ONE MORE.' },
+    ] },
+  { name: 'FLOOR IS LAVA', hint: 'JUST SOME ISLAND HOPPING.', pity: 'DO NOT LINGER ON THE MIDDLE ISLAND.',
+    quips: ['HOT FEET.'],
+    map: ['..P..................................D..',
+          '#######...###...aaa...###...###...c#####',
+          '#######...###...aaa...###...###...c#####'],
+    traps: [
+      { when: { touch: 'a' }, g: 'a', do: 'fall', shake: 0.18, say: 'THAT ONE WAS LAVA.' },
+      { when: { x: 31 }, g: 'c', do: 'fall', say: 'SO WAS THAT.' },
+    ] },
+ ] },
+
+ { name: 'SHY GARDEN', tag: 'EVERYTHING HERE IS POINTY AND NERVOUS.', motif: 'garden',
+   pal: ['#8fc7c1', '#80bab4', '#1f3d3f', '#0c1718', '#eaf6f1'],
+   levels: [
+  { name: 'SHY SPIKES', hint: 'ONLY TWO SPIKES. PROMISE.', pity: 'SHORT HOPS. THEY HIDE UNTIL YOU GET CLOSE.',
+    quips: ['THEY WERE JUST SHY.'],
+    groups: { b: { spike: 1, hide: 1 }, c: { spike: 1, hide: 1 } },
+    map: ['...P.........^^...bbb............c..D...', G40, G40],
+    traps: [
+      { when: { x: 15 }, g: 'b', do: 'pop' },
+      { when: { x: 30 }, g: 'c', do: 'pop', say: 'OKAY, THREE SPIKES.' },
+    ] },
+  { name: 'WELCOME MAT', hint: 'NO SPIKES HERE. LOOK.', pity: 'LAND BEFORE THE DOORMAT. SMALL JUMP.',
+    quips: ['WIPE YOUR FEET.'],
+    groups: { a: { spike: 1, hide: 1 }, b: { spike: 1, hide: 1 } },
+    map: ['..P...........................aaaa..b.D.', G40, G40],
+    traps: [
+      { when: { x: 28 }, g: 'a', do: 'pop', say: 'WELCOME!' },
+      { when: { jump: true, after: 0 }, g: 'b', do: 'pop', say: 'MIND THE MAT.' },
+    ] },
+  { name: 'PEEKABOO', hint: 'THEY ARE ASLEEP. PROBABLY.', pity: 'WATCH THE RHYTHM. OR JUST JUMP THEM.',
+    quips: ['PEEKABOO.'],
+    groups: { a: { spike: 1, hide: 1, blink: [1.6, 0] }, b: { spike: 1, hide: 1, blink: [1.6, 0.8] },
+              c: { spike: 1, hide: 1, blink: [1.2, 0.3] }, d: { spike: 1, hide: 1 } },
+    map: ['..P......aaa......bbb......ccc....d..D..', G40, G40],
+    traps: [ { when: { x: 32 }, g: 'd', do: 'pop', say: 'THAT ONE DOES NOT BLINK.' } ] },
+  { name: 'LOW HANGING', hint: 'PLENTY OF HEADROOM.', pity: 'SMALL HOPS UNDER THE CEILING SPIKES.',
+    quips: ['LOW HANGING FRUIT.'],
+    groups: { a: { spike: 1, down: 1, hide: 1 } },
+    map: [G40, G40,
+          '..........aaaaaaaaaaaaaaaaaaaa..........',
+          E40, E40,
+          '..P.........^.....^.....^.....^.....D...',
+          G40, G40],
+    traps: [ { when: { x: 10 }, g: 'a', do: 'pop', say: 'HEADS UP.' } ] },
+  { name: 'BLOOM', hint: 'THE GARDEN IS IN BLOOM.', pity: 'STOP BEFORE EACH PATCH. COUNT. GO.',
+    quips: ['FLOWER POWER.'],
+    groups: { a: { spike: 1, hide: 1 }, b: { spike: 1, hide: 1, blink: [1.4, 0] },
+              c: { spike: 1, hide: 1, blink: [2, 0.5] }, d: { spike: 1, hide: 1 } },
+    map: ['..P....aaa...^^...bbb....ccccc...dd..D..', G40, G40],
+    traps: [
+      { when: { x: 5 }, g: 'a', do: 'pop', say: 'SPRING!' },
+      { when: { x: 31 }, g: 'd', do: 'pop', say: 'AND SUMMER.' },
+    ] },
+ ] },
+
+ { name: 'RUNAWAY ROW', tag: 'THE DOORS HAVE LEGS.', motif: 'city',
+   pal: ['#e0705a', '#d4634e', '#3f1712', '#150605', '#fde2d6'],
+   levels: [
+  { name: 'THE DOOR HAS LEGS', hint: 'THE DOOR IS RIGHT THERE.', pity: 'IT RUNS WHEN YOU GET CLOSE. IT COMES BACK.',
+    quips: ['THE DOOR SAYS HI.'],
+    map: ['..P.............................D.......',
+          '##################...##aaaa#############',
+          '##################...##aaaa#############'],
+    traps: [
+      { when: { x: 27 }, do: 'door', x: 5, speed: 35, say: 'NOPE.' },
+      { when: { xl: 12, after: 0 }, do: 'door', x: 36, speed: 35, say: 'MADE YOU LOOK.' },
+      { when: { x: 21, after: 1 }, g: 'a', do: 'fall', say: 'THE FLOOR LEFT TOO.' },
+    ] },
+  { name: 'UP HERE', hint: 'THE DOOR IS RIGHT THERE. AGAIN.', pity: 'IT MOVES TWICE. FOLLOW IT.',
+    quips: ['IT WAS UP. THEN DOWN.'],
+    map: [E40,
+          '..............................######....',
+          '..P......................D....######....',
+          G40, G40],
+    traps: [
+      { when: { x: 22 }, do: 'door', x: 33, dy: -2, speed: 25, say: 'UP HERE.' },
+      { when: { x: 31, after: 0 }, do: 'door', x: 38, speed: 25, say: 'NO, DOWN HERE.' },
+    ] },
+  { name: 'IMPOSTOR', hint: 'TWO DOORS. TAKE THE CLOSE ONE.', pity: 'JUMP OVER THE FIRST DOOR. IT IS A LIE.',
+    quips: ['THAT DOOR BITES.'],
+    groups: { a: { spike: 1, hide: 1 } },
+    map: ['..P......a....F..................D......', G40, G40],
+    traps: [
+      { when: { x: 29 }, do: 'door', x: 6, speed: 30, say: 'WRONG ONE. GO BACK.' },
+      { when: { xl: 12, after: 0 }, g: 'a', do: 'pop' },
+    ] },
+  { name: 'ON A LEASH', hint: 'THE DOOR IS VERY CLOSE.', pity: 'CHASE IT TO THE WALL. THEN RUN BACK.',
+    quips: ['IT IS FASTER THAN IT LOOKS.'],
+    map: ['.........................#..............',
+          '..P...........D....^.....#....^^........',
+          G40, G40],
+    traps: [
+      { when: { x: 9 }, do: 'flee', speed: 12, max: 37, say: 'IT IS SHY.' },
+      { when: { x: 35 }, do: 'door', x: 3, speed: 45, say: 'HA. BEHIND YOU.' },
+    ] },
+  { name: 'GREAT ESCAPE', hint: 'THE EXIT IS JUST AHEAD.', pity: 'IT ENDS UP ON THE LEDGE. MEET IT THERE.',
+    quips: ['THE DOOR WINS AGAIN.'],
+    map: ['.................................####...',
+          '..P.................D............####...',
+          '############...#########aaaa############',
+          '############...#########aaaa############'],
+    traps: [
+      { when: { x: 15 }, do: 'flee', speed: 12, max: 30, say: 'CATCH ME.' },
+      { when: { x: 22 }, g: 'a', do: 'fall' },
+      { when: { x: 28 }, do: 'door', x: 35, dy: -2, speed: 25, say: 'UP HERE NOW.' },
+    ] },
+ ] },
+
+ { name: 'THE CELLAR', tag: 'WATCH THE CEILING.', motif: 'arches',
+   pal: ['#b9b3d6', '#aca5cb', '#2d2747', '#100d1c', '#f1eefc'],
+   levels: [
+  { name: 'LOOK UP', hint: 'NOTHING ABOVE YOU. RELAX.', pity: 'WAIT FOR THE CEILING TO DROP. THEN CLIMB IT.',
+    quips: ['THE CEILING MISSED YOU.'],
+    map: ['##############aaaa########bbbb##########',
+          '##############aaaa########bbbb##########',
+          E40, E40, E40,
+          '..P.................................D...',
+          G40, G40],
+    traps: [
+      { when: { x: 12 }, g: 'a', do: 'fall', shake: 0.05, say: 'HEADS UP.' },
+      { when: { x: 24 }, g: 'b', do: 'fall', shake: 0.05, say: 'AND AGAIN.' },
+    ] },
+  { name: 'THE PRESS', hint: 'THE PRESSES ARE OFF TODAY.', pity: 'GO RIGHT AFTER EACH PRESS LIFTS.',
+    quips: ['PRESSED.'],
+    groups: { a: { patrol: { dy: 4, speed: 8, wait: 0.5, phase: 0.2 } },
+              b: { patrol: { dy: 4, speed: 8, wait: 0.5, phase: 1.45 } },
+              c: { patrol: { dy: 4, speed: 8, wait: 0.5, phase: 0.65 } } },
+    map: ['#########aa#######bb#######cc#####dd####',
+          '#########aa#######bb#######cc#####dd####',
+          E40, E40, E40,
+          '..P..................................D..',
+          G40, G40],
+    traps: [ { when: { x: 32 }, g: 'd', do: 'fall', shake: 0.05, say: 'THAT ONE WAS NOT A PRESS.' } ] },
+  { name: 'HAIL', hint: 'CLEAR SKIES TODAY.', pity: 'PAUSE BEFORE EACH BLOCK FALLS. THEN HOP IT.',
+    quips: ['HAILSTONE.'],
+    map: ['............aa......bb...........cc.....',
+          E40, E40, E40, E40, E40, E40,
+          '..P..................................D..',
+          G40, G40],
+    traps: [
+      { when: { x: 9 }, g: 'a', do: 'fall', say: 'HAIL.' },
+      { when: { x: 17 }, g: 'b', do: 'fall' },
+      { when: { x: 30 }, g: 'c', do: 'fall', say: 'HEAVY HAIL.' },
+    ] },
+  { name: 'SQUEEZE', hint: 'A ROOMY CORRIDOR.', pity: 'HURRY. OR LEARN VERY SMALL HOPS.',
+    quips: ['SQUISHED.'],
+    map: ['########aaaaaaaaaaaaaaaaaaaaaaaa########',
+          '########aaaaaaaaaaaaaaaaaaaaaaaa########',
+          E40, E40, E40,
+          '..P...........^.......^.....^........D..',
+          G40, G40],
+    traps: [ { when: { x: 6 }, g: 'a', do: 'move', dy: 1.5, speed: 0.7, say: 'GETTING COZY.' } ] },
+  { name: 'COLLAPSE', hint: 'STRUCTURALLY SOUND. TRUST ME.', pity: 'WAIT, HOP, JUMP, TIME THE PRESS, WAIT.',
+    quips: ['THE CELLAR CAVED.'],
+    groups: { b: { patrol: { dy: 4, speed: 9, wait: 0.4, phase: 0 } } },
+    map: ['######aaaa#########bb##########cccc#####',
+          '######aaaa#########bb##########cccc#####',
+          E40, E40, E40,
+          '..P..................................D..',
+          '#############dddd#######################',
+          '#############dddd#######################'],
+    traps: [
+      { when: { x: 5 }, g: 'a', do: 'fall', say: 'MIND YOUR HEAD.' },
+      { when: { x: 12 }, g: 'd', do: 'fall', say: 'AND YOUR FEET.' },
+      { when: { x: 28 }, g: 'c', do: 'fall', shake: 0.05, say: 'AND EVERYTHING ELSE.' },
+    ] },
+ ] },
+
+ { name: 'BONEYARD', tag: 'YOUR BODY IS A TOOL.', motif: 'graves',
+   pal: ['#9cbf6a', '#8fb25e', '#253516', '#0b1206', '#eef6dc'],
+   levels: [
+  { name: 'CORPSE BRIDGE', hint: 'IMPOSSIBLE. JUST GIVE UP.', pity: 'YOUR BODY STAYS WHERE YOU DIE. WALK ON IT.',
+    quips: ['SEE? YOU ARE USEFUL NOW.', 'A FINE STEPPING STONE.'],
+    map: ['..P...........^^^^^^^...............D...', G40, G40],
+    traps: [ { when: { x: 22 }, do: 'say', say: '...WAIT. HOW?' } ] },
+  { name: 'STEPPING STONES', hint: 'TWO PITS. ZERO HOPE.', pity: 'ONE STONE IN EACH PIT. THEN HOP ACROSS.',
+    quips: ['BUILDING MATERIAL.'],
+    map: ['..P.....^^^^^^.....^^^^^^........D......', G40, G40],
+    traps: [ { when: { x: 26 }, do: 'say', say: 'STOP DOING THAT.' } ] },
+  { name: 'STAIRWAY', hint: 'THERE IS NO WAY UP. TRUST ME.', pity: 'DIE ON A SPIKE. STAND ON YOURSELF. CLIMB.',
+    quips: ['ONE MORE STEP.', 'THE STAIRS ARE YOU.'],
+    map: ['....................................D...',
+          '...........................#############',
+          '...........................#############',
+          '..........................^#############',
+          '..................######################',
+          '..................######################',
+          '..P..............^######################',
+          G40, G40],
+    traps: [ { when: { x: 19 }, do: 'say', say: 'OKAY, THAT IS CHEATING.' } ] },
+  { name: 'RECYCLING', hint: 'TOO WIDE. GO HOME.', pity: 'DIE FAR IN. THEN FARTHER. THEN WALK ON YOURSELF.',
+    quips: ['REDUCE, REUSE, RESPAWN.'],
+    groups: { a: { spike: 1, hide: 1 } },
+    map: ['..P.........^^^^^^^^^^^^........a...D...', G40, G40],
+    traps: [ { when: { x: 30 }, g: 'a', do: 'pop', say: 'RECYCLING IS IMPORTANT.' } ] },
+  { name: 'MAUSOLEUM', hint: 'NO ONE LEAVES THE MAUSOLEUM.', pity: 'A STONE IN THE PIT. A STONE BY THE WALL.',
+    quips: ['REST IN PIECES.'],
+    map: ['....................................D...',
+          '............................############',
+          '............................############',
+          '..P......^^^^^^............^############',
+          G40, G40],
+    traps: [ { when: { x: 29 }, do: 'say', say: 'THAT IS DISRESPECTFUL.' } ] },
+ ] },
+
+ { name: 'MIRAGE', tag: 'SEEING IS NOT BELIEVING.', motif: 'dunes',
+   pal: ['#e8c34a', '#ddb63e', '#45330a', '#151003', '#fff6cf'],
+   levels: [
+  { name: 'WRONG DOOR', hint: 'THE DOOR IS OBVIOUSLY ON THE RIGHT.', pity: 'FINE. HAVE SOME STAIRS.', pityAt: 3,
+    quips: ['TRY THINKING UP.'],
+    groups: { a: { ghost: 1 }, b: { ghost: 1 }, c: { ghost: 1 } },
+    map: ['.....................D..................',
+          '...................#####................',
+          E40,
+          '................cc......................',
+          E40,
+          '.............b..........................',
+          E40,
+          '..........a.............................',
+          '..P......^^........................F....',
+          G40, G40],
+    traps: [ { when: { deaths: 3 }, g: 'abc', do: 'show' } ] },
+  { name: 'INVISIBLE BRIDGE', hint: 'NO WAY ACROSS. HONEST.', pity: 'THERE IS A FLOOR. IT HAS ONE HOLE.', pityAt: 3,
+    quips: ['FELL THROUGH THE HOLE.'],
+    groups: { a: { ghost: 1 }, b: { ghost: 1 } },
+    map: ['..P................................D....',
+          '##########aaaaaaaa..bbbbbb##############',
+          '##########................##############'],
+    traps: [
+      { when: { touch: 'a' }, do: 'say', say: 'OH. THAT IS NEW.' },
+      { when: { deaths: 3 }, g: 'ab', do: 'show' },
+    ] },
+  { name: 'DOOR DOOR DOOR', hint: 'IT IS THE FIRST ONE.', pity: 'IT IS THE THIRD ONE. IT HAS A WALL.',
+    quips: ['DOOR NUMBER WRONG.'],
+    groups: { a: { ghost: 1 } },
+    map: ['.........................a..............',
+          '..P.......F.......F......aD.......F.....',
+          G40, G40],
+    traps: [] },
+  { name: 'PHANTOM STAIRS', hint: 'JUST CLIMB THE STAIRS.', pity: 'ONE STEP IS FAKE. THE REAL ONE IS INVISIBLE.', pityAt: 3,
+    quips: ['THAT STEP WAS DECORATIVE.'],
+    groups: { p: { phantom: 1 }, g: { ghost: 1 } },
+    map: ['......................D.................',
+          '....................#####...............',
+          E40,
+          '................##......................',
+          E40,
+          '..........ppgg..........................',
+          E40,
+          '........##..............................',
+          '..P.......^^^^....................F.....',
+          G40, G40],
+    traps: [ { when: { deaths: 3 }, g: 'g', do: 'show', say: 'THE REAL STEP WAS HIDING.' } ] },
+  { name: 'OASIS', hint: 'DO NOT TRUST YOUR EYES. OR ME.', pity: 'WALK ON NOTHING. JUMP OVER SOMETHING.',
+    quips: ['A MIRAGE.'],
+    groups: { a: { ghost: 1 }, b: { ghost: 1 }, c: { ghost: 1 }, p: { phantom: 1 } },
+    map: ['...................................c....',
+          '..P............................F...c.D..',
+          '########aaaaaaappppbbbbbbbbb############',
+          '########....................############'],
+    traps: [
+      { when: { touch: 'a' }, do: 'say', say: 'A MIRAGE. OR IS IT?' },
+      { when: { deaths: 4 }, g: 'ab', do: 'show' },
+    ] },
+ ] },
+
+ { name: 'MIRROR HALL', tag: 'LEFT IS RIGHT. RIGHT IS WRONG.', motif: 'mirrors',
+   pal: ['#d88aa8', '#cd7d9c', '#3d1a2a', '#14080e', '#fde7f0'],
+   levels: [
+  { name: 'MIRROR', hint: 'NOTHING WEIRD HERE. JUST SPIKES.', pity: 'WHEN IT FLIPS, PRESS THE OTHER WAY. OR STOP.',
+    quips: ['LEFT, RIGHT, WHATEVER.'],
+    map: ['..P.......^^........^^.......^^......D..', G40, G40],
+    traps: [
+      { when: { x: 13 }, do: 'reverse', time: 1.4, say: 'LEFT IS THE NEW RIGHT.' },
+      { when: { x: 24 }, do: 'reverse', time: 1.4, say: 'STILL LEFT.' },
+      { when: { x: 32 }, do: 'reverse', time: 1.0, say: 'AGAIN. SORRY. NOT SORRY.' },
+    ] },
+  { name: 'BACKFLIP', hint: 'JUST JUMP THE SPIKES.', pity: 'EVERY JUMP FLIPS YOUR CONTROLS. LET GO IN THE AIR.',
+    quips: ['FLIPPED.'],
+    map: ['..P.......^^......^^......^^^.......D...', G40, G40],
+    traps: [
+      { when: { jump: true }, do: 'reverse', time: 0.6, repeat: true },
+      { when: { jump: true }, do: 'say', say: 'JUMPING IS CONFUSING.' },
+    ] },
+  { name: 'FLIP FLOP', hint: 'A NICE SIMPLE STROLL.', pity: 'WHEN THE WARNING BLINKS, PRESS THE OPPOSITE WAY.',
+    quips: ['WRONG WAY.'],
+    map: ['..P.........^...........^........D......', G40, G40],
+    traps: [
+      { when: { x: 14 }, do: 'reverse', time: 2.5, say: 'UPSIDE... SIDEWAYS.' },
+      { when: { x: 28 }, do: 'door', x: 6, speed: 30, say: 'OTHER WAY.' },
+      { when: { xl: 22, after: 1 }, do: 'reverse', time: 2.2, say: 'AND BACK AGAIN.' },
+    ] },
+  { name: 'STUTTER', hint: 'STEADY HANDS.', pity: 'IT FLIPS EVERY SECOND. JUMP RIGHT AFTER IT ENDS.',
+    quips: ['HICCUP.'],
+    map: ['..P.................................D...',
+          '##########..###..###...###..###..#######',
+          '##########..###..###...###..###..#######'],
+    traps: [
+      { when: { x: 10 }, do: 'reverse', time: 0.35, delay: 0.9, repeat: true },
+      { when: { x: 10 }, do: 'say', say: 'HIC.' },
+    ] },
+  { name: 'HOUSE OF MIRRORS', hint: 'THE LAST ROOM OF THE HALL.', pity: 'AFTER THE FIRST FLIP, EVERY JUMP FLIPS YOU TOO.',
+    quips: ['REFLECT ON THAT.'],
+    groups: { a: { spike: 1, hide: 1 } },
+    map: ['..P......^^.....^^^.....^^.....a......D.', G40, G40],
+    traps: [
+      { when: { x: 12 }, do: 'reverse', time: 1.2, say: 'MIRROR.' },
+      { when: { jump: true, after: 0 }, do: 'reverse', time: 0.5, repeat: true },
+      { when: { x: 29 }, g: 'a', do: 'pop' },
+      { when: { x: 35 }, do: 'door', x: 20, speed: 30, say: 'BACK THERE. SORRY.' },
+    ] },
+ ] },
+
+ { name: 'SKY NURSERY', tag: 'NOTHING HERE STAYS PUT.', motif: 'clouds',
+   pal: ['#7aa7d9', '#8cb4e1', '#16304d', '#07111c', '#e5f0fc'],
+   levels: [
+  { name: 'BELIEVER', hint: 'HOP ON. IT WILL CARRY YOU.', pity: 'IT ONLY MOVES WHILE YOU ARE IN THE AIR. SMALL HOPS.',
+    quips: ['YOU STOPPED BELIEVING.'],
+    groups: { a: { airMove: 8, airMax: 19 }, b: { spike: 1, hide: 1 } },
+    map: ['..........vvvvvvvvvvvvvvvvv.............',
+          E40, E40,
+          '..P...............................b..D..',
+          '########aaa.....................########',
+          '########........................########'],
+    traps: [
+      { when: { touch: 'a' }, do: 'say', say: 'IT ONLY MOVES IF YOU BELIEVE.' },
+      { when: { x: 32 }, g: 'b', do: 'pop' },
+    ] },
+  { name: 'FERRY', hint: 'ALL ABOARD.', pity: 'DO NOT JUMP ON THE FERRY. JUST STAND THERE.',
+    quips: ['NO JUMPING ON DECK.'],
+    groups: { a: { plat: 1, patrol: { dx: 21, speed: 4, wait: 0.6 } }, b: { spike: 1, down: 1, hide: 1 } },
+    map: [G40,
+          '..........bbbbbbbbbbbbbbbbbbbb..........',
+          '..P..................................D..',
+          '########aaa.....................########',
+          '########........................########'],
+    traps: [ { when: { x: 12 }, g: 'b', do: 'pop', say: 'JUMP FOR JOY!' } ] },
+  { name: 'CLOUD HOP', hint: 'SOFT, FLUFFY, RELIABLE CLOUDS.', pity: 'DO NOT STAND STILL. ONE CLOUD LEAVES FASTER.',
+    quips: ['THE CLOUD LEFT.'],
+    groups: { a: { cloud: 1 }, b: { cloud: 1 }, c: { cloud: 1 }, d: { cloud: 1 }, e: { cloud: 1 } },
+    map: ['..P..................................D..',
+          '######..aa...bb...cc...dd...ee...#######',
+          '######...........................#######'],
+    traps: [
+      { when: { touch: 'a' }, g: 'a', do: 'fall', shake: 0.4 },
+      { when: { touch: 'b' }, g: 'b', do: 'fall', shake: 0.4 },
+      { when: { touch: 'c' }, g: 'c', do: 'fall', shake: 0.4 },
+      { when: { touch: 'd' }, g: 'd', do: 'fall', shake: 0.12, say: 'THAT ONE WAS IMPATIENT.' },
+      { when: { touch: 'e' }, g: 'e', do: 'fall', shake: 0.4 },
+    ] },
+  { name: 'UPDRAFT', hint: 'TAKE THE STAIRS.', pity: 'RIDE THE LIFT. HOP THE GAP AT THE TOP.',
+    quips: ['GOING DOWN.'],
+    groups: { a: { plat: 1, patrol: { dy: -6, speed: 3, wait: 1 } } },
+    map: ['.....................D..................',
+          '.............###ccc####.................',
+          E40, E40, E40, E40,
+          '..P.....................................',
+          '##########aaa###########################',
+          '##########...###########################'],
+    traps: [ { when: { x: 15, up: 4 }, g: 'c', do: 'fall', say: 'GAPS UP HERE TOO.' } ] },
+  { name: 'SKYFALL', hint: 'THE WHOLE SKY IS YOURS.', pity: 'HOP THE SLIDER, RIDE THE FERRY, RUN THE CLOUD.',
+    quips: ['GRAVITY REMEMBERS.'],
+    groups: { a: { airMove: 8, airMax: 9 }, b: { plat: 1, patrol: { dx: 7, speed: 4, wait: 0.6 } }, c: { cloud: 1 } },
+    map: ['..........vvvvvvvvvvv...................',
+          E40, E40,
+          '..P..................................D..',
+          '########aaa..........bbb........cc.#####',
+          '########...........................#####'],
+    traps: [ { when: { touch: 'c' }, g: 'c', do: 'fall', shake: 0.3, say: 'NOTHING STAYS PUT.' } ] },
+ ] },
+
+ { name: 'THE CHASE', tag: 'DO NOT STOP.', motif: 'peaks',
+   pal: ['#e2884a', '#d77b3e', '#40200b', '#140902', '#fde6d2'],
+   levels: [
+  { name: 'RUN', hint: 'TAKE YOUR TIME. NO RUSH.', pity: 'THEY ARE SLOWER THAN YOU. NEVER STOP.',
+    quips: ['THEY CAUGHT UP.', 'YOU STOPPED. WHY?'],
+    groups: { a: { spike: 1, hide: 1 } },
+    map: ['............#...........................',
+          'aa.P........#..............#......D.....',
+          '###################...##################',
+          '###################...##################'],
+    traps: [
+      { when: { x: 6 }, g: 'a', do: 'chase', speed: 7.5, say: 'RUN.' },
+      { when: { x: 31 }, do: 'door', x: 38, speed: 20, say: 'A LITTLE FURTHER.' },
+    ] },
+  { name: 'AVALANCHE', hint: 'A QUIET TUNNEL.', pity: 'RUN AND NEVER STOP. JUMP WITHOUT SLOWING DOWN.',
+    quips: ['BURIED.'],
+    map: ['####aaaabbbbccccddddeeeeffffgggghhhh####',
+          '####aaaabbbbccccddddeeeeffffgggghhhh####',
+          E40, E40, E40,
+          '..P.........^.........^.........^....D..',
+          G40, G40],
+    traps: [
+      { when: { x: 3 }, g: 'a', do: 'fall', delay: 0.5, say: 'AVALANCHE!' },
+      { when: { x: 3 }, g: 'b', do: 'fall', delay: 0.86 },
+      { when: { x: 3 }, g: 'c', do: 'fall', delay: 1.22 },
+      { when: { x: 3 }, g: 'd', do: 'fall', delay: 1.58 },
+      { when: { x: 3 }, g: 'e', do: 'fall', delay: 1.94 },
+      { when: { x: 3 }, g: 'f', do: 'fall', delay: 2.3 },
+      { when: { x: 3 }, g: 'g', do: 'fall', delay: 2.66 },
+      { when: { x: 3 }, g: 'h', do: 'fall', delay: 3.02 },
+    ] },
+  { name: 'SURROUNDED', hint: 'A QUIET STROLL.', pity: 'JUMP THE ONES IN FRONT. OUTRUN THE ONES BEHIND.',
+    quips: ['SANDWICHED.'],
+    groups: { a: { spike: 1, hide: 1 }, b: { spike: 1, hide: 1 } },
+    map: ['.aa..P..........................D..bb...', G40, G40],
+    traps: [
+      { when: { x: 8 }, g: 'a', do: 'chase', speed: 7.5, say: 'SURROUNDED.' },
+      { when: { x: 8 }, g: 'b', do: 'chase', speed: 5 },
+    ] },
+  { name: 'HOT PURSUIT', hint: 'YOU CAN REST HERE.', pity: 'KEEP MOVING. THE DOOR TIRES OUT AT THE WALL.',
+    quips: ['REST IN PIECES.'],
+    groups: { a: { spike: 1, hide: 1 } },
+    map: ['aa.P..........................D.........',
+          '############...#######...###############',
+          '############...#######...###############'],
+    traps: [
+      { when: { x: 5 }, g: 'a', do: 'chase', speed: 8, say: 'THEY ARE BACK.' },
+      { when: { x: 26 }, do: 'flee', speed: 12, max: 38, say: 'IT IS SCARED TOO.' },
+    ] },
+  { name: 'STAMPEDE', hint: 'NOTHING IS CHASING YOU.', pity: 'HOP THE POP, LEAP THE DROP, FLIP AT THE END.',
+    quips: ['TRAMPLED.'],
+    groups: { a: { spike: 1, hide: 1 }, b: { spike: 1, hide: 1 } },
+    map: ['aa.P........^..........b.............D..',
+          '############################cccc########',
+          '############################cccc########'],
+    traps: [
+      { when: { x: 5 }, g: 'a', do: 'chase', speed: 8.5, say: 'STAMPEDE!' },
+      { when: { x: 21 }, g: 'b', do: 'pop' },
+      { when: { x: 26 }, g: 'c', do: 'fall' },
+      { when: { x: 33 }, do: 'reverse', time: 1.0, say: 'OH NO.' },
+    ] },
+ ] },
+
+ { name: 'THE HEART', tag: 'EVERYTHING, ALL AT ONCE.', motif: 'heart',
+   pal: ['#2b2b33', '#34343e', '#e0dccf', '#f2c14e', '#14141a'],
+   levels: [
+  { name: 'TRUST NOTHING', hint: 'THIS ONE IS HONEST. PROBABLY.', pity: 'FLOOR DROPS. CEILING DROPS. ONE WALL HIDES.',
+    quips: ['YOU TRUSTED IT.'],
+    groups: { c: { ghost: 1 } },
+    map: ['####################aaaa################',
+          '####################aaaa################',
+          E40, E40,
+          '.................................c......',
+          '..P..............................c.D....',
+          '#########bbbb###########################',
+          '#########bbbb###########################'],
+    traps: [
+      { when: { x: 7 }, g: 'b', do: 'fall', say: 'OOPS.' },
+      { when: { x: 18 }, g: 'a', do: 'fall', shake: 0.05, say: 'DOUBLE OOPS.' },
+      { when: { touch: 'c' }, do: 'say', say: 'THAT WALL WAS ALWAYS THERE.' },
+    ] },
+  { name: 'DEJA VU', hint: 'YOU HAVE SEEN THIS ONE.', pity: 'IT DROPS EARLIER. AND TWICE. AND THE DOOR SCOOTS.',
+    quips: ['FAMILIAR?'],
+    map: ['...P................................D...',
+          '#########################aaaa####bb#####',
+          '#########################aaaa####bb#####'],
+    traps: [
+      { when: { x: 21 }, g: 'a', do: 'fall', say: 'NOT QUITE THE SAME.' },
+      { when: { x: 31 }, g: 'b', do: 'fall' },
+      { when: { x: 33 }, do: 'door', x: 38, speed: 25, say: 'OKAY, VERY DIFFERENT.' },
+    ] },
+  { name: 'GHOST TOWN', hint: 'NOBODY LIVES HERE.', pity: 'TWO HIDDEN WALLS. JUMP AT THE SAME SPOTS.', pityAt: 3,
+    quips: ['BOO.'],
+    groups: { a: { spike: 1, hide: 1 }, g: { ghost: 1 } },
+    map: ['........................g...............',
+          'aa.P..........g.........g...........D...',
+          G40, G40],
+    traps: [
+      { when: { x: 6 }, g: 'a', do: 'chase', speed: 7.5, say: 'BOO.' },
+      { when: { deaths: 3 }, g: 'g', do: 'show' },
+    ] },
+  { name: 'GAUNTLET', hint: 'A FRIENDLY REUNION.', pity: 'POP, DROP, FERRY, FAKE, WALL. IN THAT ORDER.',
+    quips: ['OLD FRIENDS.'],
+    groups: { a: { spike: 1, hide: 1 }, c: { ghost: 1 }, d: { plat: 1, patrol: { dx: 7, speed: 3.5, wait: 0.6 } } },
+    map: ['...............bb.......................',
+          E40, E40, E40, E40, E40, E40,
+          '...................................c....',
+          '..P.....a.......................F..c.D..',
+          '####################ddd.......##########',
+          '####################..........##########'],
+    traps: [
+      { when: { x: 6 }, g: 'a', do: 'pop', say: 'HELLO AGAIN.' },
+      { when: { x: 12.5 }, g: 'b', do: 'fall', say: 'HEADS UP, OLD FRIEND.' },
+    ] },
+  { name: 'THE LAST DOOR', hint: 'LAST ONE. NO TRICKS. CROSS MY HEART.', pity: 'FLOOR. SPIKES. WALL. MIRROR. DOOR. YOU KNOW THEM.',
+    quips: ['SO CLOSE. NOT REALLY.'],
+    groups: { c: { spike: 1, hide: 1 }, g: { ghost: 1 } },
+    map: ['ccP...................g.............D...',
+          '########aaa#############################',
+          '########aaa#############################'],
+    traps: [
+      { when: { x: 6 }, g: 'a', do: 'fall', say: 'CLASSIC.' },
+      { when: { x: 12 }, g: 'c', do: 'chase', speed: 7, say: 'AND NOW, CARDIO.' },
+      { when: { x: 26 }, do: 'reverse', time: 1.1, say: 'MIRROR, MIRROR.' },
+      { when: { x: 33 }, do: 'door', x: 4, speed: 40, say: 'BEHIND YOU. ALWAYS.' },
+      { when: { x: 33 }, g: 'c', do: 'vanish' },
+    ] },
+ ] },
+
+ /* Bonus phase, opens after the ending. Levels with `grudge: true` grow a hidden spike
+    where you last jumped from before dying, and pop it when you come near. */
+ { name: 'GRUDGE MATCH', tag: 'IT REMEMBERS EVERYTHING YOU DID.', motif: 'eyes',
+   pal: ['#3a1d24', '#4a2530', '#f0d9c8', '#ff6b5e', '#1a0b0f'],
+   levels: [
+  { name: 'I REMEMBER', hint: 'THREE LITTLE GAPS. NOTHING ELSE.', pity: 'A SPIKE GROWS WHERE YOU LAST JUMPED. SO JUMP SOMEWHERE HARMLESS.',
+    quips: ['IT REMEMBERS.'], grudge: true,
+    map: ['..P.................................D...',
+          '#########...#######...#######...########',
+          '#########...#######...#######...########'],
+    traps: [] },
+  { name: 'FORK IN THE ROAD', hint: 'PICK A ROAD. BOTH ARE SAFE.', pity: 'TOP: SKIP THE LEFT HALF OF THE MIDDLE LEDGE. BOTTOM: HOP THE POPS.',
+    quips: ['WRONG ROAD.'],
+    groups: { a: { spike: 1, hide: 1 }, b: { spike: 1, hide: 1 }, p: { phantom: 1 } },
+    map: [E40,
+          '..........####..####..pp##..###..###....',
+          E40,
+          '.....###................................',
+          '..P.........a....b....^^..............D.',
+          G40, G40],
+    traps: [
+      { when: { x: 9 }, g: 'a', do: 'pop', say: 'THE LOW ROAD HAS A TOLL.' },
+      { when: { x: 14 }, g: 'b', do: 'pop' },
+      { when: { x: 20, up: 3 }, do: 'say', say: 'SO DOES THE HIGH ROAD.' },
+    ] },
+  { name: 'GRAVE ROBBER', hint: 'NO WAY ACROSS. AND NO TIME.', pity: 'DIE FAR INTO THE SPIKES. NEXT TIME, STAND ON YOURSELF.',
+    quips: ['GRAVE ROBBER.'],
+    groups: { a: { spike: 1, hide: 1 }, c: { spike: 1, hide: 1 } },
+    map: ['aa.P.........^^^^^^.........c.......D...', G40, G40],
+    traps: [
+      { when: { x: 6 }, g: 'a', do: 'chase', speed: 7, say: 'THEY WANT THEIR GRAVES BACK.' },
+      { when: { x: 25 }, g: 'c', do: 'pop', say: 'AND A TIP.' },
+    ] },
+  { name: 'DEAD WEIGHT', hint: 'THE DOOR IS RIGHT THERE. ON THE FLOOR.', pity: 'ONE STONE IN THE PIT. ONE BY THE WALL. THEN CLIMB.',
+    quips: ['HEAVY.'],
+    map: [E40,
+          '.............................###########',
+          '.............................###########',
+          '..P.........^^^^^^......D...^###########',
+          G40, G40],
+    traps: [
+      { when: { x: 19 }, do: 'flee', speed: 10, max: 27, say: 'IT IS GETTING AWAY.' },
+      { when: { x: 25 }, do: 'door', x: 33, dy: -3, speed: 25, say: 'UP HERE, OBVIOUSLY.' },
+    ] },
+  { name: 'LAST WORD', hint: 'I FORGIVE YOU. REALLY.', pity: 'STONE IN THE SPIKES. HOP THE POP. STOP AFTER THE GAP.',
+    quips: ['I NEVER FORGET.'], grudge: true,
+    groups: { c: { spike: 1, hide: 1 }, a: { spike: 1, hide: 1 } },
+    map: ['cc.P........^^^^^^.......a..........D...',
+          '##############################...#######',
+          '##############################...#######'],
+    traps: [
+      { when: { x: 6 }, g: 'c', do: 'chase', speed: 7, say: 'ROUND TWO.' },
+      { when: { x: 22 }, g: 'a', do: 'pop' },
+      { when: { x: 33 }, do: 'reverse', time: 0.8, say: 'FOR OLD TIMES SAKE.' },
+      { when: { x: 35 }, do: 'door', x: 38, speed: 20 },
+    ] },
+ ] },
+];
+
+// Flatten into one ordered list; each level remembers its phase and number.
+const LEVELS = [];
+PHASES.forEach((ph, pi) => ph.levels.forEach((lv, k) => { lv.phase = pi; lv.num = k; LEVELS.push(lv); }));
+const levelLabel = lv => `${lv.phase + 1}-${lv.num + 1}`;
+const MAIN_PHASES = 10, MAIN_LEVELS = MAIN_PHASES * 5;   // the rest is the bonus phase
+
+const QUIPS = {
+  spike:   ['POINTY. WHO KNEW?', 'YOU FOUND THE SHARP PART.', 'SKEWERED. NEATLY.', 'THAT WAS A SPIKE.'],
+  pit:     ['GRAVITY 1, YOU 0.', 'MIND THE GAP.', 'THE FLOOR HAD PLANS.', 'DOWN YOU GO.'],
+  crush:   ['FLATTENED.', 'LOOK UP NEXT TIME.', 'PANCAKE MODE.'],
+  door:    ['DECORATIVE. OBVIOUSLY.', 'WRONG DOOR, GENIUS.'],
+  restart: ['GAVE UP ALREADY?', 'RESTARTS COUNT. SORRY.'],
+  same:    ['SAME SPOT. AGAIN.', 'YOU REALLY LIKE IT THERE.', 'THAT SPOT IS YOURS NOW.', 'I SAVED YOU A SEAT.'],
+  grudge:  ['YOU JUMPED HERE LAST TIME.', 'I REMEMBER THIS SPOT.', 'NOT HERE. NOT AGAIN.'],
+};
+const pick = a => a[Math.random() * a.length | 0];
+const greeting = () => pick(['YOU AGAIN.', 'OH. YOU CAME BACK.', `I KEPT COUNT. ${deaths} DEATHS.`]);
+
+/* ---- progress (kept in this browser only) ---- */
+// sound: 2 music + sfx, 1 sfx only, 0 off.  best: level index -> { d: fewest deaths, t: fastest clear (s) }
+let save = { cleared: [], deaths: 0, sound: 2, shake: true, best: {}, playT: 0, skin: 'blob', got: [] };
+function loadSave() {
+  try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s && Array.isArray(s.cleared)) save = Object.assign(save, s); } catch (_) {}
+  if ('muted' in save) { if (save.muted) save.sound = 0; delete save.muted; }   // older saves
+}
+function writeSave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (_) {} }
+const isCleared = i => !!save.cleared[i];
+const isUnlocked = i => i === 0 || isCleared(i - 1) || isCleared(i);
+const phaseUnlocked = p => isUnlocked(p * 5);
+const clearedCount = () => LEVELS.reduce((n, _, i) => n + (isCleared(i) ? 1 : 0), 0);
+const firstOpenLevel = () => { for (let i = 0; i < LEVELS.length; i++) if (!isCleared(i)) return i; return -1; };
+const themePhase = () => { const i = firstOpenLevel(); return i < 0 ? PHASES.length - 1 : LEVELS[i].phase; };
+const phaseCleared = p => { let n = 0; for (let k = 0; k < 5; k++) n += isCleared(p * 5 + k) ? 1 : 0; return n; };
+const deathlessCount = () => Object.values(save.best).filter(b => b.d === 0).length;
+function fmtTime(s) {
+  s = Math.max(0, s || 0);
+  if (s < 60) return s.toFixed(1) + 'S';
+  const m = Math.floor(s / 60), h = Math.floor(m / 60);
+  return (h ? h + ':' + pad2(m % 60) : m) + ':' + pad2(Math.floor(s % 60));
+}
+// New skins announce themselves once. silent: just note what is already unlocked.
+let toast = '', toastT = 0;
+function checkUnlocks(silent) {
+  for (const s of SKINS) if (skinUnlocked(s) && !save.got.includes(s.id)) {
+    save.got.push(s.id);
+    if (!silent) { toast = 'NEW SKIN: ' + s.name; toastT = 2.6; }
+  }
+}
+
+/* ======================== 6. LEVEL LOADING ========================= */
+let state = 'title';             // title | phases | levels | card | play | dead | exit | ending
+let li = 0, L = null, pal = null, palPhase = -1;
+let grid, groups, gmap, door, fakeDoors, spawn, traps, player;
+let stones = [];                 // grudge stones {tx,ty} - survive retries, reset per level
+let deaths = 0, levelDeaths = 0, levelTime = 0, time = 0;
+let introT = 0, deadT = 0, exitT = 0, exitDone = false, endT = 0, menuT = 0;
+let narr = '', msg = '', msgT = 0, reverseT = 0;
+let narrT = 0, narrN = 0, narrBlip = false;         // typewriter: time, letters shown, blip while typing
+let greet = null, greeted = false, returning = false;
+let bannerY = 50;                                  // title / death banners sit above the level
+let hitStop = 0, flashT = 0, skullT = 0;
+let rec = [], recTick = 0, runs = [];              // this attempt's path, and every attempt this visit
+let replayT = 0, replayDur = 0, replaySpeed = 1, lastPoof = 0;
+let jumpsThisTry = [], grudgeAt = null;            // where you jumped from, and where the level will strike
+let lastDeathTile = null, sameSpot = 0;
+let endBonus = false;
+let shakeT = 0, shakeMag = 0;
+let particles = [];
+let jumped = false;
+const touched = new Set();
+const fade = { a: 0, dir: 0, cb: null };
+
+function setPalette(pi) {
+  palPhase = pi;
+  const a = PHASES[pi].pal;
+  pal = { bg: a[0], deco: a[1], ink: a[2], hero: a[3], glow: a[4] };
+  bakeSprites();
+  const r = document.documentElement.style;
+  r.setProperty('--bg', pal.bg); r.setProperty('--ink', pal.ink); r.setProperty('--glow', pal.glow);
+}
+
+function loadLevel(i) {
+  li = i; L = LEVELS[i];
+  setPalette(L.phase);
+  stones = []; levelDeaths = 0; introT = 1.6; msgT = 0;
+  runs = []; grudgeAt = null; lastDeathTile = null; sameSpot = 0;
+  if (!greeted) { greeted = true; if (returning) greet = greeting(); }
+  startAttempt();
+}
+
+function setNarr(s, blip = false) { if (s === narr) return; narr = s; narrT = 0; narrN = 0; narrBlip = blip; }
+
+// Rebuild the level from its data. Stones and death counts persist between attempts.
+function startAttempt() {
+  // Center the level below the HUD, then extend its bottom row down to the screen edge
+  // (ground stays ground, pits stay bottomless).
+  const src = L.map.map(r => r.padEnd(COLS, '.').slice(0, COLS));
+  const top = clamp(4 + Math.floor((ROWS - 4 - src.length) / 2), 0, Math.max(0, ROWS - src.length));
+  const rows = [];
+  for (let i = 0; i < top; i++) rows.push(E40);
+  rows.push(...src.slice(0, ROWS - top));
+  while (rows.length < ROWS) rows.push(src[src.length - 1]);
+  bannerY = clamp(rows.findIndex(r => /[^.]/.test(r)) * TS + OY - 42, 34, 68);
+
+  grid = new Uint8Array(COLS * ROWS);   // 0 empty, 1 solid, 2 spike up, 3 spike down
+  groups = []; gmap = {}; fakeDoors = []; door = null; spawn = { tx: 1, ty: ROWS - 2 };
+  rows.forEach((row, ty) => [...row].forEach((ch, tx) => {
+    const i = ty * COLS + tx;
+    if (ch === '#') grid[i] = 1;
+    else if (ch === '^') grid[i] = 2;
+    else if (ch === 'v') grid[i] = 3;
+    else if (ch === 'P') spawn = { tx, ty };
+    else if (ch === 'D') door = { x: tx * TS, y: ty * TS - TS, y0: ty * TS - TS, tx: 0, ty: 0, speed: 0, moving: false, flee: null };
+    else if (ch === 'F') fakeDoors.push({ x: tx * TS, y: ty * TS - TS });
+    else if (ch >= 'a' && ch <= 'z') getGroup(ch).tiles.push([tx, ty]);
+  }));
+  if (L.grudge && grudgeAt) getGroup('~', { spike: 1, hide: 1 }).tiles.push([grudgeAt.tx, grudgeAt.ty]);
+  for (const g of groups) g.cx0 = g.tiles.reduce((s, t) => s + t[0] * TS + 4, 0) / g.tiles.length;
+  traps = (L.traps || []).map(t => ({ ...t, armed: false, done: false, timer: 0 }));
+  if (gmap['~']) traps.push({ when: { near: [grudgeAt.tx, grudgeAt.ty] }, g: '~', do: 'pop', say: pick(QUIPS.grudge),
+                              armed: false, done: false, timer: 0 });
+  player = newPlayer();
+  levelTime = 0; reverseT = 0;
+  rec = []; recTick = 0; jumpsThisTry = [];
+  setNarr(greet || ((L.pity && levelDeaths >= (L.pityAt || 4)) ? L.pity : L.hint));
+  state = 'play';
+}
+
+function getGroup(ch, def) {
+  if (!gmap[ch]) {
+    const d = def || (L.groups && L.groups[ch]) || {};
+    const hideOy = d.hide ? (d.down ? -TS : TS) : 0;
+    const g = {
+      id: ch, d, tiles: [], ox: 0, oy: hideOy, hideOy, vy: 0,
+      solid: !d.spike && !d.phantom, spike: !!d.spike, down: !!d.down,
+      ghost: !!d.ghost, revealed: false, plat: !!(d.airMove || d.plat || d.cloud),
+      state: 'idle', tox: 0, toy: 0, speed: 0, shake: 0, pendingFall: false, gone: false,
+    };
+    gmap[ch] = g; groups.push(g);
+  }
+  return gmap[ch];
+}
+
+function newPlayer() {
+  return { x: spawn.tx * TS + 1, y: spawn.ty * TS + 1, w: 6, h: 7, vx: 0, vy: 0,
+           onGround: false, ground: null, coyote: 0, buffer: 0, jumping: false,
+           face: 1, alive: true, sx: 1, sy: 1, anim: 0 };
+}
+
+/* ============================ 7. PHYSICS =========================== */
+const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+const approach = (v, t, d) => v < t ? Math.min(v + d, t) : Math.max(v - d, t);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const tileAt = (tx, ty) => (tx < 0 || tx >= COLS) ? 1 : (ty < 0 || ty >= ROWS) ? 0 : grid[ty * COLS + tx];
+
+// Every solid rectangle overlapping box b: static tiles, side walls, trap blocks, grudge stones.
+function solidsIn(b) {
+  const out = [];
+  const x0 = Math.floor(b.x / TS), x1 = Math.floor((b.x + b.w - 0.001) / TS);
+  const y0 = Math.floor(b.y / TS), y1 = Math.floor((b.y + b.h - 0.001) / TS);
+  for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++)
+    if (tileAt(tx, ty) === 1) out.push({ x: tx * TS, y: ty * TS, w: TS, h: TS, g: null });
+  for (const g of groups) {
+    if (!g.solid || g.gone) continue;
+    for (const [tx, ty] of g.tiles) {
+      const r = { x: tx * TS + g.ox, y: ty * TS + g.oy, w: TS, h: TS, g };
+      if (overlap(b, r)) out.push(r);
+    }
+  }
+  for (const s of stones) {
+    const r = { x: s.tx * TS, y: s.ty * TS, w: TS, h: TS, g: null };
+    if (overlap(b, r)) out.push(r);
+  }
+  return out;
+}
+const overlapsStatic = b => solidsIn(b).some(s => !s.g);
+
+function touchGroup(g) {
+  if (!g) return;
+  touched.add(g.id);
+  if (g.ghost && !g.revealed) { g.revealed = true; sfx.reveal(); }
+}
+
+function moveX(dx) {
+  const p = player; p.x += dx;
+  for (const s of solidsIn(p)) {
+    if (!overlap(p, s)) continue;
+    if (dx > 0) p.x = s.x - p.w; else if (dx < 0) p.x = s.x + s.w;
+    p.vx = 0; touchGroup(s.g);
+  }
+}
+function moveY(dy) {
+  const p = player; p.y += dy;
+  for (const s of solidsIn(p)) {
+    if (!overlap(p, s)) continue;
+    if (dy > 0) { p.y = s.y - p.h; p.onGround = true; p.ground = s.g; }
+    else if (dy < 0) { p.y = s.y + s.h; if (p.vy < -60) sfx.bonk(); }
+    p.vy = 0; touchGroup(s.g);
+  }
+}
+
+function updatePlayer(dt) {
+  const p = player;
+  let mx = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+  if (reverseT > 0) mx = -mx;                       // the level is lying to your fingers
+  const accel = p.onGround ? (mx ? PH.accG : PH.fric) : (mx ? PH.accA : PH.accIdleAir);
+  p.vx = approach(p.vx, mx * PH.run, accel * dt);
+  if (mx) p.face = mx;
+
+  p.coyote = p.onGround ? PH.coyote : p.coyote - dt;            // coyote time
+  p.buffer = input.jumpPressed ? PH.buffer : p.buffer - dt;     // jump buffering
+  if (p.buffer > 0 && p.coyote > 0) {
+    p.vy = -PH.jump; p.buffer = 0; p.coyote = 0; p.jumping = true; p.onGround = false;
+    jumped = true; p.sx = 0.7; p.sy = 1.35;
+    if (L.grudge) jumpsThisTry.push({ tx: Math.floor((p.x + p.w / 2) / TS), ty: Math.floor((p.y + p.h - 1) / TS) });
+    sfx.jump(); dust(p.x + p.w / 2, p.y + p.h, 3);
+  }
+  if (p.jumping && !input.jump && p.vy < 0) { p.vy *= PH.cut; p.jumping = false; } // variable height
+  if (p.vy >= 0) p.jumping = false;
+  p.vy = Math.min(p.vy + PH.grav * dt, PH.maxFall);
+
+  const wasGround = p.onGround, fallV = p.vy;
+  moveX(p.vx * dt);
+  p.onGround = false; p.ground = null;
+  moveY(p.vy * dt);
+  if (p.onGround && !wasGround && fallV > 90) {                 // landing squash
+    const k = Math.min(1, fallV / 300);
+    p.sx = 1 + 0.45 * k; p.sy = 1 - 0.35 * k;
+    sfx.land(); dust(p.x + p.w / 2, p.y + p.h, 4);
+  }
+  const ease = Math.min(1, dt * 14);
+  p.sx += (1 - p.sx) * ease; p.sy += (1 - p.sy) * ease;
+  p.anim += dt * (Math.abs(p.vx) / PH.run) * 12;
+}
+
+function checkHazards() {
+  const p = player;
+  const hb = { x: p.x + 0.5, y: p.y + 0.5, w: p.w - 1, h: p.h - 1 };
+  const x0 = Math.floor(hb.x / TS), x1 = Math.floor((hb.x + hb.w) / TS);
+  const y0 = Math.floor(hb.y / TS), y1 = Math.floor((hb.y + hb.h) / TS);
+  for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) {
+    const v = tileAt(tx, ty);
+    if (v === 2 && overlap(hb, { x: tx * TS + 1, y: ty * TS + 3, w: 6, h: 5 })) return kill('spike', { tx, ty });
+    if (v === 3 && overlap(hb, { x: tx * TS + 1, y: ty * TS, w: 6, h: 5 })) return kill('spike', { tx, ty });
+  }
+  for (const g of groups) {
+    if (!g.spike || g.gone) continue;
+    for (const [tx, ty] of g.tiles) {
+      const x = tx * TS + g.ox, y = ty * TS + g.oy;
+      const r = g.down ? { x: x + 1, y, w: 6, h: 5 } : { x: x + 1, y: y + 3, w: 6, h: 5 };
+      if (overlap(hb, r)) return kill('spike', { tx: Math.round(x / TS), ty: Math.round(y / TS) });
+    }
+  }
+  for (const f of fakeDoors)
+    if (overlap(hb, { x: f.x + 2, y: f.y + 4, w: 4, h: 12 })) return kill('door', { tx: f.x / TS, ty: f.y / TS + 1 });
+}
+
+/* ============================ 8. TRAPS ============================= */
+function updateGroups(dt) {
+  const p = player;
+  for (const g of groups) {
+    if (g.gone) continue;
+    const standing = p.alive && p.onGround && p.ground === g;
+    const ox0 = g.ox, oy0 = g.oy;
+    if (g.shake > 0) { g.shake -= dt; if (g.shake <= 0 && g.pendingFall) { g.state = 'fall'; g.vy = 0; } }
+
+    if (g.state === 'fall') {
+      g.vy = Math.min(g.vy + PH.grav * dt, 420);
+      let ny = g.oy + g.vy * dt, lim = Infinity;
+      for (const [tx, ty] of g.tiles) {                      // land on static ground if any
+        const row = Math.floor((ty * TS + ny + TS - 0.01) / TS);
+        if (row >= 0 && row < ROWS && tileAt(tx, row) === 1) {
+          const l = row * TS - (ty * TS + TS);
+          if (l >= g.oy - 0.01) lim = Math.min(lim, l);
+        }
+      }
+      if (lim !== Infinity) {
+        ny = lim; g.state = 'landed'; g.vy = 0; shake(3, 0.2); sfx.thud();
+        for (const [tx, ty] of g.tiles) dust(tx * TS + 4, ty * TS + ny + TS, 1);
+      }
+      g.oy = ny;
+      if (g.oy > H + 64) g.gone = true;
+    } else if (g.state === 'move') {
+      const dx = g.tox - g.ox, dy = g.toy - g.oy, d = Math.hypot(dx, dy), step = g.speed * dt;
+      if (d <= step) { g.ox = g.tox; g.oy = g.toy; g.state = 'done'; }
+      else { g.ox += dx / d * step; g.oy += dy / d * step; }
+    } else if (g.state === 'chase') {
+      const target = (p.x + p.w / 2) - g.cx0;
+      g.ox += clamp(target - g.ox, -g.speed * dt, g.speed * dt);
+      if (g.oy > 0) g.oy = Math.max(0, g.oy - 220 * dt);    // rise out of the ground first
+    } else if (g.state === 'idle') {
+      if (g.d.patrol) {                                      // back-and-forth on a fixed clock
+        const P = g.d.patrol, dxT = (P.dx || 0) * TS, dyT = (P.dy || 0) * TS;
+        const tr = Math.hypot(dxT, dyT) / ((P.speed || 4) * TS), w = P.wait || 0, cyc = 2 * (tr + w);
+        const tt = ((levelTime + (P.phase || 0)) % cyc + cyc) % cyc;
+        const f = tt < w ? 0 : tt < w + tr ? (tt - w) / tr : tt < 2 * w + tr ? 1 : 1 - (tt - 2 * w - tr) / tr;
+        g.ox = dxT * f; g.oy = dyT * f;
+      }
+      if (g.d.blink) {                                       // spikes that breathe in and out
+        const [per, ph] = g.d.blink;
+        const target = ((levelTime + ph) % per) < per / 2 ? g.hideOy : 0;
+        g.oy = approach(g.oy, target, 140 * dt);
+      }
+      // Believer platforms only travel while the player is airborne
+      if (g.d.airMove && state === 'play' && p.alive && !p.onGround && g.ox < g.d.airMax * TS)
+        g.ox = Math.min(g.d.airMax * TS, g.ox + g.d.airMove * TS * dt);
+    }
+
+    const dx = g.ox - ox0, dy = g.oy - oy0;
+    if ((dx || dy) && g.solid && p.alive) {
+      if (standing && g.state !== 'fall') { p.x += dx; p.y += dy; }
+      else for (const [tx, ty] of g.tiles) {                 // push or crush the player
+        const r = { x: tx * TS + g.ox, y: ty * TS + g.oy, w: TS, h: TS };
+        if (!overlap(p, r)) continue;
+        if (dy > 0 && p.y + p.h / 2 > r.y + 4) { kill('crush'); break; }
+        if (dy < 0) p.y = r.y - p.h; else if (dx > 0) p.x = r.x + TS; else if (dx < 0) p.x = r.x - p.w;
+        if (overlapsStatic(p)) { kill('crush'); break; }
+      }
+    }
+  }
+}
+
+function updateDoor(dt) {
+  if (!door) return;
+  if (door.moving) {
+    const dx = door.tx - door.x, dy = door.ty - door.y, d = Math.hypot(dx, dy), step = door.speed * dt;
+    if (d <= step) { door.x = door.tx; door.y = door.ty; door.moving = false; dust(door.x + 4, door.y + 16, 3); }
+    else { door.x += dx / d * step; door.y += dy / d * step; if (Math.random() < 0.5) dust(door.x + 4, door.y + 16, 1); }
+  } else if (door.flee && player.alive) {                    // keeps its distance until cornered
+    const dist = door.x + 4 - (player.x + player.w / 2);
+    if (dist > -4 && dist < 44 && door.x < door.flee.max) {
+      door.x = Math.min(door.flee.max, door.x + door.flee.speed * dt);
+      if (Math.random() < 0.3) dust(door.x + 4, door.y + 16, 1);
+    }
+  }
+}
+
+function cond(w) {
+  const pcx = (player.x + player.w / 2) / TS;
+  if (w.x != null && pcx < w.x) return false;
+  if (w.xl != null && pcx > w.xl) return false;
+  if (w.up != null && spawn.ty - Math.floor((player.y + player.h / 2) / TS) < w.up) return false;
+  if (w.touch && !touched.has(w.touch)) return false;
+  if (w.jump && !jumped) return false;
+  if (w.deaths != null && levelDeaths < w.deaths) return false;
+  if (w.t != null && levelTime < w.t) return false;
+  if (w.after != null && !(traps[w.after] && traps[w.after].done)) return false;
+  if (w.near) {                                              // within a few tiles of [tx, ty]
+    const pcy = (player.y + player.h / 2) / TS;
+    if (Math.abs(pcx - w.near[0] - 0.5) > 3.5 || Math.abs(pcy - w.near[1] - 0.5) > 2.5) return false;
+  }
+  return true;
+}
+
+// The level holds a grudge: the last spot you jumped from (on plain ground) gets a hidden spike next time.
+function pickGrudgeSpot() {
+  for (let i = jumpsThisTry.length - 1; i >= 0; i--) {
+    const { tx, ty } = jumpsThisTry[i];
+    if (tileAt(tx, ty) !== 0 || tileAt(tx, ty + 1) !== 1) continue;
+    if (Math.abs(tx - spawn.tx) <= 3 && Math.abs(ty - spawn.ty) <= 1) continue;
+    if (door && Math.abs(tx * TS - door.x) < TS * 2) continue;
+    if (stones.some(s => s.tx === tx && s.ty === ty)) continue;
+    return { tx, ty };
+  }
+  return grudgeAt;                                           // nothing new to hold against you
+}
+
+function updateTraps(dt) {
+  for (const t of traps) {
+    if (t.done) continue;
+    if (!t.armed && cond(t.when || {})) { t.armed = true; t.timer = t.delay || 0; }
+    if (t.armed && (t.timer -= dt) <= 0) { fire(t); t.armed = false; if (!t.repeat) t.done = true; }
+  }
+}
+
+function fire(t) {
+  const quiet = levelTime < 0.05;
+  if (t.say) setNarr(t.say, !quiet);
+  const gs = t.g ? [...t.g].map(c => gmap[c]).filter(Boolean) : [];
+  switch (t.do) {
+    case 'fall':
+      gs.forEach(g => { if (t.shake) { g.shake = t.shake; g.pendingFall = true; } else { g.state = 'fall'; g.vy = 0; } });
+      sfx.trap(); break;
+    case 'pop':
+      gs.forEach(g => { g.state = 'move'; g.tox = g.ox; g.toy = 0; g.speed = 220; }); sfx.pop(); break;
+    case 'move':
+      gs.forEach(g => { g.state = 'move'; g.tox = (t.dx || 0) * TS; g.toy = (t.dy || 0) * TS; g.speed = (t.speed || 6) * TS; });
+      sfx.trap(); break;
+    case 'chase':
+      gs.forEach(g => { g.state = 'chase'; g.speed = (t.speed || 7) * TS; }); sfx.trap(); break;
+    case 'show':
+      gs.forEach(g => g.revealed = true); if (!quiet) sfx.reveal(); break;
+    case 'vanish':
+      gs.forEach(g => { g.gone = true; for (const [tx, ty] of g.tiles) burst(tx * TS + g.ox + 4, ty * TS + g.oy + 4, pal.ink, 5, 60, 0.5); });
+      sfx.pop(); break;
+    case 'door':
+      door.flee = null;
+      door.tx = (t.x != null ? t.x : door.x / TS) * TS; door.ty = door.y0 + (t.dy || 0) * TS;
+      door.speed = (t.speed || 20) * TS; door.moving = true; sfx.door(); break;
+    case 'flee':
+      door.flee = { speed: (t.speed || 8) * TS, max: (t.max || 37) * TS }; sfx.door(); break;
+    case 'reverse':
+      reverseT = t.time || 1.5; sfx.reverse(); break;
+  }
+}
+
+/* ---- death, grudge stones, juice ---- */
+function kill(cause, tile) {
+  const p = player;
+  if (!p.alive) return;
+  p.alive = false; deaths++; levelDeaths++;
+  save.deaths = deaths;
+  state = 'dead'; deadT = 0; greet = null;
+  shake(cause === 'restart' ? 2 : 6, 0.3);
+  if (cause !== 'restart') { hitStop = 0.07; flashT = save.shake && !REDUCED ? 0.07 : 0; }
+  skullT = 0.35;
+  burst(p.x + p.w / 2, p.y + p.h / 2, pal.hero, 26, 150, 0.9);
+  burst(p.x + p.w / 2, p.y + p.h / 2, pal.glow, 6, 90, 0.6);
+  sfx.die();
+  runs.push({ p: rec, dead: true }); if (runs.length > 40) runs.shift();
+  if (cause !== 'pit' && cause !== 'crush' && cause !== 'restart') placeStone(tile);
+  if (L.grudge) grudgeAt = pickGrudgeSpot();
+  // Dying in (nearly) the same place three times in a row earns a special remark
+  const here = tile || { tx: Math.floor((p.x + p.w / 2) / TS), ty: Math.floor((p.y + p.h / 2) / TS) };
+  const same = cause !== 'restart' && lastDeathTile && Math.abs(lastDeathTile.tx - here.tx) <= 1 && Math.abs(lastDeathTile.ty - here.ty) <= 1;
+  sameSpot = same ? sameSpot + 1 : 1; lastDeathTile = here;
+  const pool = (QUIPS[cause] || QUIPS.spike).concat(cause === 'restart' ? [] : (L.quips || []));
+  msg = deaths % 10 === 0 ? `DEATH #${deaths}. DELIGHTFUL.` : sameSpot >= 3 ? pick(QUIPS.same) : pick(pool);
+  msgT = 1.6;
+  checkUnlocks(); writeSave();
+}
+
+// The signature twist: you leave a solid tombstone where you died. Max 3 per level.
+function placeStone(tile) {
+  const p = player;
+  const t = tile || { tx: Math.floor((p.x + p.w / 2) / TS), ty: Math.floor((p.y + p.h / 2) / TS) };
+  if (t.tx < 0 || t.tx >= COLS || t.ty < 0 || t.ty >= ROWS) return;
+  if (tileAt(t.tx, t.ty) === 1) return;
+  if (t.tx === spawn.tx && t.ty === spawn.ty) return;
+  if (stones.some(s => s.tx === t.tx && s.ty === t.ty)) return;
+  stones.push({ tx: t.tx, ty: t.ty, born: time });
+  if (stones.length > MAX_STONES) {
+    const old = stones.shift();
+    burst(old.tx * TS + 4, old.ty * TS + 4, pal.ink, 10, 70, 0.7);
+  }
+}
+
+function shake(mag, dur) {
+  if (!save.shake) return;
+  shakeMag = Math.max(shakeT > 0 ? shakeMag : 0, mag * (REDUCED ? 0.3 : 1));
+  shakeT = Math.max(shakeT, dur);
+}
+function burst(x, y, color, n, spd, life) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, s = spd * (0.3 + Math.random() * 0.7);
+    particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 40, g: 420,
+                     life: life * (0.5 + Math.random() * 0.5), color, size: Math.random() < 0.3 ? 2 : 1 });
+  }
+}
+function dust(x, y, n) {
+  for (let i = 0; i < n; i++) {
+    const side = i % 2 ? 1 : -1;
+    particles.push({ x: x + side * 2, y: y - 1, vx: side * (20 + Math.random() * 30), vy: -10 - Math.random() * 20,
+                     g: 60, life: 0.25 + Math.random() * 0.15, color: pal.ink, size: 1 });
+  }
+}
+function updateParticles(dt) {
+  for (const q of particles) { q.vy += q.g * dt; q.x += q.vx * dt; q.y += q.vy * dt; q.life -= dt; }
+  particles = particles.filter(q => q.life > 0);
+}
+
+/* =========================== 9. RENDERING ========================== */
+const cv = document.getElementById('game');
+const ctx = cv.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+const pad2 = n => String(n).padStart(2, '0');
+let hits = [];                    // clickable regions registered by the last rendered frame
+const hit = (x, y, w, h, id) => hits.push({ x, y, w, h, id });
+
+function resize() {
+  const reserve = pad.hidden ? 0 : 100;
+  const aw = Math.max(160, innerWidth - 32), ah = Math.max(90, innerHeight - 24 - reserve);
+  let s = Math.min(aw / W, ah / H);
+  if (s >= 2) s = Math.floor(s);                      // integer scaling keeps pixels square
+  cv.style.width = Math.round(W * s) + 'px';
+  cv.style.height = Math.round(H * s) + 'px';
+  cv.style.marginBottom = pad.hidden ? '0' : reserve + 'px';
+}
+addEventListener('resize', resize);
+
+function drawSprite(img, x, y, flip = false, w = img.width, h = img.height) {
+  x = Math.round(x); y = Math.round(y);
+  if (!flip) return ctx.drawImage(img, x, y, w, h);
+  ctx.save(); ctx.translate(x + w, y); ctx.scale(-1, 1); ctx.drawImage(img, 0, 0, w, h); ctx.restore();
+}
+function rect(x, y, w, h, c) { ctx.fillStyle = c; ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h)); }
+function disc(cx, cy, r, c) {                         // aliasing-free pixel circle
+  ctx.fillStyle = c;
+  for (let dy = -r; dy <= r; dy++) { const w = Math.floor(Math.sqrt(r * r - dy * dy)); ctx.fillRect(Math.round(cx - w), Math.round(cy + dy), w * 2 + 1, 1); }
+}
+function tri(cx, baseY, h, half, c) {                 // flat pixel triangle
+  ctx.fillStyle = c;
+  for (let r = 0; r < h; r++) { const w = Math.round(half * (r + 1) / h); ctx.fillRect(Math.round(cx - w), Math.round(baseY - h + r), w * 2, 1); }
+}
+function rng(seed) { let s = seed >>> 0; return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; }
+
+// Each phase gets one flat backdrop motif drawn in its fifth color, behind everything.
+function drawBackdrop(motif, t) {
+  const c = pal.deco, R = rng(7);
+  switch (motif) {
+    case 'sun':
+      disc(252, 46, 22, c);
+      for (const [x, r] of [[30, 46], [130, 60], [236, 50], [330, 44]]) disc(x, 168, r, c);
+      break;
+    case 'garden':
+      for (let i = 0; i < 15; i++) {
+        const x = 8 + i * 22 + Math.floor(R() * 8), h = 40 + Math.floor(R() * 60);
+        const sway = Math.round(Math.sin(t * 1.2 + i) * 1);
+        rect(x, 180 - h, 2, h, c); disc(x + 1 + sway, 180 - h, 4 + Math.floor(R() * 3), c);
+      }
+      break;
+    case 'city':
+      for (let x = -6; x < W; ) {
+        const w = 16 + Math.floor(R() * 18), h = 50 + Math.floor(R() * 70);
+        rect(x, 180 - h, w, h, c);
+        for (let wy = 180 - h + 6; wy < 176; wy += 8) for (let wx = x + 4; wx < x + w - 4; wx += 6)
+          if (R() < 0.55) rect(wx, wy, 2, 3, pal.bg);
+        x += w + 4;
+      }
+      break;
+    case 'arches':
+      for (let i = 0; i < 6; i++) {
+        const x = i * 64 - 10;
+        rect(x, 0, 64, 40, c); disc(x + 37, 40, 22, pal.bg); rect(x + 15, 40, 45, 140, pal.bg);
+        rect(x, 0, 12, 180, c);
+      }
+      break;
+    case 'graves':
+      disc(56, 40, 14, c); disc(62, 35, 12, pal.bg);
+      for (let i = 0; i < 12; i++) {
+        const x = 10 + i * 27 + Math.floor(R() * 8), h = 12 + Math.floor(R() * 10), w = 10 + Math.floor(R() * 4);
+        const y = 110 + Math.floor(R() * 20);
+        rect(x, y - h, w, h + 80, c); disc(x + w / 2, y - h, w / 2, c);
+        if (R() < 0.5) { rect(x + w / 2 - 1, y - h - 2, 2, 7, pal.bg); rect(x + w / 2 - 3, y - h, 6, 2, pal.bg); }
+      }
+      break;
+    case 'dunes':
+      disc(232, 50, 18, c);
+      tri(70, 150, 56, 64, c); tri(150, 150, 76, 84, c); tri(250, 150, 44, 52, c);
+      rect(0, 150, W, 30, c);
+      break;
+    case 'mirrors':
+      for (let i = 0; i < 6; i++) {
+        const x = 14 + i * 54;
+        disc(x + 13, 40, 13, c); rect(x, 40, 27, 140, c);
+        disc(x + 13, 42, 9, pal.bg); rect(x + 4, 42, 19, 138, pal.bg);
+        const gy = 60 + ((i * 37 + Math.floor(t * 20)) % 100);
+        rect(x + 8, gy, 2, 10, c);
+      }
+      break;
+    case 'clouds':
+      for (let i = 0; i < 6; i++) {
+        const x = ((i * 71 + t * (4 + i)) % 400) - 40, y = 24 + (i * 37) % 90;
+        disc(x, y, 9, c); disc(x + 12, y - 5, 12, c); disc(x + 26, y, 9, c); rect(x, y, 26, 9, c);
+      }
+      break;
+    case 'peaks':
+      tri(50, 180, 110, 90, c); tri(170, 180, 140, 110, c); tri(290, 180, 100, 80, c);
+      for (let i = 0; i < 9; i++) {
+        const x = W - ((i * 53 + t * (90 + i * 10)) % (W + 40)), y = 30 + i * 13;
+        rect(x, y, 14 + (i % 3) * 6, 1, c);
+      }
+      break;
+    case 'eyes': {                                    // they watch you, and blink now and then
+      const live = player && (state === 'play' || state === 'dead' || state === 'exit');
+      const lx = live ? player.x + 3 : W / 2, ly = live ? player.y + OY : 100;
+      for (const [ex, ey, r] of [[38, 42, 12], [118, 28, 9], [196, 50, 14], [282, 30, 10], [78, 124, 10], [252, 120, 12]]) {
+        if (((t * 0.6 + ex * 0.011) % 4) < 0.14) { rect(ex - r, ey, r * 2 + 1, 2, c); continue; }
+        disc(ex, ey, r, c);
+        const a = Math.atan2(ly - ey, lx - ex), pr = Math.round(r * 0.45);
+        disc(ex + Math.round(Math.cos(a) * (r - pr - 1)), ey + Math.round(Math.sin(a) * (r - pr - 1)), pr, pal.bg);
+      }
+      break;
+    }
+    case 'heart': {
+      for (let i = 0; i < 40; i++) { const x = R() * W, y = R() * 140; if (((t * 2 + i) | 0) % 5) rect(x, y, 1, 1, c); }
+      const r = 22 + ((t * 1.6 | 0) % 2);
+      disc(140, 58, r, c); disc(180, 58, r, c);
+      for (let row = 0; row < 46; row++) { const w = Math.round((r * 2 - 2) * (1 - row / 46)); rect(160 - w, 62 + row, w * 2, 1, c); }
+      break;
+    }
+  }
+}
+
+function render() {
+  hits = [];
+  ctx.fillStyle = pal.bg; ctx.fillRect(0, 0, W, H);
+  if (state === 'title') drawHome();
+  else if (state === 'phases') drawPhases();
+  else if (state === 'levels') drawLevels();
+  else if (state === 'card') drawPhaseCard();
+  else if (state === 'ending') drawEnding();
+  else if (state === 'skins') drawSkins();
+  else drawGame();
+  if (flashT > 0) { ctx.globalAlpha = 0.45; ctx.fillStyle = pal.glow; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }
+  drawToast();
+  drawFade();
+}
+
+function drawGame() {
+  drawBackdrop(PHASES[L.phase].motif, time);
+  let sx = 0, sy = 0;
+  if (shakeT > 0) {
+    const m = shakeMag * Math.min(1, shakeT / 0.2);
+    sx = Math.round((Math.random() * 2 - 1) * m); sy = Math.round((Math.random() * 2 - 1) * m);
+  }
+  ctx.save(); ctx.translate(sx, OY + sy);
+
+  // Trap groups first, so hidden spikes tuck behind the ground drawn over them
+  for (const g of groups) {
+    if (g.gone || (g.ghost && !g.revealed)) continue;
+    const jx = g.shake > 0 ? (Math.random() * 3 | 0) - 1 : 0;
+    for (const [tx, ty] of g.tiles) {
+      const x = Math.round(tx * TS + g.ox + jx), y = Math.round(ty * TS + g.oy);
+      if (g.spike) drawSprite(g.down ? SPR.spikeDown : SPR.spike, x, y);
+      else if (g.plat) drawSprite(SPR.plat, x, y);
+      else { ctx.fillStyle = pal.ink; ctx.fillRect(x, y, TS, TS); }
+    }
+  }
+  ctx.fillStyle = pal.ink;
+  for (let ty = 0; ty < ROWS; ty++) for (let tx = 0; tx < COLS; tx++) {
+    const v = grid[ty * COLS + tx];
+    if (v === 1) ctx.fillRect(tx * TS, ty * TS, TS, TS);
+    else if (v === 2) ctx.drawImage(SPR.spike, tx * TS, ty * TS);
+    else if (v === 3) ctx.drawImage(SPR.spikeDown, tx * TS, ty * TS);
+  }
+  for (const s of stones) {
+    const k = Math.min(1, (time - s.born) / 0.18);
+    drawSprite(SPR.stone, s.tx * TS, s.ty * TS - Math.round((1 - k) * 6));
+  }
+  for (const f of fakeDoors) drawSprite(SPR.door, f.x, f.y);
+  if (door) drawSprite(SPR.door, door.x, door.y);
+  if (state === 'replay') drawReplay(); else drawPlayer();
+  for (const q of particles) { ctx.fillStyle = q.color; ctx.fillRect(Math.round(q.x), Math.round(q.y), q.size, q.size); }
+  ctx.restore();
+  drawHUD();
+}
+
+function drawPlayer() {
+  const p = player;
+  if (!p.alive && state !== 'exit') return;
+  let frame = 'idle0';
+  if (!p.onGround) frame = p.vy < 0 ? 'jump' : 'fall';
+  else if (Math.abs(p.vx) > 8) frame = RUN_CYCLE[Math.floor(p.anim) % 4];
+  else if (time % 3.2 < 0.14) frame = 'idle1';
+  let sx = p.sx, sy = p.sy, cx = p.x + p.w / 2, by = p.y + p.h;
+  if (state === 'exit') {                              // shrink into the door
+    const k = Math.min(1, exitT / 0.35);
+    cx += (door.x + 4 - cx) * k; by += (door.y + 15 - by) * k;
+    sx = sy = Math.max(0, 1 - k);
+  }
+  if (sx <= 0) return;
+  const img = SPR[frame];
+  const w = Math.max(1, Math.round(img.width * sx)), h = Math.max(1, Math.round(img.height * sy));
+  drawSprite(img, cx - w / 2, by - h, p.face < 0, w, h);
+}
+// Hero sprites can be taller than 8px (hats), so menus place them by their feet.
+function drawHero(frame, x, bottom, flip = false) { const img = SPR[frame]; drawSprite(img, x, bottom - img.height, flip); }
+
+// Every attempt at this level, replayed at once: dead ones fade to a skull, the winner walks out.
+function drawReplay() {
+  const idx = Math.floor(replayT * replaySpeed * 30);
+  runs.forEach((r, n) => {
+    const len = r.p.length / 3;
+    if (!len) return;
+    const i = Math.min(idx, len - 1), x = r.p[i * 3], y = r.p[i * 3 + 1];
+    if (idx >= len) { if (r.dead) ctx.drawImage(SPR.skull, x, y + 2); return; }
+    const px = i ? r.p[i * 3 - 3] : x, py = i ? r.p[i * 3 - 2] : y;
+    const fr = y < py ? 'jump' : y > py ? 'fall' : x !== px ? RUN_CYCLE[(i >> 1) % 4] : 'idle0';
+    ctx.globalAlpha = n === runs.length - 1 ? 1 : 0.45;
+    drawHero(fr, x - 1, y + 7, !!r.p[i * 3 + 2]);
+    ctx.globalAlpha = 1;
+  });
+}
+function updateReplay() {
+  const idx = Math.floor(replayT * replaySpeed * 30);
+  for (const r of runs) {
+    const len = r.p.length / 3;
+    if (!r.dead || r.popped || !len || idx < len) continue;
+    r.popped = true;
+    burst(r.p[len * 3 - 3] + 3, r.p[len * 3 - 2] + 3, pal.hero, 10, 100, 0.6);
+    if (time - lastPoof > 0.06) { sfx.poof(); lastPoof = time; }
+  }
+}
+
+function band(y, h, c = pal.ink) { rect(0, y, W, h, c); }
+
+function drawHUD() {
+  const label = levelLabel(L) + '  ' + L.name;
+  text('<', 4, 3, pal.ink); text(label, 12, 3, pal.ink);
+  hit(0, 0, 16 + textW(label), 12, 'menu');
+  const ds = String(deaths), bump = skullT > 0 ? Math.round(Math.sin(skullT / 0.35 * Math.PI) * 3) : 0;
+  text(ds, W - 4, 3 - bump, pal.ink, 1, 'right');
+  ctx.drawImage(SPR.skull, W - 4 - textW(ds) - 8, 3 - bump);
+  if (state === 'replay') {
+    text('ALL ' + runs.length + ' ATTEMPTS AT ONCE', W / 2, 13, pal.ink, 1, 'center');
+    if ((time * 2 | 0) % 2 === 0) text('JUMP TO SKIP', W / 2, 21, pal.hero, 1, 'center');
+    return;
+  }
+  // Typewriter: centered on the full line so it does not slide while it types
+  const full = '"' + narr + '"';
+  text(narrN >= narr.length ? full : '"' + narr.slice(0, narrN), Math.round(W / 2 - textW(full) / 2), 13, pal.ink);
+  if (state === 'play' && msgT > 0 && levelTime < 1.6) text(msg, W / 2, 21, pal.hero, 1, 'center');
+  if (reverseT > 0 && (time * 8 | 0) % 2 === 0) text('< CONTROLS REVERSED >', W / 2, 29, pal.hero, 1, 'center');
+  if (introT > 0 && levelDeaths === 0 && state === 'play') {
+    band(bannerY, 34);
+    text('LEVEL ' + levelLabel(L) + '   ' + PHASES[L.phase].name, W / 2, bannerY + 6, pal.bg, 1, 'center');
+    text(L.name, W / 2, bannerY + 17, pal.bg, 2, 'center');
+  }
+  if (state === 'dead') { band(bannerY + 6, 22); text(msg, W / 2, bannerY + 12, pal.bg, 2, 'center'); }
+}
+
+function drawToast() {
+  if (toastT <= 0) return;
+  const w = textW(toast) + 10, y = toastT > 2.4 ? 180 - (2.6 - toastT) * 70 : 166;   // slides up, then sits
+  rect(W / 2 - w / 2, y, w, 11, pal.glow); rect(W / 2 - w / 2, y, w, 1, pal.ink);
+  text(toast, W / 2, y + 3, pal.ink, 1, 'center');
+}
+
+function drawFade() {
+  if (fade.a <= 0) return;
+  ctx.globalAlpha = Math.ceil(fade.a * 4) / 4;          // stepped, not smooth
+  ctx.fillStyle = pal.ink; ctx.fillRect(0, 0, W, H);
+  ctx.globalAlpha = 1;
+}
+
+/* ============================ 10. AUDIO ============================ */
+let AC = null, muted = false, noiseBuf = null;
+function initAudio() {
+  if (!AC) { const C = window.AudioContext || window.webkitAudioContext; if (C) try { AC = new C(); } catch (_) {} }
+  if (AC && AC.state === 'suspended') AC.resume();
+}
+function cycleSound() { save.sound = (save.sound + 2) % 3; muted = save.sound === 0; writeSave(); }   // all > sfx > off
+function tone(f0, f1, dur, type = 'square', vol = 0.1, delay = 0) {
+  if (!AC || muted) return;
+  const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.setValueAtTime(f0, t);
+  if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0005, t + dur);
+  o.connect(g).connect(AC.destination); o.start(t); o.stop(t + dur + 0.02);
+}
+function noise(dur, vol = 0.2, freq = 1500, delay = 0) {
+  if (!AC || muted) return;
+  if (!noiseBuf) {
+    noiseBuf = AC.createBuffer(1, AC.sampleRate * 0.5, AC.sampleRate);
+    const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  const t = AC.currentTime + delay, s = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+  s.buffer = noiseBuf; f.type = 'lowpass';
+  f.frequency.setValueAtTime(freq, t); f.frequency.exponentialRampToValueAtTime(80, t + dur);
+  g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0005, t + dur);
+  s.connect(f).connect(g).connect(AC.destination); s.start(t); s.stop(t + dur);
+}
+const sfx = {
+  jump:    () => tone(260, 560, 0.09, 'square', 0.07),
+  land:    () => tone(120, 55, 0.06, 'triangle', 0.14),
+  bonk:    () => tone(220, 140, 0.05, 'square', 0.06),
+  die:     () => { noise(0.4, 0.28, 2600); tone(420, 45, 0.38, 'sawtooth', 0.07); },
+  trap:    () => { tone(190, 110, 0.08, 'square', 0.07); tone(110, 60, 0.12, 'square', 0.07, 0.07); },
+  pop:     () => tone(1100, 280, 0.06, 'square', 0.06),
+  thud:    () => noise(0.18, 0.3, 600),
+  door:    () => { tone(520, 980, 0.07, 'triangle', 0.08); tone(980, 520, 0.07, 'triangle', 0.08, 0.07); },
+  reveal:  () => tone(880, 1320, 0.09, 'triangle', 0.08),
+  reverse: () => { tone(300, 640, 0.08, 'square', 0.06); tone(640, 300, 0.08, 'square', 0.06, 0.08); },
+  say:     () => tone(740, 740, 0.03, 'square', 0.035),
+  move:    () => tone(520, 520, 0.03, 'square', 0.04),
+  ok:      () => [392, 523, 784].forEach((f, i) => tone(f, f, 0.07, 'square', 0.06, i * 0.05)),
+  back:    () => tone(400, 200, 0.07, 'square', 0.05),
+  nope:    () => tone(140, 110, 0.12, 'square', 0.06),
+  win:     () => [523, 659, 784, 1047].forEach((f, i) => tone(f, f, 0.12, 'square', 0.06, i * 0.07)),
+  poof:    () => tone(320, 90, 0.06, 'square', 0.035),
+};
+
+/* ---- music: one little loop per phase (same order as PHASES). Steps are eighth notes, 8 per bar.
+   lead: scale degrees 0-9, '-' holds the note before, '.' rests (spaces are only for reading).
+   chords: the bass note's scale degree, one per bar.  bass: one bar of rhythm, 'x' plays.  */
+const SCALES = { maj: [0, 2, 4, 5, 7, 9, 11], min: [0, 2, 3, 5, 7, 8, 10], dor: [0, 2, 3, 5, 7, 9, 10],
+                 mix: [0, 2, 4, 5, 7, 9, 10], phr: [0, 1, 3, 5, 7, 8, 10], hij: [0, 1, 4, 5, 7, 8, 10],
+                 pent: [0, 2, 4, 7, 9] };
+const SONGS = [
+  { bpm: 116, root: 72, scale: 'maj',  chords: [0, 5, 3, 4], bass: 'x...x.x.', lead: '0.2.4.2. 5-4-2... 3.5.7.5. 4---1...' },
+  { bpm: 100, root: 74, scale: 'pent', chords: [0, 4, 3, 0], bass: 'x...x...', lead: '4.3.2... 4.3.5... 6-5-4-3- 2---....' },
+  { bpm: 138, root: 69, scale: 'mix',  chords: [0, 0, 6, 3], bass: 'x.x.x.xx', lead: '0.0.2.4. 6.4.2... 0.0.2.4. 5-4-3-2-', hat: 1 },
+  { bpm: 92,  root: 62, scale: 'min',  chords: [0, 5, 3, 4], bass: 'x..x..x.', lead: '0...2.3. 4-3-2... 0...2.3. 1---....' },
+  { bpm: 104, root: 64, scale: 'phr',  chords: [0, 0, 5, 1], bass: 'x.x...x.', lead: '0.4.3.0. 2.1.0... 0.4.5.4. 3---....' },
+  { bpm: 108, root: 62, scale: 'hij',  chords: [0, 0, 1, 0], bass: 'x..x.x..', lead: '4.3.2.1. 2---.... 4.5.4.3. 2.1.0...' },
+  { bpm: 120, root: 65, scale: 'dor',  chords: [0, 3, 0, 4], bass: 'x...x...', lead: '0.2.4.6. 4.2.0... 6.4.2.0. 2---....' },
+  { bpm: 96,  root: 72, scale: 'pent', chords: [0, 3, 4, 0], bass: 'x.......', lead: '4-3-2-0- 1-2-3--- 4-5-6-5- 4---....' },
+  { bpm: 168, root: 64, scale: 'min',  chords: [0, 5, 6, 4], bass: 'x.x.x.x.', lead: '0.0.3.0. 4.0.3.2. 0.0.3.0. 6.5.4.2.', hat: 1 },
+  { bpm: 84,  root: 60, scale: 'min',  chords: [0, 5, 2, 6], bass: 'x...x...', lead: '4---3--- 2-1-0--- 4---5--- 4-------' },
+  { bpm: 126, root: 62, scale: 'min',  chords: [0, 0, 5, 4], bass: 'x.xx.x.x', lead: '0.0.0.3. 2.0..... 0.0.0.5. 4.3.2.1.', hat: 1 },
+];
+const hz = m => 440 * Math.pow(2, (m - 69) / 12);
+const degree = (sc, d) => sc[d % sc.length] + 12 * Math.floor(d / sc.length);
+const music = { song: -1, step: 0, next: 0 };
+function updateMusic() {                              // schedules a little ahead on the audio clock
+  if (!AC || AC.state !== 'running' || save.sound < 2 || palPhase < 0) return;
+  if (palPhase !== music.song) { music.song = palPhase; music.step = 0; music.next = AC.currentTime + 0.1; }
+  const S = SONGS[music.song], lead = S.lead.replace(/ /g, ''), sc = SCALES[S.scale], spb = 30 / S.bpm;
+  if (music.next < AC.currentTime) music.next = AC.currentTime + 0.05;          // fell behind (tab was hidden)
+  while (music.next < AC.currentTime + 0.15) {
+    const st = music.step, at = music.next - AC.currentTime, ch = lead[st % lead.length], beat = st % 8;
+    if (ch >= '0' && ch <= '9') {
+      let len = 1; while (lead[(st + len) % lead.length] === '-' && len < 8) len++;
+      tone(hz(S.root + degree(sc, +ch)), 0, spb * len * 0.9, 'square', 0.022, at);
+    }
+    if (S.bass[beat] === 'x') tone(hz(S.root - 24 + degree(sc, S.chords[(st >> 3) % S.chords.length])), 0, spb * 0.9, 'triangle', 0.08, at);
+    if (S.hat && beat % 2) noise(0.03, 0.03, 7000, at);
+    music.step++; music.next += spb;
+  }
+}
+
+/* ============================ 11. MENUS ============================ */
+let homeSel = 0, phaseSel = 0, levelPhase = 0, levelSel = 0, cardLevel = 0, cardT = 0;
+const demo = { x: 60, dir: 1, door: 280, doorTo: 280, anim: 0, wait: 0 };
+
+const homeItems = () => [
+  { label: clearedCount() ? 'CONTINUE' : 'PLAY', id: 'play' },
+  { label: 'PHASES', id: 'phases' },
+  { label: 'SKINS', id: 'skins' },
+  { label: ['SOUND  OFF', 'SFX ONLY', 'MUSIC + SFX'][save.sound], id: 'sound' },
+  { label: save.shake ? 'SHAKE  ON' : 'SHAKE  OFF', id: 'shake' },
+];
+
+function goHome() { state = 'title'; menuT = 0; setPalette(themePhase()); }
+function goPhases(sel) { state = 'phases'; menuT = 0; phaseSel = sel != null ? sel : themePhase(); setPalette(themePhase()); }
+function goLevels(p, sel) {
+  state = 'levels'; menuT = 0; levelPhase = p; setPalette(p);
+  if (sel == null) { sel = 0; for (let k = 0; k < 5; k++) if (isUnlocked(p * 5 + k)) sel = k; for (let k = 0; k < 5; k++) if (isUnlocked(p * 5 + k) && !isCleared(p * 5 + k)) { sel = k; break; } }
+  levelSel = sel;
+}
+function goCard(i) { state = 'card'; cardLevel = i; cardT = 0; setPalette(LEVELS[i].phase); }
+function playFrom(i) { if (i % 5 === 0 && !isCleared(i)) goCard(i); else loadLevel(i); }
+
+function hitAt(pt) { if (!pt) return null; for (const h of hits) if (pt.x >= h.x && pt.x < h.x + h.w && pt.y >= h.y && pt.y < h.y + h.h) return h.id; return null; }
+
+function updateHome(dt) {
+  menuT += dt;
+  // The demo hero chases a door that keeps running off - the game in miniature.
+  demo.anim += dt * 8;
+  if (demo.wait > 0) demo.wait -= dt; else demo.x += demo.dir * 46 * dt;
+  demo.door = approach(demo.door, demo.doorTo, 420 * dt);
+  if (demo.dir > 0 && demo.doorTo > 160 && demo.x > demo.doorTo - 46) { demo.doorTo = 24; demo.dir = -1; demo.wait = 0.5; sfx.door(); }
+  if (demo.dir < 0 && demo.doorTo < 160 && demo.x < demo.doorTo + 40) { demo.doorTo = 288; demo.dir = 1; demo.wait = 0.5; sfx.door(); }
+
+  const items = homeItems();
+  const hov = hitAt(input.hover);
+  if (hov && hov.startsWith('home:')) homeSel = +hov.slice(5);
+  if (input.presses.has('up') || input.presses.has('left')) { homeSel = (homeSel + items.length - 1) % items.length; sfx.move(); }
+  if (input.presses.has('down') || input.presses.has('right')) { homeSel = (homeSel + 1) % items.length; sfx.move(); }
+  let pick = input.presses.has('ok') ? homeSel : null;
+  const tap = hitAt(input.tap);
+  if (tap && tap.startsWith('home:')) pick = +tap.slice(5);
+  if (pick == null) return;
+  const id = items[pick].id;
+  if (id === 'sound') { cycleSound(); sfx.ok(); return; }
+  if (id === 'shake') { save.shake = !save.shake; writeSave(); sfx.ok(); shake(3, 0.2); return; }
+  sfx.ok();
+  if (id === 'play') { const i = firstOpenLevel(); fadeTo(() => i < 0 ? goPhases(0) : playFrom(i)); }
+  else if (id === 'skins') fadeTo(goSkins);
+  else fadeTo(() => goPhases());
+}
+
+function drawHome() {
+  drawBackdrop(PHASES[palPhase].motif, menuT);
+  const gy = H - 26;
+  rect(0, gy, W, 26, pal.ink);
+  // Title with a chunky drop shadow
+  text('GRUDGE', W / 2 + 2, 10, pal.hero, 7, 'center');
+  text('GRUDGE', W / 2, 8, pal.ink, 7, 'center');
+  text('THE LEVEL NEVER FORGETS. NEITHER DO YOU.', W / 2, 48, pal.ink, 1, 'center');
+  // Menu buttons
+  homeItems().forEach((it, i) => {
+    const w = 92, h = 13, x = W / 2 - w / 2, y = 58 + i * 18, sel = i === homeSel;
+    const lift = sel ? -2 : 0;
+    if (sel) rect(x + 2, y + 2, w, h, pal.hero);
+    rect(x, y + lift, w, h, sel ? pal.glow : pal.ink);
+    text(it.label, W / 2, y + 4 + lift, sel ? pal.ink : pal.bg, 1, 'center');
+    if (sel) drawHero((menuT * 3 | 0) % 2 ? 'idle0' : 'jump', x - 14, y + 11 + lift);
+    hit(x, y - 2, w, h + 4, 'home:' + i);
+  });
+  // Ground scene
+  drawSprite(SPR.door, demo.door, gy - 16);
+  const fr = demo.wait > 0 ? 'idle0' : RUN_CYCLE[Math.floor(demo.anim) % 4];
+  drawHero(fr, demo.x, gy, demo.dir < 0);
+  text(`DEATHS ${deaths}     CLEARED ${clearedCount()} / ${LEVELS.length}`, W / 2, gy + 6, pal.glow, 1, 'center');
+  text('ARROWS / WASD MOVE   SPACE JUMP   R RESTART   ESC MENU   M SOUND', W / 2, gy + 16, pal.bg, 1, 'center');
+}
+
+/* ---- skins ---- */
+let skinSel = 0;
+function goSkins() { state = 'skins'; menuT = 0; skinSel = Math.max(0, SKINS.findIndex(s => s.id === save.skin)); setPalette(themePhase()); }
+
+function updateSkins(dt) {
+  menuT += dt;
+  const hov = hitAt(input.hover);
+  if (hov && hov.startsWith('sk:')) skinSel = +hov.slice(3);
+  const pr = input.presses, N = SKINS.length;
+  if (pr.has('left')) { skinSel = (skinSel + N - 1) % N; sfx.move(); }
+  if (pr.has('right')) { skinSel = (skinSel + 1) % N; sfx.move(); }
+  if (pr.has('up') || pr.has('down')) { skinSel = (skinSel + 6) % N; sfx.move(); }
+  const tap = hitAt(input.tap);
+  if (pr.has('back') || tap === 'back') { sfx.back(); return fadeTo(goHome); }
+  let choice = pr.has('ok') ? skinSel : null;
+  if (tap && tap.startsWith('sk:')) choice = skinSel = +tap.slice(3);
+  if (choice == null) return;
+  const s = SKINS[choice];
+  if (!skinUnlocked(s)) { sfx.nope(); shake(2, 0.15); return; }
+  save.skin = s.id; writeSave(); bakeSprites(); sfx.ok();
+}
+
+function drawSkins() {
+  drawBackdrop(PHASES[palPhase].motif, menuT);
+  text('< BACK', 6, 6, pal.ink); hit(0, 0, 40, 16, 'back');
+  text('SKINS', W / 2, 8, pal.ink, 2, 'center');
+  // Big preview of the highlighted skin, hopping in place (a silhouette while locked)
+  const s = SKINS[skinSel], open = skinUnlocked(s), worn = s.id === save.skin;
+  rect(W / 2 - 30, 78, 60, 2, pal.ink);
+  const hop = open ? Math.round(Math.max(0, Math.sin(menuT * 4)) * 10) : 0;
+  const img = skinSprite(s, hop > 1 ? 'jump' : open ? RUN_CYCLE[(menuT * 10 | 0) % 4] : 'idle0', !open);
+  drawSprite(img, W / 2 - img.width * 1.5, 78 - img.height * 3 - hop, false, img.width * 3, img.height * 3);
+  SKINS.forEach((sk, i) => {
+    const x = 20 + (i % 6) * 48, y = 86 + Math.floor(i / 6) * 40, sel = i === skinSel, yy = y - (sel ? 2 : 0);
+    const on = skinUnlocked(sk);
+    if (sel) rect(x + 2, yy + 2, 40, 34, pal.hero);
+    rect(x, yy, 40, 34, pal.ink);
+    rect(x + 2, yy + 2, 36, 30, on ? (sk.id === save.skin ? pal.glow : pal.bg) : pal.ink);
+    if (on) { const im = skinSprite(sk, 'idle0'); drawSprite(im, x + 20 - im.width, yy + 30 - im.height * 2, false, im.width * 2, im.height * 2); }
+    else ctx.drawImage(bakeLock(pal.bg), x + 15, yy + 10, 10, 14);
+    hit(x, y, 40, 34, 'sk:' + i);
+  });
+  text(s.name + (worn ? '  - WEARING' : ''), W / 2, 166, pal.ink, 1, 'center');
+  const info = open ? (worn ? 'LOOKING GOOD.' : 'PRESS JUMP TO WEAR')
+                    : s.need.text + '   ' + Math.min(s.need.have(), s.need.goal) + ' / ' + s.need.goal;
+  text(info, W / 2, 174, open ? pal.ink : pal.hero, 1, 'center');
+}
+
+function updatePhases(dt) {
+  menuT += dt;
+  const hov = hitAt(input.hover);
+  if (hov && hov.startsWith('ph:')) phaseSel = +hov.slice(3);
+  const pr = input.presses, N = PHASES.length;
+  if (pr.has('left')) { phaseSel = (phaseSel + N - 1) % N; sfx.move(); }
+  if (pr.has('right')) { phaseSel = (phaseSel + 1) % N; sfx.move(); }
+  if (pr.has('up') || pr.has('down')) { phaseSel = phaseSel < 6 ? Math.min(N - 1, phaseSel + 6) : phaseSel - 6; sfx.move(); }
+  const tap = hitAt(input.tap);
+  if (pr.has('back') || tap === 'back') { sfx.back(); return fadeTo(goHome); }
+  let pick = pr.has('ok') ? phaseSel : null;
+  if (tap && tap.startsWith('ph:')) pick = phaseSel = +tap.slice(3);
+  if (pick == null) return;
+  if (!phaseUnlocked(pick)) { sfx.nope(); shake(2, 0.15); return; }
+  sfx.ok(); fadeTo(() => goLevels(pick));
+}
+
+function drawPhases() {
+  drawBackdrop(PHASES[palPhase].motif, menuT);
+  text('< BACK', 6, 6, pal.ink); hit(0, 0, 40, 16, 'back');
+  text('CHOOSE A PHASE', W / 2, 8, pal.ink, 2, 'center');
+  const cw = 44, ch = 58, gap = 6, x0 = (W - (cw * 6 + gap * 5)) / 2;
+  let sxh = 0;
+  if (shakeT > 0) sxh = Math.round((Math.random() * 2 - 1) * shakeMag * 0.5);
+  PHASES.forEach((ph, i) => {
+    const [bg, deco, ink, hero, glow] = ph.pal;
+    const sel = i === phaseSel, open = phaseUnlocked(i);
+    const x = x0 + (i % 6) * (cw + gap) + (sel ? sxh : 0), y = 30 + Math.floor(i / 6) * (ch + 14) - (sel ? 3 : 0);
+    if (sel) rect(x + 2, y + 3, cw, ch, pal.hero);
+    if (open) {
+      rect(x, y, cw, ch, bg);
+      disc(x + cw - 9, y + 10, 5, deco);
+      text(String(i + 1), x + 5, y + 5, ink, 3);
+      for (let k = 0; k < 5; k++) rect(x + 5 + k * 7, y + 28, 5, 5, isCleared(i * 5 + k) ? ink : deco);
+      rect(x, y + ch - 16, cw, 16, ink);
+      const words = ph.name.split(' ');
+      if (words.length > 1 && textW(ph.name) > cw - 4) {
+        text(words[0], x + cw / 2, y + ch - 14, bg, 1, 'center'); text(words.slice(1).join(' '), x + cw / 2, y + ch - 7, bg, 1, 'center');
+      } else text(ph.name, x + cw / 2, y + ch - 10, bg, 1, 'center');
+    } else {
+      rect(x, y, cw, ch, ink);
+      ctx.drawImage(bakeLock(bg), Math.round(x + cw / 2 - 5), y + 16, 10, 14);
+      text(String(i + 1), x + cw / 2, y + ch - 12, deco, 1, 'center');
+    }
+    if (sel) drawHero('idle0', x + cw / 2 - 4, y);
+    hit(x, y, cw, ch, 'ph:' + i);
+  });
+  const ph = PHASES[phaseSel];
+  text(phaseUnlocked(phaseSel) ? ph.tag : 'CLEAR THE PHASE BEFORE IT TO UNLOCK.', W / 2, 168, pal.ink, 1, 'center');
+}
+const lockCache = {};
+function bakeLock(color) { return lockCache[color] || (lockCache[color] = bakeSprite(LOCK, { 1: color })); }
+
+function updateLevels(dt) {
+  menuT += dt;
+  const hov = hitAt(input.hover);
+  if (hov && hov.startsWith('lv:')) levelSel = +hov.slice(3);
+  const pr = input.presses;
+  if (pr.has('left') || pr.has('up')) { levelSel = (levelSel + 4) % 5; sfx.move(); }
+  if (pr.has('right') || pr.has('down')) { levelSel = (levelSel + 1) % 5; sfx.move(); }
+  const tap = hitAt(input.tap);
+  if (pr.has('back') || tap === 'back') { sfx.back(); return fadeTo(() => goPhases(levelPhase)); }
+  let pick = pr.has('ok') ? levelSel : null;
+  if (tap && tap.startsWith('lv:')) pick = levelSel = +tap.slice(3);
+  if (pick == null) return;
+  const i = levelPhase * 5 + pick;
+  if (!isUnlocked(i)) { sfx.nope(); shake(2, 0.15); return; }
+  sfx.ok(); fadeTo(() => loadLevel(i));
+}
+
+function drawLevels() {
+  const ph = PHASES[levelPhase];
+  drawBackdrop(ph.motif, menuT);
+  text('< PHASES', 6, 6, pal.ink); hit(0, 0, 48, 16, 'back');
+  text('PHASE ' + pad2(levelPhase + 1), W / 2, 8, pal.ink, 1, 'center');
+  text(ph.name, W / 2, 18, pal.ink, 3, 'center');
+  text(ph.tag, W / 2, 39, pal.ink, 1, 'center');
+  const i = levelPhase * 5 + levelSel, lv = LEVELS[i];
+  rect(0, 54, W, 30, pal.ink);
+  text(levelLabel(lv) + (isCleared(i) ? '   CLEARED' : isUnlocked(i) ? '   NEW' : '   LOCKED'), W / 2, 59, pal.glow, 1, 'center');
+  text(isUnlocked(i) ? lv.name : '? ? ?', W / 2, 69, pal.bg, 2, 'center');
+  const b = save.best[i];
+  if (b) text((b.d === 0 ? 'DEATHLESS!' : 'BEST ' + b.d + (b.d === 1 ? ' DEATH' : ' DEATHS')) + '    ' + fmtTime(b.t), W / 2, 90, pal.ink, 1, 'center');
+  const gy = 150;
+  rect(0, gy, W, H - gy, pal.ink);
+  let sxh = shakeT > 0 ? Math.round((Math.random() * 2 - 1) * shakeMag * 0.5) : 0;
+  for (let k = 0; k < 5; k++) {
+    const idx = levelPhase * 5 + k, cx = 40 + k * 60, sel = k === levelSel;
+    const x = cx - 8 + (sel ? sxh : 0), y = gy - 32;
+    if (isUnlocked(idx)) drawSprite(SPR.door, x, y, false, 16, 32);
+    else { rect(x, y, 16, 32, pal.ink); ctx.drawImage(SPR.lock, x + 3, y + 10, 10, 14); }
+    if (isCleared(idx)) drawSprite(SPR.stone, x + 18, gy - 8);
+    if (save.best[idx] && save.best[idx].d === 0) ctx.drawImage(SPR.star, x + 19, gy - 15);
+    text(String(k + 1), cx, sel ? y - 15 : y - 9, sel ? pal.hero : pal.ink, sel ? 2 : 1, 'center');
+    if (sel) drawHero((menuT * 2 | 0) % 2 ? 'idle0' : 'idle1', x - 12, gy);
+    hit(cx - 24, y - 16, 48, 50, 'lv:' + k);
+  }
+  text('LEFT / RIGHT PICK    SPACE ENTER    ESC BACK', W / 2, gy + 12, pal.bg, 1, 'center');
+}
+
+function drawPhaseCard() {
+  const ph = PHASES[LEVELS[cardLevel].phase];
+  drawBackdrop(ph.motif, cardT);
+  band(52, 70);
+  text('PHASE ' + pad2(ph.levels[0].phase + 1) + ' OF ' + PHASES.length, W / 2, 60, pal.glow, 1, 'center');
+  text(ph.name, W / 2, 74, pal.bg, 4, 'center');
+  text(ph.tag, W / 2, 104, pal.bg, 1, 'center');
+  if (cardT > 0.6 && (cardT * 2 | 0) % 2 === 0) text('PRESS JUMP', W / 2, 134, pal.ink, 1, 'center');
+}
+
+function drawEnding() {
+  drawBackdrop('heart', endT);
+  const gy = H - 24;
+  rect(0, gy, W, 24, pal.ink);
+  const n = Math.min(deaths, 36);                       // a monument of your failures
+  for (let i = 0; i < n; i++) {
+    const row = Math.floor(i / 9), col = i % 9;
+    if (col >= Math.max(1, 9 - row)) continue;
+    ctx.drawImage(SPR.stone, 196 + col * 8 + row * 4, gy - 8 - row * 8);
+  }
+  drawHero('idle0', 40, gy);
+  text(endBonus ? 'YOU GOT OUT. AGAIN.' : 'YOU GOT OUT.', 20, 22, pal.ink, endBonus ? 2 : 3);
+  text(clearedCount() + ' LEVELS CLEARED. TOTAL DEATHS', 20, 54, pal.ink, 1);
+  text(String(deaths), 20, 63, pal.hero, 4);
+  const rank = deaths <= 60 ? 'THE LEVEL IS AFRAID OF YOU.' : deaths <= 150 ? 'A RESPECTABLE AMOUNT OF SPITE.'
+             : deaths <= 300 ? 'THE LEVEL HAD A WONDERFUL TIME.' : 'THE LEVEL WOULD LIKE TO KEEP YOU.';
+  text(rank, 20, 92, pal.ink, 1);
+  text('IT WILL REMEMBER YOU.', 20, 101, pal.ink, 1);
+  text('TIME ' + fmtTime(save.playT) + '    DEATHLESS ' + deathlessCount(), 20, 112, pal.ink, 1);
+  if (endT > 0.8 && (endT * 2 | 0) % 2 === 0) text('PRESS JUMP FOR THE MENU', 20, 124, pal.hero, 1);
+  if (!endBonus && !isCleared(LEVELS.length - 1)) text('PHASE 11 IS OPEN. IT REMEMBERS YOU.', 20, 136, pal.ink, 1);
+}
+
+/* ===================== 12. GAME STATES + LOOP ====================== */
+function fadeTo(cb) { if (fade.dir > 0) return; fade.dir = 1; fade.cb = cb; }
+
+function update(dt) {
+  time += dt;
+  if (toastT > 0) toastT -= dt;
+  if (flashT > 0) flashT -= dt;
+  if (skullT > 0) skullT -= dt;
+  narrT += dt;                                        // typewriter, with a blip every other letter
+  const n = Math.min(narr.length, Math.floor(narrT * 45));
+  if (n > narrN) { if (narrBlip && n % 2 === 0 && narr[n - 1] !== ' ') sfx.say(); narrN = n; }
+  updateMusic();
+  if (hitStop > 0) {                                  // freeze a few frames when you die
+    hitStop -= dt;
+    input.jumpPressed = input.restartPressed = false; input.presses.clear(); input.tap = null;
+    return;
+  }
+  if (fade.dir) {
+    fade.a += fade.dir * dt / 0.22;
+    if (fade.dir > 0 && fade.a >= 1) { fade.a = 1; fade.dir = -1; const cb = fade.cb; fade.cb = null; if (cb) cb(); }
+    else if (fade.dir < 0 && fade.a <= 0) { fade.a = 0; fade.dir = 0; }
+  }
+  if (shakeT > 0) shakeT -= dt;
+  updateParticles(dt);
+  if (fade.dir <= 0) {
+    const inLevel = state === 'play' || state === 'dead';
+    if (inLevel && (input.presses.has('back') || (input.tap && hitAt(input.tap) === 'menu'))) {
+      sfx.back(); const p = L.phase, k = L.num; fadeTo(() => goLevels(p, k));
+    } else switch (state) {
+      case 'title': updateHome(dt); break;
+      case 'phases': updatePhases(dt); break;
+      case 'levels': updateLevels(dt); break;
+      case 'skins': updateSkins(dt); break;
+      case 'card':
+        cardT += dt;
+        if (cardT > 2.4 || (cardT > 0.3 && (input.presses.has('ok') || input.jumpPressed || input.tap))) { const i = cardLevel; cardT = -99; fadeTo(() => loadLevel(i)); }
+        break;
+      case 'play': save.playT += dt; updatePlay(dt); break;
+      case 'dead':
+        save.playT += dt; deadT += dt; updateGroups(dt);
+        if (deadT > DEAD_PAUSE || (deadT > 0.15 && (input.jumpPressed || input.restartPressed))) startAttempt();
+        break;
+      case 'exit':
+        exitT += dt;
+        if (exitT > 0.45 && !exitDone) {
+          exitDone = true;
+          recordClear();
+          if (runs.length >= 3) startReplay(); else leaveLevel();
+        }
+        break;
+      case 'replay':
+        replayT += dt; updateReplay();
+        if (replayT > replayDur || (replayT > 0.4 && (input.jumpPressed || input.presses.has('ok') || input.presses.has('back') || input.tap)))
+          leaveLevel();
+        break;
+      case 'ending':
+        endT += dt;
+        if (endT > 0.8 && (input.jumpPressed || input.presses.has('ok') || input.tap)) fadeTo(goHome);
+        break;
+    }
+  }
+  input.jumpPressed = input.restartPressed = false;
+  input.presses.clear(); input.tap = null;
+}
+
+function recordClear() {
+  save.cleared[li] = true;
+  const b = save.best[li] || (save.best[li] = {});
+  b.d = b.d == null ? levelDeaths : Math.min(b.d, levelDeaths);
+  b.t = b.t == null ? levelTime : Math.min(b.t, levelTime);
+  runs.push({ p: rec, dead: false });
+  checkUnlocks(); writeSave();
+}
+function startReplay() {
+  const longest = Math.max(...runs.map(r => r.p.length / 3)) / 30;   // seconds
+  replaySpeed = Math.max(1, longest / 5);                           // never longer than ~5s
+  replayDur = longest / replaySpeed + 1;
+  replayT = 0; state = 'replay';
+}
+function leaveLevel() {
+  const next = li + 1;
+  fadeTo(() => {
+    if (li === MAIN_LEVELS - 1 || next >= LEVELS.length) {
+      state = 'ending'; endT = 0; endBonus = li >= MAIN_LEVELS; setPalette(endBonus ? PHASES.length - 1 : MAIN_PHASES - 1);
+    }
+    else if (LEVELS[next].phase !== L.phase) goCard(next);
+    else loadLevel(next);
+  });
+}
+
+function updatePlay(dt) {
+  // First visit: the level waits behind its title until you move
+  if (introT > 0 && levelDeaths === 0) {
+    if (input.left || input.right || input.jumpPressed) introT = 0;
+    else { introT -= dt; if (introT > 0) return; }
+  }
+  levelTime += dt;
+  if (greet && levelTime > 2.2) { const g = greet; greet = null; if (narr === g) setNarr(L.hint); }
+  if (msgT > 0) msgT -= dt;
+  if (reverseT > 0) reverseT -= dt;
+  if (input.restartPressed) return kill('restart');
+  touched.clear(); jumped = false;
+  updatePlayer(dt);
+  if ((recTick++ & 1) === 0 && rec.length < 3000)     // 30 samples/s of x, y, facing for the replay
+    rec.push(Math.round(player.x), Math.round(player.y), player.face < 0 ? 1 : 0);
+  updateGroups(dt);
+  updateDoor(dt);
+  if (!player.alive) return;
+  checkHazards();
+  if (!player.alive) return;
+  updateTraps(dt);
+  if (player.y > ROWS * TS + 16) return kill('pit');
+  if (door && overlap(player, { x: door.x + 2, y: door.y + 6, w: 4, h: 10 })) {
+    state = 'exit'; exitT = 0; exitDone = false; sfx.win();
+    burst(door.x + 4, door.y + 8, pal.glow, 14, 80, 0.6);
+  }
+}
+
+function canvasPos(e) { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height }; }
+cv.addEventListener('pointerdown', e => { initAudio(); cv.focus(); input.tap = canvasPos(e); input.hover = input.tap; });
+cv.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') input.hover = canvasPos(e); });
+cv.addEventListener('pointerleave', () => { input.hover = null; });
+
+let last = performance.now(), acc = 0;
+function frame(now) {
+  let dt = (now - last) / 1000; last = now;
+  if (dt > 0.25) dt = 0.25;
+  pollGamepad();
+  acc += dt;
+  while (acc >= DT) { update(DT); acc -= DT; }
+  render();
+  requestAnimationFrame(frame);
+}
+
+// Keep progress across live page updates when the viewer supports it
+window.claude?.hot?.snapshot?.(() => ({ li, playing: state === 'play' || state === 'dead' }));
+function start(data) {
+  loadSave();
+  deaths = save.deaths || 0; muted = save.sound === 0;
+  returning = deaths > 0 || clearedCount() > 0;
+  checkUnlocks(true);
+  addEventListener('visibilitychange', () => { if (document.hidden) writeSave(); });   // keep play time
+  if (data && data.playing && typeof data.li === 'number' && LEVELS[data.li]) loadLevel(data.li);
+  else goHome();
+  resize();
+  cv.focus();
+  requestAnimationFrame(t => { last = t; frame(t); });
+}
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+</script>
