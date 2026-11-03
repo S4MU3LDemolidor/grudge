@@ -16,7 +16,11 @@ A tiny troll platformer in a single HTML file. 10 phases of 5 levels, plus a bon
 | Menu    | Esc                 | B / Select   |
 | Sound   | M                   |              |
 
-On phones, on-screen buttons appear automatically.
+## On phones
+
+On-screen controls appear automatically. Hold the phone sideways for the biggest view. The arrows are one strip, so you can slide your thumb between them without lifting it. Back and restart are in the top corners, away from JUMP.
+
+For a full-screen, app-like version, use **Add to Home Screen** from the browser's share or menu button.
 
 ## Run it locally
 
