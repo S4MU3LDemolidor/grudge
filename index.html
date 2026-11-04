@@ -48,6 +48,7 @@ body {
   max-width: 100%;
   outline: none;
   cursor: pointer;
+  touch-action: none;   /* drags paint in the level editor instead of scrolling */
 }
 [hidden] { display: none !important; }
 /* Phones held upright: room for the corner buttons above the game and the controls below it */
@@ -95,6 +96,8 @@ body.touch.land {
 body.land .key { opacity: .55; box-shadow: inset 0 0 0 2px var(--glow); }
 body.land .key.on { opacity: .9; }
 body.land #bF { left: calc(10px + env(safe-area-inset-left, 0px)); top: calc(62px + env(safe-area-inset-top, 0px)); }
+/* The level editor is edited by touching the canvas directly; its toolbar has its own back button */
+#pad.editing > * { display: none; }
 @media (prefers-reduced-motion: reduce) { body { transition: none; } }
 </style>
 
@@ -147,12 +150,14 @@ const SAVE_KEY = 'grudge-save-v2';
 /* ============================ 2. INPUT ============================= */
 // Held state for gameplay, plus one-shot "presses" for menus.
 const input = { left: false, right: false, jump: false, jumpPressed: false, restartPressed: false,
-                presses: new Set(), tap: null, hover: null };
+                presses: new Set(), tap: null, hover: null,
+                ptr: null, ptrDown: false, ptrBtn: 0, ptrNew: false };   // held pointer on the canvas (editor drags)
 const KEYMAP = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
                  Space: 'jump', ArrowUp: 'jump', KeyW: 'jump', KeyZ: 'jump' };
 const MENUKEYS = { ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
                    ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down',
-                   Space: 'ok', Enter: 'ok', KeyZ: 'ok', Escape: 'back', Backspace: 'back' };
+                   Space: 'ok', Enter: 'ok', KeyZ: 'ok', Escape: 'back', Backspace: 'back',
+                   KeyQ: 'prev', KeyE: 'next' };
 addEventListener('keydown', e => {
   initAudio();
   const k = KEYMAP[e.code];
@@ -216,7 +221,10 @@ function toggleFullscreen() {
                    .catch(() => {});
 }
 // A short buzz on phones that can (follows the SHAKE setting)
-const buzz = pattern => { if (save.shake && navigator.vibrate) try { navigator.vibrate(pattern); } catch (_) {} };
+const buzz = pattern => {
+  const tapped = !navigator.userActivation || navigator.userActivation.hasBeenActive;   // browsers refuse before a tap
+  if (save.shake && !pad.hidden && tapped && navigator.vibrate) try { navigator.vibrate(pattern); } catch (_) {}
+};
 
 function showPad() { if (pad.hidden) { pad.hidden = false; resize(); } }
 if (matchMedia('(hover: none) and (pointer: coarse)').matches) pad.hidden = false;
@@ -362,6 +370,7 @@ function bakeSprites() {
   SPR.stone = bakeSprite(STONE, { 1: pal.ink, 2: pal.bg });
   SPR.spike = bakeSprite(SPIKE, { 1: pal.ink });
   SPR.spikeDown = bakeSprite([...SPIKE].reverse(), { 1: pal.ink });
+  SPR.spikeHero = bakeSprite(SPIKE, { 1: pal.hero });          // editor: chaser spikes
   SPR.plat = bakeSprite(PLAT, { 1: pal.ink });
   SPR.door = bakeSprite(DOOR, { 1: pal.ink, 2: pal.glow });
   SPR.skull = bakeSprite(SKULL, { 1: pal.ink });
@@ -995,7 +1004,7 @@ const PHASES = [
 // Flatten into one ordered list; each level remembers its phase and number.
 const LEVELS = [];
 PHASES.forEach((ph, pi) => ph.levels.forEach((lv, k) => { lv.phase = pi; lv.num = k; LEVELS.push(lv); }));
-const levelLabel = lv => `${lv.phase + 1}-${lv.num + 1}`;
+const levelLabel = lv => lv.label || `${lv.phase + 1}-${lv.num + 1}`;
 const MAIN_PHASES = 10, MAIN_LEVELS = MAIN_PHASES * 5;   // the rest is the bonus phase
 
 const QUIPS = {
@@ -1037,9 +1046,10 @@ let toast = '', toastT = 0;
 function checkUnlocks(silent) {
   for (const s of SKINS) if (skinUnlocked(s) && !save.got.includes(s.id)) {
     save.got.push(s.id);
-    if (!silent) { toast = 'NEW SKIN: ' + s.name; toastT = 2.6; }
+    if (!silent) showToast('NEW SKIN: ' + s.name);
   }
 }
+function showToast(s) { toast = s; toastT = 2.6; }
 
 /* ======================== 6. LEVEL LOADING ========================= */
 let state = 'title';             // title | phases | levels | card | play | dead | exit | ending
@@ -1075,12 +1085,14 @@ function setPalette(pi) {
   if (tc) tc.content = pal.bg;
 }
 
-function loadLevel(i) {
-  li = i; L = LEVELS[i];
+function loadLevel(i) { li = i; startLevel(LEVELS[i]); }
+function startLevel(lv) {                         // also plays custom levels, which have li = -1
+  if (lv.custom) li = -1;
+  L = lv;
   setPalette(L.phase);
   stones = []; levelDeaths = 0; introT = 1.6; msgT = 0;
   runs = []; grudgeAt = null; lastDeathTile = null; sameSpot = 0;
-  if (!greeted) { greeted = true; if (returning) greet = greeting(); }
+  if (!greeted && !L.custom) { greeted = true; if (returning) greet = greeting(); }
   startAttempt();
 }
 
@@ -1341,6 +1353,10 @@ function cond(w) {
   if (w.deaths != null && levelDeaths < w.deaths) return false;
   if (w.t != null && levelTime < w.t) return false;
   if (w.after != null && !(traps[w.after] && traps[w.after].done)) return false;
+  if (w.zone) {                                              // player inside the tile box [x0, y0, x1, y1]
+    const pcy = (player.y + player.h / 2) / TS, [x0, y0, x1, y1] = w.zone;
+    if (pcx < x0 || pcx > x1 + 1 || pcy < y0 || pcy > y1 + 1) return false;
+  }
   if (w.near) {                                              // within a few tiles of [tx, ty]
     const pcy = (player.y + player.h / 2) / TS;
     if (Math.abs(pcx - w.near[0] - 0.5) > 3.5 || Math.abs(pcy - w.near[1] - 0.5) > 2.5) return false;
@@ -1597,6 +1613,7 @@ function render() {
   hits = [];
   const inLevel = state === 'play' || state === 'dead';
   if (bX.hidden === inLevel) bX.hidden = !inLevel;     // the phone R button only makes sense in a level
+  pad.classList.toggle('editing', state === 'editor');
   ctx.fillStyle = pal.bg; ctx.fillRect(0, 0, W, H);
   if (state === 'title') drawHome();
   else if (state === 'phases') drawPhases();
@@ -1604,6 +1621,8 @@ function render() {
   else if (state === 'card') drawPhaseCard();
   else if (state === 'ending') drawEnding();
   else if (state === 'skins') drawSkins();
+  else if (state === 'editor') drawEditor();
+  else if (state === 'shared') drawSharedCard();
   else drawGame();
   if (flashT > 0) { ctx.globalAlpha = 0.45; ctx.fillStyle = pal.glow; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }
   drawToast();
@@ -1717,7 +1736,7 @@ function drawHUD() {
   if (reverseT > 0 && (time * 8 | 0) % 2 === 0) text('< CONTROLS REVERSED >', W / 2, 29, pal.hero, 1, 'center');
   if (introT > 0 && levelDeaths === 0 && state === 'play') {
     band(bannerY, 34);
-    text('LEVEL ' + levelLabel(L) + '   ' + PHASES[L.phase].name, W / 2, bannerY + 6, pal.bg, 1, 'center');
+    text((L.custom ? 'CUSTOM LEVEL' : 'LEVEL ' + levelLabel(L)) + '   ' + PHASES[L.phase].name, W / 2, bannerY + 6, pal.bg, 1, 'center');
     text(L.name, W / 2, bannerY + 17, pal.bg, 2, 'center');
   }
   if (state === 'dead') { band(bannerY + 6, 22); text(msg, W / 2, bannerY + 12, pal.bg, 2, 'center'); }
@@ -1827,15 +1846,20 @@ function updateMusic() {                              // schedules a little ahea
 let homeSel = 0, phaseSel = 0, levelPhase = 0, levelSel = 0, cardLevel = 0, cardT = 0;
 const demo = { x: 60, dir: 1, door: 280, doorTo: 280, anim: 0, wait: 0 };
 
-const homeItems = () => [
+let homeOpts = false;                              // showing the OPTIONS sub-menu
+const homeItems = () => homeOpts ? [
+  { label: ['SOUND  OFF', 'SFX ONLY', 'MUSIC + SFX'][save.sound], id: 'sound' },
+  { label: save.shake ? 'SHAKE  ON' : 'SHAKE  OFF', id: 'shake' },
+  { label: 'BACK', id: 'back' },
+] : [
   { label: clearedCount() ? 'CONTINUE' : 'PLAY', id: 'play' },
   { label: 'PHASES', id: 'phases' },
   { label: 'SKINS', id: 'skins' },
-  { label: ['SOUND  OFF', 'SFX ONLY', 'MUSIC + SFX'][save.sound], id: 'sound' },
-  { label: save.shake ? 'SHAKE  ON' : 'SHAKE  OFF', id: 'shake' },
+  { label: 'MAKE A LEVEL', id: 'make' },
+  { label: 'OPTIONS', id: 'options' },
 ];
 
-function goHome() { state = 'title'; menuT = 0; setPalette(themePhase()); }
+function goHome() { state = 'title'; menuT = 0; homeOpts = false; homeSel = Math.min(homeSel, 4); setPalette(themePhase()); }
 function goPhases(sel) { state = 'phases'; menuT = 0; phaseSel = sel != null ? sel : themePhase(); setPalette(themePhase()); }
 function goLevels(p, sel) {
   state = 'levels'; menuT = 0; levelPhase = p; setPalette(p);
@@ -1857,20 +1881,25 @@ function updateHome(dt) {
   if (demo.dir < 0 && demo.doorTo < 160 && demo.x < demo.doorTo + 40) { demo.doorTo = 288; demo.dir = 1; demo.wait = 0.5; sfx.door(); }
 
   const items = homeItems();
+  if (homeOpts && input.presses.has('back')) { homeOpts = false; homeSel = 4; sfx.back(); return; }
   const hov = hitAt(input.hover);
   if (hov && hov.startsWith('home:')) homeSel = +hov.slice(5);
+  homeSel = Math.min(homeSel, items.length - 1);          // the two menus have different lengths
   if (input.presses.has('up') || input.presses.has('left')) { homeSel = (homeSel + items.length - 1) % items.length; sfx.move(); }
   if (input.presses.has('down') || input.presses.has('right')) { homeSel = (homeSel + 1) % items.length; sfx.move(); }
   let pick = input.presses.has('ok') ? homeSel : null;
   const tap = hitAt(input.tap);
   if (tap && tap.startsWith('home:')) pick = +tap.slice(5);
-  if (pick == null) return;
+  if (pick == null || !items[pick]) return;
   const id = items[pick].id;
   if (id === 'sound') { cycleSound(); sfx.ok(); return; }
   if (id === 'shake') { save.shake = !save.shake; writeSave(); sfx.ok(); shake(3, 0.2); return; }
+  if (id === 'options') { homeOpts = true; homeSel = 0; sfx.ok(); return; }
+  if (id === 'back') { homeOpts = false; homeSel = 4; sfx.back(); return; }
   sfx.ok();
   if (id === 'play') { const i = firstOpenLevel(); fadeTo(() => i < 0 ? goPhases(0) : playFrom(i)); }
   else if (id === 'skins') fadeTo(goSkins);
+  else if (id === 'make') fadeTo(goEditor);
   else fadeTo(() => goPhases());
 }
 
@@ -1946,6 +1975,278 @@ function drawSkins() {
   const info = open ? (worn ? 'LOOKING GOOD.' : 'PRESS JUMP TO WEAR')
                     : s.need.text + '   ' + Math.min(s.need.have(), s.need.goal) + ' / ' + s.need.goal;
   text(info, W / 2, 174, open ? pal.ink : pal.hero, 1, 'center');
+}
+
+/* ---- level editor ----
+   The editor paints a 40x18 grid of characters (the playable rows 4..21). Plain tiles use the
+   level map letters; trap brushes use their own letters, and on export every touching blob of
+   one trap becomes a lettered group with a ready-made trap, so creators never write rules. */
+const ED_ROWS = ROWS - 4, ED_TOP = 4, ED_Y0 = OY + ED_TOP * TS;   // ED_Y0: screen y of the first editable row
+const ED_TOOLS = [
+  { ch: '#', name: 'GROUND',        tip: 'SOLID GROUND.' },
+  { ch: '^', name: 'SPIKE',         tip: 'POINTY. KILLS.' },
+  { ch: 'v', name: 'CEILING SPIKE', tip: 'POINTS DOWN. ALSO KILLS.' },
+  { ch: 'P', name: 'START',         tip: 'WHERE THE HERO BEGINS.' },
+  { ch: 'D', name: 'DOOR',          tip: 'THE WAY OUT.' },
+  { ch: 'F', name: 'FAKE DOOR',     tip: 'LOOKS LIKE THE EXIT. BITES.' },
+  { ch: 'f', name: 'CRUMBLE',       tip: 'FALLS WHEN YOU STAND ON IT. PUT IT OVER A PIT.' },
+  { ch: 'c', name: 'DROP BLOCK',    tip: 'FALLS WHEN YOU WALK UNDER IT.' },
+  { ch: 's', name: 'SHY SPIKE',     tip: 'HIDDEN. POPS UP WHEN YOU GET CLOSE.' },
+  { ch: 'g', name: 'GHOST BLOCK',   tip: 'SOLID, BUT INVISIBLE.' },
+  { ch: 'p', name: 'FAKE BLOCK',    tip: 'LOOKS SOLID. IS NOT.' },
+  { ch: 'm', name: 'LIFT',          tip: 'SLIDES INTO THE EMPTY SPACE AND BACK.' },
+  { ch: 'k', name: 'CHASER',        tip: 'SPIKES THAT RISE AND HUNT YOU.' },
+  { ch: '.', name: 'ERASER',        tip: 'CLEARS A TILE. RIGHT-CLICK ERASES TOO.' },
+];
+const ED_KINDS = 'fcsgpmk', GROUP_IDS = 'abcdefghijklmnopqrstuwxyz';   // no 'v': that's a ceiling spike
+let ed = null, sharedLv = null;
+
+// Keep only characters the pixel font can draw
+const cleanText = (s, n) => String(s || '').toUpperCase().split('').filter(ch => FONT[ch]).join('')
+  .replace(/\s+/g, ' ').trim().slice(0, n);
+
+function edBlank() {
+  const grid = Array.from({ length: ED_ROWS }, () => Array(COLS).fill('.'));
+  for (let y = 14; y < ED_ROWS; y++) grid[y].fill('#');
+  grid[13][2] = 'P'; grid[13][36] = 'D';
+  return { grid, theme: 0, grudge: false, name: 'MY LEVEL', hint: 'TOTALLY SAFE. TRUST ME.' };
+}
+
+// Level <-> link code: "G1|theme|grudge|name|hint|run-length map", base64url so it survives any chat app
+function edEncode(lv) {
+  const flat = lv.grid.map(r => r.join('')).join('');
+  let rle = '';
+  for (let i = 0; i < flat.length; ) {
+    let j = i; while (flat[j] === flat[i]) j++;
+    rle += j - i > 2 ? (j - i) + flat[i] : flat.slice(i, j);
+    i = j;
+  }
+  return btoa(['G1', lv.theme, lv.grudge ? 1 : 0, lv.name, lv.hint, rle].join('|'))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function edDecode(code) {
+  try {
+    const [ver, theme, grudge, name, hint, rle] = atob(code.replace(/-/g, '+').replace(/_/g, '/')).split('|');
+    if (ver !== 'G1' || rle == null) return null;
+    let flat = '';
+    for (const m of rle.matchAll(/(\d*)(\D)/g)) flat += m[2].repeat(m[1] ? Math.min(+m[1], ED_ROWS * COLS) : 1);
+    if (flat.length !== ED_ROWS * COLS || /[^.#^vPDF]/.test(flat.replace(/[fcsgpmk]/g, ''))) return null;
+    const grid = [];
+    for (let y = 0; y < ED_ROWS; y++) grid.push([...flat.slice(y * COLS, (y + 1) * COLS)]);
+    const th = Math.floor(+theme);
+    return { grid, theme: th >= 0 && th < PHASES.length ? th : 0, grudge: grudge === '1',
+             name: cleanText(name, 16) || 'A LEVEL', hint: cleanText(hint, 44) || '...' };
+  } catch (_) { return null; }
+}
+
+// Painted grid -> a level the engine can play (null without a start and a door)
+function edBuild(lv) {
+  // Read brushes from the editor grid, write group letters into a copy (the letters overlap brush letters)
+  const src = lv.grid, rows = src.map(r => r.slice()), seen = src.map(r => r.map(() => false));
+  const groups = {}, traps = [];
+  const flat = src.map(r => r.join('')).join('');
+  if (!flat.includes('P') || !flat.includes('D')) return null;
+  let n = 0, dropped = 0;
+  for (let y = 0; y < ED_ROWS; y++) for (let x = 0; x < COLS; x++) {
+    const kind = src[y][x];
+    if (seen[y][x] || !ED_KINDS.includes(kind)) continue;
+    const cells = [], stack = [[x, y]];                 // flood-fill the blob so it acts as one piece
+    seen[y][x] = true;
+    while (stack.length) {
+      const [cx, cy] = stack.pop(); cells.push([cx, cy]);
+      for (const [nx, ny] of [[cx + 1, cy], [cx - 1, cy], [cx, cy + 1], [cx, cy - 1]])
+        if (src[ny] && src[ny][nx] === kind && !seen[ny][nx]) { seen[ny][nx] = true; stack.push([nx, ny]); }
+    }
+    if (n >= GROUP_IDS.length) { for (const [cx, cy] of cells) rows[cy][cx] = '.'; dropped++; continue; }
+    const id = GROUP_IDS[n++];
+    for (const [cx, cy] of cells) rows[cy][cx] = id;
+    const xs = cells.map(c => c[0]), ys = cells.map(c => c[1] + ED_TOP);   // game rows
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    switch (kind) {
+      case 'f': groups[id] = {}; traps.push({ when: { touch: id }, g: id, do: 'fall', shake: 0.25 }); break;
+      case 'c': groups[id] = {}; traps.push({ when: { zone: [x0 - 1.5, y1 + 1, x1 + 1.5, ROWS] }, g: id, do: 'fall', shake: 0.12 }); break;
+      case 's': groups[id] = { spike: 1, hide: 1 }; traps.push({ when: { zone: [x0 - 3, y0 - 2, x1 + 3, y1 + 2] }, g: id, do: 'pop' }); break;
+      case 'g': groups[id] = { ghost: 1 }; break;
+      case 'p': groups[id] = { phantom: 1 }; break;
+      case 'k': groups[id] = { spike: 1, hide: 1 }; traps.push({ when: { t: 0.8 }, g: id, do: 'chase', speed: 7 }); break;
+      case 'm': groups[id] = { plat: 1, patrol: { dx: edLiftRun(rows, cells, id), speed: 4, wait: 0.6 } }; break;
+    }
+  }
+  return { name: lv.name, hint: lv.hint, quips: [], groups, traps, grudge: lv.grudge, dropped,
+           custom: true, label: 'CUSTOM', phase: lv.theme, num: 0, map: rows.map(r => r.join('')) };
+}
+// How far a lift can slide: rightwards into empty space if it can, otherwise leftwards
+function edLiftRun(rows, cells, id) {
+  const free = (x, y) => x >= 0 && x < COLS && (rows[y][x] === '.' || rows[y][x] === id);
+  const reach = dir => { let d = 0; while (d < COLS && cells.every(([cx, cy]) => free(cx + (d + 1) * dir, cy))) d++; return d; };
+  const r = reach(1);
+  return r ? r : -reach(-1);
+}
+
+// The draft lives in the save, so closing the page never loses a level
+function goEditor() {
+  if (!ed) {
+    const d = save.draft && edDecode(save.draft.code);
+    ed = Object.assign(d || edBlank(), { tool: 0, cx: 2, cy: 13, verified: !!(d && save.draft.verified),
+                                         dirty: false, savedAt: 0, painting: false, last: null, blipT: 0 });
+    showToast(pad.hidden ? 'CLICK TO PAINT. RIGHT-CLICK ERASES. Q / E SWAP TOOLS.' : 'TAP OR DRAG TO PAINT. TURN SIDEWAYS FOR ROOM.');
+  }
+  state = 'editor'; menuT = 0; setPalette(ed.theme);
+}
+function edSaveDraft() { save.draft = { code: edEncode(ed), verified: ed.verified }; writeSave(); ed.dirty = false; ed.savedAt = time; }
+
+function edPaint(x, y, ch) {
+  if (ed.grid[y][x] === ch) return;
+  if (ch === 'P' || ch === 'D') for (const row of ed.grid) for (let i = 0; i < COLS; i++) if (row[i] === ch) row[i] = '.';
+  ed.grid[y][x] = ch; ed.verified = false; ed.dirty = true;
+  if (time - ed.blipT > 0.05) { sfx.move(); ed.blipT = time; }
+}
+function edTool(i) { ed.tool = (i + ED_TOOLS.length) % ED_TOOLS.length; sfx.move(); showToast(ED_TOOLS[ed.tool].name + ': ' + ED_TOOLS[ed.tool].tip); }
+
+// Browser dialogs pause the game; forget held keys afterwards so nothing sticks
+function ask(question, value) { const s = prompt(question, value); input.left = input.right = input.jump = false; return s; }
+
+function edAction(id) {
+  if (id === 'back') { sfx.back(); edSaveDraft(); return fadeTo(goHome); }
+  if (id === 'name') { const s = ask('Name your level (16 letters max):', ed.name); if (s != null) ed.name = cleanText(s, 16) || ed.name; }
+  else if (id === 'hint') { const s = ask('What should the narrator say? A good lie works best (44 letters max):', ed.hint); if (s != null) ed.hint = cleanText(s, 44) || ed.hint; }
+  else if (id === 'theme') { ed.theme = (ed.theme + 1) % PHASES.length; setPalette(ed.theme); showToast('THEME: ' + PHASES[ed.theme].name); }
+  else if (id === 'grudge') { ed.grudge = !ed.grudge; ed.verified = false; showToast(ed.grudge ? 'GRUDGE ON: A SPIKE GROWS WHERE THEY LAST JUMPED.' : 'GRUDGE OFF.'); }
+  else if (id === 'clear') { if (!confirm('Clear the whole level and start over?')) return; Object.assign(ed, edBlank(), { verified: false }); setPalette(0); }
+  else if (id === 'test') return edTest();
+  else if (id === 'share') return edShare();
+  sfx.ok(); ed.dirty = true;
+}
+
+function edTest() {
+  const lv = edBuild(ed);
+  if (!lv) { sfx.nope(); return showToast('PUT A START AND A DOOR IN FIRST.'); }
+  edSaveDraft(); sfx.ok();
+  lv.fromEditor = true;
+  fadeTo(() => { startLevel(lv); if (lv.dropped) showToast('TOO MANY TRAPS. ONLY 25 KEPT.'); });
+}
+
+function edShare() {
+  if (!edBuild(ed)) { sfx.nope(); return showToast('PUT A START AND A DOOR IN FIRST.'); }
+  if (!ed.verified) { sfx.nope(); return showToast('BEAT IT ONCE WITH TEST BEFORE SHARING.'); }
+  edSaveDraft(); sfx.ok();
+  const url = location.href.split('#')[0] + '#L=' + edEncode(ed);
+  const text = `I made a Grudge level: "${ed.name}". Bet you can't beat it.`;
+  if (navigator.share) return navigator.share({ title: 'Grudge', text, url }).catch(() => {});
+  const fallback = () => ask('Copy this link and send it to a friend:', url);
+  if (navigator.clipboard) navigator.clipboard.writeText(url).then(() => showToast('LINK COPIED! SEND IT TO A FRIEND.'), fallback);
+  else fallback();
+}
+
+const edTileAt = p => {
+  if (!p) return null;
+  const x = Math.floor(p.x / TS), y = Math.floor((p.y - ED_Y0) / TS);
+  return x >= 0 && x < COLS && y >= 0 && y < ED_ROWS ? { x, y } : null;
+};
+
+function updateEditor(dt) {
+  menuT += dt;
+  const pr = input.presses, tap = hitAt(input.tap);
+  if (pr.has('back')) return edAction('back');
+  if (pr.has('prev')) edTool(ed.tool - 1);
+  if (pr.has('next')) edTool(ed.tool + 1);
+  if (tap && tap.startsWith('tool:')) edTool(+tap.slice(5));
+  if (tap && tap.startsWith('ed:')) return edAction(tap.slice(3));
+  // Keyboard / gamepad: move a cursor, paint with jump
+  if (pr.has('left')) ed.cx = Math.max(0, ed.cx - 1);
+  if (pr.has('right')) ed.cx = Math.min(COLS - 1, ed.cx + 1);
+  if (pr.has('up')) ed.cy = Math.max(0, ed.cy - 1);
+  if (pr.has('down')) ed.cy = Math.min(ED_ROWS - 1, ed.cy + 1);
+  if (pr.has('ok')) edPaint(ed.cx, ed.cy, ED_TOOLS[ed.tool].ch);
+  // Mouse / touch: paint while held, filling the gaps of fast drags (right button erases)
+  if (input.ptrDown && input.ptr) {
+    const t = edTileAt(input.ptr);
+    if (input.ptrNew) { ed.painting = !!t; ed.last = null; }
+    if (ed.painting && t) {
+      const ch = input.ptrBtn === 2 ? '.' : ED_TOOLS[ed.tool].ch, a = ed.last || t;
+      const steps = Math.max(Math.abs(t.x - a.x), Math.abs(t.y - a.y));
+      for (let i = 0; i <= steps; i++) {
+        const k = steps ? i / steps : 1;
+        edPaint(Math.round(a.x + (t.x - a.x) * k), Math.round(a.y + (t.y - a.y) * k), ch);
+      }
+      ed.last = t; ed.cx = t.x; ed.cy = t.y;
+    }
+  } else ed.painting = false;
+  const hov = edTileAt(input.hover);
+  if (hov) { ed.cx = hov.x; ed.cy = hov.y; }
+  if (ed.dirty && time - ed.savedAt > 1.5) edSaveDraft();
+}
+
+// One editor tile. Traps get a small mark so the creator can tell them apart from the real thing.
+function drawEdTile(ch, x, y, icon = false) {
+  const ink = pal.ink, bg = pal.bg;
+  switch (ch) {
+    case '#': rect(x, y, TS, TS, ink); break;
+    case '^': ctx.drawImage(SPR.spike, x, y); break;
+    case 'v': ctx.drawImage(SPR.spikeDown, x, y); break;
+    case 'P': drawHero('idle0', x, y + TS); break;
+    case 'D': case 'F':
+      if (icon) drawSprite(SPR.door, x + 1, y - 3, false, 6, 12); else drawSprite(SPR.door, x, y - TS);
+      if (ch === 'F') ctx.drawImage(SPR.skull, x + 2, icon ? y + 1 : y - 5);
+      break;
+    case 'f': rect(x, y, TS, TS, ink); rect(x + 2, y + 1, 1, 3, bg); rect(x + 3, y + 4, 1, 3, bg); rect(x + 5, y + 2, 1, 2, bg); break;
+    case 'c': rect(x, y, TS, TS, ink); rect(x + 3, y + 1, 2, 4, bg); rect(x + 2, y + 4, 4, 1, bg); rect(x + 3, y + 5, 2, 1, bg); break;
+    case 's': ctx.globalAlpha = 0.45; ctx.drawImage(SPR.spike, x, y); ctx.globalAlpha = 1; break;
+    case 'g': ctx.globalAlpha = 0.3; rect(x, y, TS, TS, ink); ctx.globalAlpha = 1; break;
+    case 'p': rect(x, y, TS, TS, ink); rect(x + 2, y + 2, 4, 4, bg); break;
+    case 'm': drawSprite(SPR.plat, x, y); rect(x + 1, y + 3, 1, 1, bg); rect(x + 6, y + 3, 1, 1, bg); break;
+    case 'k': ctx.drawImage(SPR.spikeHero, x, y); break;
+    case '.': if (icon) for (let i = 0; i < 6; i++) { rect(x + 1 + i, y + 1 + i, 1, 1, ink); rect(x + 6 - i, y + 1 + i, 1, 1, ink); } break;
+  }
+}
+
+function edButton(id, label, x, y, look) {                 // look: 'on' (lit), 'go' (call to action), 'off' (not ready)
+  const w = textW(label) + 8, fill = look === 'on' ? pal.glow : look === 'go' ? pal.hero : pal.ink;
+  if (look === 'off') ctx.globalAlpha = 0.45;
+  rect(x, y, w, 11, fill);
+  text(label, x + 4, y + 3, look === 'on' ? pal.ink : look === 'go' ? pal.glow : pal.bg);
+  ctx.globalAlpha = 1;
+  hit(x, y - 1, w, 13, 'ed:' + id);
+  return w;
+}
+
+function drawEditor() {
+  drawBackdrop(PHASES[ed.theme].motif, menuT);
+  ctx.globalAlpha = 0.2;                                    // faint dots on the tile corners
+  for (let y = 0; y <= ED_ROWS; y++) for (let x = 0; x <= COLS; x++) rect(x * TS, ED_Y0 + y * TS, 1, 1, pal.ink);
+  ctx.globalAlpha = 1;
+  for (let y = 0; y < ED_ROWS; y++) for (let x = 0; x < COLS; x++) drawEdTile(ed.grid[y][x], x * TS, ED_Y0 + y * TS);
+  if ((menuT * 3 | 0) % 2 === 0 || ed.painting) {           // cursor
+    const x = ed.cx * TS, y = ED_Y0 + ed.cy * TS;
+    rect(x, y, TS, 1, pal.hero); rect(x, y + TS - 1, TS, 1, pal.hero); rect(x, y, 1, TS, pal.hero); rect(x + TS - 1, y, 1, TS, pal.hero);
+  }
+  // Toolbar: brushes on top, actions below
+  rect(0, 0, W, ED_Y0 - 3, pal.bg); rect(0, ED_Y0 - 3, W, 1, pal.ink);
+  ED_TOOLS.forEach((t, i) => {
+    const x = 4 + i * 16;
+    if (i === ed.tool) { rect(x, 1, 15, 15, pal.glow); rect(x, 16, 15, 1, pal.hero); }
+    drawEdTile(t.ch, x + 4, 5, true);
+    hit(x, 0, 16, 18, 'tool:' + i);
+  });
+  text(ED_TOOLS[ed.tool].name, 232, 6, pal.ink);
+  let x = 4;
+  for (const [id, label, look] of [['back', '<'], ['name', 'NAME'], ['hint', 'HINT'], ['theme', 'THEME'],
+                                   ['grudge', 'GRUDGE', ed.grudge ? 'on' : ''], ['clear', 'CLEAR']])
+    x += edButton(id, label, x, 20, look) + 3;
+  const sw = textW('SHARE') + 8, tw = textW('TEST') + 8;
+  edButton('share', 'SHARE', W - 4 - sw, 20, ed.verified ? 'go' : 'off');
+  edButton('test', 'TEST', W - 7 - sw - tw, 20, 'go');
+}
+
+// Someone opened a level link: show what it is before playing it
+function drawSharedCard() {
+  drawBackdrop(PHASES[sharedLv.phase].motif, cardT);
+  band(46, 78);
+  text('SOMEONE MADE THIS LEVEL FOR YOU', W / 2, 54, pal.glow, 1, 'center');
+  text(sharedLv.name, W / 2, 68, pal.bg, 3, 'center');
+  text('"' + sharedLv.hint + '"', W / 2, 92, pal.bg, 1, 'center');
+  if (sharedLv.grudge) text('IT HOLDS A GRUDGE.', W / 2, 106, pal.glow, 1, 'center');
+  if (cardT > 0.6 && (cardT * 2 | 0) % 2 === 0) text('PRESS JUMP', W / 2, 140, pal.ink, 1, 'center');
 }
 
 function updatePhases(dt) {
@@ -2108,12 +2409,20 @@ function update(dt) {
   if (fade.dir <= 0) {
     const inLevel = state === 'play' || state === 'dead';
     if (inLevel && (input.presses.has('back') || (input.tap && hitAt(input.tap) === 'menu'))) {
-      sfx.back(); const p = L.phase, k = L.num; fadeTo(() => goLevels(p, k));
+      sfx.back();
+      if (L.custom) fadeTo(L.fromEditor ? goEditor : goHome);
+      else { const p = L.phase, k = L.num; fadeTo(() => goLevels(p, k)); }
     } else switch (state) {
       case 'title': updateHome(dt); break;
       case 'phases': updatePhases(dt); break;
       case 'levels': updateLevels(dt); break;
       case 'skins': updateSkins(dt); break;
+      case 'editor': updateEditor(dt); break;
+      case 'shared':
+        cardT += dt;
+        if (input.presses.has('back')) fadeTo(goHome);
+        else if (cardT > 0.4 && (input.presses.has('ok') || input.jumpPressed || input.tap)) { cardT = -99; fadeTo(() => startLevel(sharedLv)); }
+        break;
       case 'card':
         cardT += dt;
         if (cardT > 2.4 || (cardT > 0.3 && (input.presses.has('ok') || input.jumpPressed || input.tap))) { const i = cardLevel; cardT = -99; fadeTo(() => loadLevel(i)); }
@@ -2143,15 +2452,16 @@ function update(dt) {
     }
   }
   input.jumpPressed = input.restartPressed = false;
-  input.presses.clear(); input.tap = null;
+  input.presses.clear(); input.tap = null; input.ptrNew = false;
 }
 
 function recordClear() {
+  runs.push({ p: rec, dead: false });
+  if (L.custom) return;                                // custom levels don't touch progress or stats
   save.cleared[li] = true;
   const b = save.best[li] || (save.best[li] = {});
   b.d = b.d == null ? levelDeaths : Math.min(b.d, levelDeaths);
   b.t = b.t == null ? levelTime : Math.min(b.t, levelTime);
-  runs.push({ p: rec, dead: false });
   checkUnlocks(); writeSave();
 }
 function startReplay() {
@@ -2161,6 +2471,13 @@ function startReplay() {
   replayT = 0; state = 'replay';
 }
 function leaveLevel() {
+  if (L.custom) {
+    const tries = levelDeaths + 1, fromEditor = L.fromEditor;
+    return fadeTo(() => {
+      if (fromEditor) { goEditor(); ed.verified = true; edSaveDraft(); showToast('BEATEN! NOW YOU CAN SHARE IT.'); }
+      else { goHome(); showToast(tries > 1 ? `YOU BEAT IT IN ${tries} TRIES.` : 'BEATEN ON THE FIRST TRY!'); }
+    });
+  }
   const next = li + 1;
   fadeTo(() => {
     if (li === MAIN_LEVELS - 1 || next >= LEVELS.length) {
@@ -2200,9 +2517,21 @@ function updatePlay(dt) {
 }
 
 function canvasPos(e) { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height }; }
-cv.addEventListener('pointerdown', e => { initAudio(); cv.focus(); input.tap = canvasPos(e); input.hover = input.tap; });
-cv.addEventListener('pointermove', e => { if (e.pointerType === 'mouse') input.hover = canvasPos(e); });
+cv.addEventListener('pointerdown', e => {
+  initAudio(); cv.focus(); input.tap = canvasPos(e); input.hover = input.tap;
+  input.ptr = input.tap; input.ptrDown = true; input.ptrBtn = e.button; input.ptrNew = true;
+  try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+});
+cv.addEventListener('pointermove', e => {
+  const p = canvasPos(e);
+  if (e.pointerType === 'mouse') input.hover = p;
+  if (input.ptrDown) input.ptr = p;
+});
+const ptrUp = () => { input.ptrDown = false; };
+cv.addEventListener('pointerup', ptrUp);
+cv.addEventListener('pointercancel', ptrUp);
 cv.addEventListener('pointerleave', () => { input.hover = null; });
+cv.addEventListener('contextmenu', e => e.preventDefault());       // right-click erases in the editor
 
 let last = performance.now(), acc = 0;
 function frame(now) {
@@ -2215,6 +2544,16 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
+// A shared level arrives as #L=<code> on the page address
+function openLevelLink() {
+  if (!location.hash.startsWith('#L=')) return false;
+  const d = edDecode(location.hash.slice(3)), lv = d && edBuild(d);
+  try { history.replaceState(null, '', location.href.split('#')[0]); } catch (_) {}
+  if (!lv) { goHome(); showToast('THAT LEVEL LINK IS BROKEN.'); return true; }
+  sharedLv = lv; state = 'shared'; cardT = 0; setPalette(lv.phase);
+  return true;
+}
+
 // Keep progress across live page updates when the viewer supports it
 window.claude?.hot?.snapshot?.(() => ({ li, playing: state === 'play' || state === 'dead' }));
 function start(data) {
@@ -2223,7 +2562,9 @@ function start(data) {
   returning = deaths > 0 || clearedCount() > 0;
   checkUnlocks(true);
   addEventListener('visibilitychange', () => { if (document.hidden) writeSave(); });   // keep play time
-  if (data && data.playing && typeof data.li === 'number' && LEVELS[data.li]) loadLevel(data.li);
+  addEventListener('hashchange', openLevelLink);           // a level link opened in an already-open tab
+  if (openLevelLink()) {}
+  else if (data && data.playing && typeof data.li === 'number' && LEVELS[data.li]) loadLevel(data.li);
   else goHome();
   resize();
   cv.focus();
