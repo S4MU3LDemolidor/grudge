@@ -116,12 +116,18 @@ body.land #bF { left: calc(10px + env(safe-area-inset-left, 0px)); top: calc(62p
   <button id="bX" class="key small" aria-label="Restart the level">R</button>
 </div>
 
+<!-- pixelfx -->
+<script>/* pixelfx 044e12a 2026-11-09 (https://github.com/patch-gg/pixelfx): weather, transitions and particles.
+   MIT License, Copyright (c) 2026 Patch, Copyright (c) 2026 Hugo Duprez. See third_party/pixelfx. Built by tools/build-fx.mjs. */
+(()=>{var Xe=Object.defineProperty;var it=(o,t)=>{for(var s in t)Xe(o,s,{get:t[s],enumerable:!0})};var I=Math.PI*2,H=(o,t=0,s=1)=>o<t?t:o>s?s:o,Bn=(o,t,s)=>o+(t-o)*s;var _=(o,t)=>(o%t+t)%t,Ue=(o,t,s)=>H((o-t)/(s-t)),C=(o,t,s)=>{let n=Ue(s,o,t);return n*n*(3-2*n)};var At={linear:o=>o,inQuad:o=>o*o,outQuad:o=>1-(1-o)*(1-o),inOutQuad:o=>o<.5?2*o*o:1-Math.pow(-2*o+2,2)/2,inCubic:o=>o*o*o,outCubic:o=>1-Math.pow(1-o,3),inOutCubic:o=>o<.5?4*o*o*o:1-Math.pow(-2*o+2,3)/2,inQuart:o=>o*o*o*o,outQuart:o=>1-Math.pow(1-o,4),inExpo:o=>o<=0?0:Math.pow(2,10*o-10),outExpo:o=>o>=1?1:1-Math.pow(2,-10*o),inSine:o=>1-Math.cos(o*Math.PI/2),outSine:o=>Math.sin(o*Math.PI/2),inOutSine:o=>-(Math.cos(Math.PI*o)-1)/2,inBack:(o,t=1.70158)=>o<=0?0:o>=1?1:(t+1)*o*o*o-t*o*o,outBack:(o,t=1.70158)=>o<=0?0:o>=1?1:1+(t+1)*Math.pow(o-1,3)+t*Math.pow(o-1,2),outElastic:o=>o<=0?0:o>=1?1:Math.pow(2,-10*o)*Math.sin((o*10-.75)*(2*Math.PI/3))+1,outBounce:o=>o<1/2.75?7.5625*o*o:o<2/2.75?7.5625*(o-=1.5/2.75)*o+.75:o<2.5/2.75?7.5625*(o-=2.25/2.75)*o+.9375:7.5625*(o-=2.625/2.75)*o+.984375};function We(...o){let t=2654435769;for(let s of o)t=Math.imul(t^(s|0),2246822507),t^=t>>>13,t=Math.imul(t,3266489909),t^=t>>>16;return t>>>0}var F=(...o)=>We(...o)/4294967296,ot=class{constructor(t=1){this.s=t>>>0||1}next(){let t=this.s=this.s+1831565813>>>0;return t=Math.imul(t^t>>>15,t|1),t^=t+Math.imul(t^t>>>7,t|61),((t^t>>>14)>>>0)/4294967296}range(t,s){return t+(s-t)*this.next()}int(t,s){return Math.floor(this.range(t,s+1))}chance(t){return this.next()<t}sign(){return this.next()<.5?-1:1}pick(t){return t[Math.floor(this.next()*t.length)]}gauss(){return(this.next()+this.next()+this.next()+this.next()-2)*1.732}};function He(o,t,s=0){let n=Math.floor(o),a=Math.floor(t),e=o-n,i=t-a,r=e*e*(3-2*e),f=i*i*(3-2*i),l=F(n,a,s),c=F(n+1,a,s),p=F(n,a+1,s),h=F(n+1,a+1,s);return Bn(Bn(l,c,r),Bn(p,h,r),f)*2-1}function In(o,t=1,s=0){let n=o*I;return He(Math.cos(n)*t+50,Math.sin(n)*t+50,s)}var Pn=(o,t,s)=>255<<24|(s&255)<<16|(t&255)<<8|o&255,wo=o=>o&255,bo=o=>o>>>8&255,ko=o=>o>>>16&255;function j(o){if(typeof o=="number")return o;let t=o.replace("#","");t.length===3&&(t=t[0]+t[0]+t[1]+t[1]+t[2]+t[2]);let s=parseInt(t.slice(0,6),16);return Pn(s>>16&255,s>>8&255,s&255)}var I0=o=>"#"+[wo(o),bo(o),ko(o)].map(t=>t.toString(16).padStart(2,"0")).join("");function X(o,t,s){return s=H(s),Pn(wo(o)+(wo(t)-wo(o))*s,bo(o)+(bo(t)-bo(o))*s,ko(o)+(ko(t)-ko(o))*s)}var Gt=(o,t)=>Pn(Math.min(255,wo(o)*t),Math.min(255,bo(o)*t),Math.min(255,ko(o)*t));var Ke=o=>o.map(j);function J(o,t){return o=o.map(j),o.length===t?o:Array.from({length:t},(s,n)=>o[Math.round(n*(o.length-1)/Math.max(1,t-1))])}var P0=(o,t)=>o[H(Math.floor(t*o.length),0,o.length-1)];var On={fire:["#1f0b10","#4a1118","#8c1d1c","#cc3a1a","#f2701f","#ffae35","#ffe27a","#fff8d6"],ember:["#1a0a0e","#3d1012","#701a14","#a8301a","#e0561e","#ff8a2a","#ffc46a"],lava:["#14060a","#380a10","#6e1210","#ac2410","#e8501a","#ff8c2a","#ffd25a"],smoke:["#0e0c12","#1d1a22","#2e2a35","#433e4b","#5c5664","#7b7484","#a39cab"],dust:["#1c1610","#33281c","#4f3f2c","#6e5a40","#927a58","#b89f78","#dcc8a2"],ice:["#0c1430","#162c5c","#1f4f94","#2f7fcc","#58b4ec","#9bdcff","#d8f4ff","#ffffff"],water:["#081830","#0e2e5a","#14508c","#1c76bc","#36a2e0","#78ccf4","#c4ecff","#ffffff"],electric:["#0a0f2e","#172a78","#2550d0","#3f8cff","#7cc8ff","#c8f0ff","#ffffff"],volt:["#24160a","#5e3a0c","#a8680f","#e8a218","#ffd23c","#fff08a","#ffffff"],poison:["#0d1a0c","#173a14","#265e18","#3f8a1e","#6cb82a","#a8e04a","#e0ff8a"],holy:["#2a1c08","#5a3e10","#9a6c18","#d8a428","#ffd84a","#fff09a","#fffbe6","#ffffff"],heal:["#08201a","#0f3f2c","#17663e","#24924e","#3ec466","#7ee88a","#c8ffc4","#ffffff"],arcane:["#140a26","#2b1252","#481c88","#6b2cc0","#9a48ec","#c684ff","#ecc8ff","#ffffff"],shadow:["#050308","#0f0a18","#1c1230","#2c1a4a","#432468","#5e3290","#8048b8","#a970e0"],blood:["#14040a","#3a0a14","#6a101c","#a01824","#d42a30","#ff5a50","#ff9a8a"],earth:["#140e0a","#2a1e14","#47321e","#69492a","#8e6638","#b88a52","#dcb47c"],stone:["#0e0e12","#1c1c24","#2c2c38","#42424f","#5c5c6b","#7d7d8c","#a4a4b2","#d0d0da"],gold:["#1e1206","#4a2c08","#86520c","#c48412","#f0b424","#ffe066","#fff6c4","#ffffff"],leaf:["#0c1a0e","#163418","#225224","#357530","#4f9a3a","#7cc048","#b4e070","#e4ffb0"],wood:["#160c06","#2e1a0c","#4a2c14","#6a421e","#8e5c2c","#b47c40","#d8a464"],metal:["#0c0e14","#1c2230","#2e3648","#4a5468","#6e7a90","#9aa6ba","#d0d8e6","#ffffff"],bone:["#1a1814","#3a352c","#5e5648","#8a806c","#b8ad96","#e4dcc8","#fffaf0"],neon:["#1a0516","#3d0a33","#701560","#b0228f","#f53cd1","#ff86e6","#ffd2f6","#ffffff"],cyber:["#041418","#08303a","#0c5260","#108088","#18b4b0","#4ce8d8","#b4fff0","#ffffff"],matrix:["#020a04","#05200c","#0a3c16","#106624","#1a9a34","#3cd650","#a4ffa8","#e8ffe8"],candy:["#ff4a5a","#ff9a2a","#ffe03c","#5ad84a","#3cc8ff","#7a6cff","#f53cd1"],night:["#07060d","#0c0a18","#131026","#1b1734","#241f44","#2f2956"]},_a=Object.fromEntries(Object.entries(On).map(([o,t])=>[o,Ke(t)])),P=j("#ffffff"),Qa=j("#000000"),Za=j("#0b0a10"),$a=j("#f53cd1");var Ao=950,T0=[[1,0],[-1,0],[0,1],[0,-1]],O0=[[1,1],[1,-1],[-1,1],[-1,-1]],ao=["#fff3a6","#ffe26b","#ff8a2a","#f2561d"].map(j),j0=["#ffffff","#fff3a6","#ffe26b","#ffc23d","#ff8a2a","#f2561d","#c9281f","#8a1f17","#4a1712"].map(j),Nn=["#7b6f72","#5d5660","#433d48","#2b2630","#1a171e"].map(j),N0=(o,t)=>o[Math.min(o.length-1,Math.max(0,Math.floor(t*o.length)))],U={SPARK:0,MOTE:1,STREAK:2,FLAKE:3,VAPOUR:4,DUST:5,STAR:6,EMBER:7,SMOKE:8,FIRE:9,BRAND:10,GRIT:11},mt={SMOKES:1,BIG:2,BACK:4},R0=new Set([U.VAPOUR,U.DUST,U.SMOKE]),ut=class{constructor(t={}){this.R=t.rng??new ot(t.seed??1),this.list=[],this.t=0,this.ground=t.ground??(()=>1/0),this.sparks=(t.sparks??ao).map(j),this.haze=t.haze===void 0?null:j(t.haze),this.onLand=t.onLand??null}spawn(t,s,n,a,e,i,r=P,f=1,l=0,c=0){this.list.push({k:t,x:s,y:n,vx:a,vy:e,life:i,max:i,col:r?j(r):0,size:f,seed:this.R.next()*100,delay:l,flag:c})}get count(){return this.list.length}update(t){this.t+=t;let s=this.R,n=this.t;for(let a=this.list.length-1;a>=0;a--){let e=this.list[a];if(e.delay>0){e.delay-=t;continue}if((e.life-=t)<=0){if(e.k===U.FIRE&&e.flag&mt.SMOKES){let i=e.flag&mt.BIG;this.spawn(U.SMOKE,e.x,e.y,e.vx*.6,e.vy*.6-6,i?s.range(1.3,2.3):s.range(.8,1.4),0,e.size*(i?.85:.7),0,i?mt.BIG:0)}this.list.splice(a,1);continue}switch(e.k){case U.FIRE:e.vy-=95*t,e.vx+=Math.sin(n*17+e.seed)*30*t,e.vx-=e.vx*5*t,e.vy-=e.vy*3.2*t;break;case U.GRIT:{e.vy+=Ao*t,e.vx-=e.vx*.8*t;let i=this.ground(e.x),r=e.y+e.vy*t;e.x+=e.vx*t,e.vy>0&&e.y<=i&&r>=i?(e.y=i-.25,e.vy>130&&s.chance(.4)?(e.vy=-e.vy*.25,e.vx=e.vx*.5+s.range(-10,10)):(e.vx=e.vy=0,e.life=Math.min(e.life,.5))):e.y=r;continue}case U.BRAND:{e.vy+=Ao*.8*t,e.vx-=e.vx*.9*t,s.chance(.9*Math.min(1,t*60))&&this.spawn(U.FIRE,e.x,e.y,e.vx*.1+s.range(-7,7),e.vy*.1-10,s.range(.16,.32),0,s.range(.9,1.7)*(.5+e.life/e.max*.6),0,s.chance(.4)?mt.SMOKES:0);let i=this.ground(e.x),r=e.y+e.vy*t;e.x+=e.vx*t,e.vy>0&&e.y<=i&&r>=i?(this.onLand?.(e.x,i),this.list.splice(a,1)):e.y=r;continue}case U.SPARK:{e.vy+=Ao*.45*t,e.vx-=e.vx*2.2*t,e.vy-=e.vy*2.2*t;let i=this.ground(e.x),r=e.y+e.vy*t;e.x+=e.vx*t,e.vy>0&&e.y<=i&&r>=i?(e.vy=-e.vy*.45,e.vx*=.7,e.y=i-.25):e.y=r;continue}case U.STREAK:e.vx+=e.vx*3*t,e.vy+=e.vy*3*t;break;case U.FLAKE:e.vx-=e.vx*2.2*t,e.vy-=e.vy*2.2*t-35*t,e.x+=Math.sin(this.t*2.5+e.seed)*7*t;break;case U.EMBER:e.vy+=(-30+Math.sin(n*3+e.seed)*20)*t,e.vx+=Math.cos(n*2.3+e.seed)*45*t,e.vx-=e.vx*1.6*t,e.vy-=e.vy*1.6*t;break;case U.SMOKE:{let i=e.flag&mt.BIG;e.vy-=(i?23:16)*t,e.vx+=Math.sin(n*1.3+e.seed)*8*t,e.vx-=e.vx*1.6*t,e.vy-=e.vy*1.2*t;break}case U.MOTE:e.vx-=e.vx*.6*t,e.vy-=e.vy*.6*t;break;default:{let i=R0.has(e.k)?4:1.6;e.vx-=e.vx*i*t,e.vy-=e.vy*i*t+5*t}}e.x+=e.vx*t,e.y+=e.vy*t}}draw(t,s){for(let n of this.list){if(n.delay>0||s&&(R0.has(n.k)||n.flag&mt.BACK?"back":"front")!==s)continue;let a=n.life/n.max,e=n.x,i=n.y,r=Math.hypot(n.vx,n.vy)||1,f=n.vx/r,l=n.vy/r;switch(n.k){case U.SPARK:{let c=this.sparks,p=a>.6?c[0]:a>.3?c[1]:c[2],h=Math.min(9,1+r*.022);t.line(e-f*h,i-l*h,e-f*h*.4,i-l*h*.4,a>.5?p:c[c.length-1]),t.line(e-f*h*.45,i-l*h*.45,e,i,p),t.glow(e,i,3,p,.45*a);break}case U.MOTE:{let c=Math.min(16,.5+r*.026)*n.size,p=a<.35?a/.35:1;t.line(e-f*c,i-l*c,e-f*c*.35,i-l*c*.35,Gt(n.col,.55),p),t.line(e-f*c*.4,i-l*c*.4,e,i,n.col,p),t.glow(e,i,2.5+n.size,n.col,.4*a);break}case U.STREAK:{let c=H(r/30,1,7);for(let p=c;p>=0;p-=.5)t.dot(e-f*p,i-l*p,p<1?P:p<c*.5?n.col:Gt(n.col,.6),p<c*.5?1:1.2-p/c);t.glow(e,i,4,n.col,.4);break}case U.FLAKE:{let c=Math.min(1,a*3);if(t.dot(e,i,n.col,c),n.size>1.3)for(let[p,h]of T0)t.dot(e+p,i+h,Gt(n.col,.8),c*.8);break}case U.VAPOUR:{let c=n.size*(.6+(1-a)*.9);t.disc(e,i,c,n.col,Math.pow(a,1.3)*.45),this.haze&&t.glow(e,i,c*1.8,this.haze,.16*a);break}case U.DUST:t.disc(e,i,n.size*(.6+(1-a)*.9),n.col,Math.pow(a,1.3)*.7);break;case U.SMOKE:{let c=1-a,p=n.flag&mt.BIG,h=n.size*(.65+Math.min(1,c*2.5)*.45+c*(p?.5:.4)),d=Math.min(1,c*12)*Math.min(1,a*2.4)*(p?.7:.58),u=n.col?X(n.col,N0(Nn,c),c):N0(Nn,c*1.05);t.disc(e,i,h,u,d*.45),t.disc(e+h*.05,i+h*.06,h*.74,u,d*.62),c<.5&&t.disc(e-h*.22,i-h*.3,h*.5,X(u,P,.12),d*.4*(1-c*2));break}case U.FIRE:{let c=1-a,p=Math.min(.999,Math.pow(c,.62)+n.seed%1*.1),h=j0,d=h.length,u=Math.min(d-2,Math.floor(p*(d-1))),x=n.size*(.55+.45*Math.min(1,c*7))*(1-c*.55),M=h[u];u>=d-2?t.disc(e,i,x,M,Math.min(1,a*3)*.85):(t.circle(e,i,x,h[Math.min(d-1,u+2)]),t.circle(e-x*.16,i-x*.22,x*.78,M),x>1.6&&t.circle(e,i-x*.9,x*.42,M),u<=3&&x>1.8&&t.circle(e-x*.28,i-x*.34,x*.36,h[Math.max(0,u-1)]),u<6&&t.glow(e,i,x*2.4+2,M,.18*a));break}case U.BRAND:t.circle(e,i,1.6,ao[3]),t.px(e,i,Math.sin(this.t*40+n.seed)>0?ao[0]:ao[1]),t.px(e+1,i,ao[1]),t.glow(e,i,7,ao[2],.45);break;case U.GRIT:(a>.25||a*4>.5)&&(t.px(e,i,n.col),n.size>=2&&(t.px(e+1,i,n.col),t.px(e,i+1,Gt(n.col,.8)),t.px(e+1,i+1,Gt(n.col,.7))));break;case U.EMBER:{let c=a>.6?this.sparks[0]:a>.3?this.sparks[1]:this.sparks[2];if(a<.25&&Math.sin(this.t*40+n.seed)<0)break;t.px(e,i,c),n.size>1.5&&t.px(e,i+1,this.sparks[this.sparks.length-1]),t.glow(e,i,3+n.size,c,.35*a);break}default:{let c=.6+.4*Math.sin(this.t*(8+n.seed%5)+n.seed);if(n.size<1){c*a>.25&&t.px(e,i,c>.8?P:n.col),t.glow(e,i,3,n.col,.4*a*c);break}yt(t,e,i,n.size*c*Math.min(1,a*3),n.col,Gt(n.col,.75),.5*a*c)}}}}};var _t={SHARD:0,CHUNK:1,DRIP:2},vo=class{constructor(t={}){this.list=[],this.ground=t.ground??(()=>1/0)}add(t){let s=t.life??1;this.list.push({kind:_t.SHARD,vx:0,vy:0,a:0,va:0,s:1,c:P,g:1,drag:0,bounce:0,rest:!1,...t,life:s,max:s})}get count(){return this.list.length}update(t){for(let s=this.list.length-1;s>=0;s--){let n=this.list[s];if((n.life-=t)<=0){this.list.splice(s,1);continue}if(n.rest)continue;n.vy+=Ao*n.g*t,n.vx-=n.vx*n.drag*t,n.vy-=n.vy*n.drag*t,n.x+=n.vx*t,n.y+=n.vy*t,n.a+=n.va*t;let a=this.ground(n.x),e=n.vy;n.g<=0||n.y<a||e<=0||(n.y=a-.01,n.kind===_t.DRIP?n.life=0:n.bounce>0&&e>70?(n.vy=-e*n.bounce,n.vx*=.7,n.va*=.6):(n.rest=!0,n.vx=n.vy=0))}}draw(t){for(let s of this.list){let n=Math.min(1,s.life/.4),a=Math.cos(s.a),e=Math.sin(s.a);if(s.kind===_t.SHARD)for(let i=-s.s/2;i<=s.s/2;i+=.5)t.dot(s.x+a*i,s.y+e*i,i>s.s/2-.6?P:j(s.c),n);else if(s.kind===_t.DRIP)t.dot(s.x,s.y,j(s.c),n),t.dot(s.x,s.y-1,j(s.c),n*.5);else{let i=(s.ramp??["#1c2030","#3a4a66","#6e86a8","#a8c0dc","#e8f2ff"]).map(j),r=i.length,f=Math.round(s.x),l=Math.round(s.y),c=Math.ceil(s.s)+1;for(let p=-c;p<=c;p++)for(let h=-c;h<=c;h++){let d=(h+.5)*a+(p+.5)*e,u=-(h+.5)*e+(p+.5)*a,x=Math.abs(d)/s.s+Math.abs(u)/(s.s*.62);x>1.3||t.dot(f+h,l+p,x>1?i[0]:u<0?d<0?i[r-1]:i[r-2]:d<0?i[r-3]:i[Math.max(1,r-4)],n)}}}}},Qt=class{constructor(){this.list=[]}add(t,s,n,a,e,i){this.list.push({x:t,y:s,r:n,color:j(a),k:e,life:i,max:i})}update(t){for(let s=this.list.length-1;s>=0;s--)(this.list[s].life-=t)<=0&&this.list.splice(s,1)}draw(t){for(let s of this.list){let n=s.life/s.max;t.glow(s.x,s.y,s.r*(.55+.45*n),s.color,s.k*n*n)}}};function yt(o,t,s,n,a,e=a,i=.6){let r=Math.round(n);if(r<1)return;let f=Math.floor(t),l=Math.floor(s);for(let c=1;c<=r;c++){let p=c>r*.6?e:a;for(let[h,d]of T0)o.px(f+h*c,l+d*c,p)}if(r>=3)for(let[c,p]of O0)o.px(f+c,l+p,a);if(r>=6)for(let[c,p]of O0)o.px(f+c*2,l+p*2,e);o.px(f,l,P),o.glow(t,s,4+r*2,a,i)}var Ge={A:".#.|#.#|###|#.#|#.#",B:"##.|#.#|##.|#.#|##.",C:".##|#..|#..|#..|.##",D:"##.|#.#|#.#|#.#|##.",E:"###|#..|##.|#..|###",F:"###|#..|##.|#..|#..",G:".##|#..|#.#|#.#|.##",H:"#.#|#.#|###|#.#|#.#",I:"###|.#.|.#.|.#.|###",J:"..#|..#|..#|#.#|.#.",K:"#.#|#.#|##.|#.#|#.#",L:"#..|#..|#..|#..|###",M:"#.#|###|###|#.#|#.#",N:"##.|#.#|#.#|#.#|#.#",O:".#.|#.#|#.#|#.#|.#.",P:"##.|#.#|##.|#..|#..",Q:".#.|#.#|#.#|##.|.##",R:"##.|#.#|##.|#.#|#.#",S:".##|#..|.#.|..#|##.",T:"###|.#.|.#.|.#.|.#.",U:"#.#|#.#|#.#|#.#|###",V:"#.#|#.#|#.#|#.#|.#.",W:"#.#|#.#|###|###|#.#",X:"#.#|#.#|.#.|#.#|#.#",Y:"#.#|#.#|.#.|.#.|.#.",Z:"###|..#|.#.|#..|###",0:"###|#.#|#.#|#.#|###",1:".#.|##.|.#.|.#.|###",2:"##.|..#|.#.|#..|###",3:"##.|..#|.#.|..#|##.",4:"#.#|#.#|###|..#|..#",5:"###|#..|##.|..#|##.",6:".##|#..|###|#.#|###",7:"###|..#|.#.|.#.|.#.",8:"###|#.#|###|#.#|###",9:"###|#.#|###|..#|##.","+":"...|.#.|###|.#.|...","-":"...|...|###|...|...","!":"#|#|#|.|#","?":"##.|..#|.#.|...|.#.",".":".|.|.|.|#",",":"..|..|..|.#|#.",":":".|#|.|#|.","/":"..#|..#|.#.|#..|#..","%":"#.#|..#|.#.|#..|#.#",x:"...|#.#|.#.|#.#|...","*":"#.#|.#.|#.#|...|...","'":"#|#|.|.|.","(":".#|#.|#.|#.|.#",")":"#.|.#|.#|.#|#.","<":"..#|.#.|#..|.#.|..#",">":"#..|.#.|..#|.#.|#..","=":"...|###|...|###|...",_:"...|...|...|...|###","#":"#.#|###|#.#|###|#.#"},_e={A:".###.|#...#|#...#|#####|#...#|#...#|#...#",B:"####.|#...#|#...#|####.|#...#|#...#|####.",C:".###.|#...#|#....|#....|#....|#...#|.###.",D:"####.|#...#|#...#|#...#|#...#|#...#|####.",E:"#####|#....|#....|####.|#....|#....|#####",F:"#####|#....|#....|####.|#....|#....|#....",G:".###.|#...#|#....|#.###|#...#|#...#|.####",H:"#...#|#...#|#...#|#####|#...#|#...#|#...#",I:"###|.#.|.#.|.#.|.#.|.#.|###",J:"..###|...#.|...#.|...#.|...#.|#..#.|.##..",K:"#...#|#..#.|#.#..|##...|#.#..|#..#.|#...#",L:"#....|#....|#....|#....|#....|#....|#####",M:"#...#|##.##|#.#.#|#.#.#|#...#|#...#|#...#",N:"#...#|#...#|##..#|#.#.#|#..##|#...#|#...#",O:".###.|#...#|#...#|#...#|#...#|#...#|.###.",P:"####.|#...#|#...#|####.|#....|#....|#....",Q:".###.|#...#|#...#|#...#|#.#.#|#..#.|.##.#",R:"####.|#...#|#...#|####.|#.#..|#..#.|#...#",S:".####|#....|#....|.###.|....#|....#|####.",T:"#####|..#..|..#..|..#..|..#..|..#..|..#..",U:"#...#|#...#|#...#|#...#|#...#|#...#|.###.",V:"#...#|#...#|#...#|#...#|#...#|.#.#.|..#..",W:"#...#|#...#|#...#|#.#.#|#.#.#|#.#.#|.#.#.",X:"#...#|#...#|.#.#.|..#..|.#.#.|#...#|#...#",Y:"#...#|#...#|.#.#.|..#..|..#..|..#..|..#..",Z:"#####|....#|...#.|..#..|.#...|#....|#####",0:".###.|#...#|#..##|#.#.#|##..#|#...#|.###.",1:".#.|##.|.#.|.#.|.#.|.#.|###",2:".###.|#...#|....#|...#.|..#..|.#...|#####",3:"#####|...#.|..#..|...#.|....#|#...#|.###.",4:"...#.|..##.|.#.#.|#..#.|#####|...#.|...#.",5:"#####|#....|####.|....#|....#|#...#|.###.",6:"..##.|.#...|#....|####.|#...#|#...#|.###.",7:"#####|....#|...#.|..#..|.#...|.#...|.#...",8:".###.|#...#|#...#|.###.|#...#|#...#|.###.",9:".###.|#...#|#...#|.####|....#|...#.|.##..","!":"#|#|#|#|#|.|#","?":".###.|#...#|....#|...#.|..#..|.....|..#..","+":".....|..#..|..#..|#####|..#..|..#..|.....","-":"....|....|....|####|....|....|....",".":".|.|.|.|.|.|#",",":"..|..|..|..|..|.#|#.",":":".|.|#|.|.|#|.","/":"....#|....#|...#.|..#..|.#...|#....|#....","%":"##...|##..#|...#.|..#..|.#...|#..##|...##",x:".....|.....|#...#|.#.#.|..#..|.#.#.|#...#","*":".....|..#..|#.#.#|.###.|#.#.#|..#..|.....","'":"#|#|.|.|.|.|.","<":"...#|..#.|.#..|#...|.#..|..#.|...#",">":"#...|.#..|..#.|...#|..#.|.#..|#...","=":"....|....|####|....|####|....|....","(":"..#|.#.|#..|#..|#..|.#.|..#",")":"#..|.#.|..#|..#|..#|.#.|#..","#":".#.#.|.#.#.|#####|.#.#.|#####|.#.#.|.#.#."};function S0(o,t){let s={};for(let[n,a]of Object.entries(o)){let e=a.split("|");if(s[n]={w:e[0].length,rows:e.map(i=>[...i].map(r=>r==="#"))},e.length!==t)throw new Error(`glyph ${n} has ${e.length} rows, expected ${t}`)}return s}var Fo={mini:{h:5,space:2,gap:1,glyphs:S0(Ge,5)},big:{h:7,space:3,gap:1,glyphs:S0(_e,7)}};function Ho(o,t="mini"){let s=Fo[t],n=0;for(let a of String(o)){let e=s.glyphs[a]??s.glyphs[a.toUpperCase()];n+=(e?e.w:s.space)+s.gap}return Math.max(0,n-s.gap)}function Ko(o,t,s){let n=Fo[t],a=0;for(let e of String(o)){let i=n.glyphs[e]??n.glyphs[e.toUpperCase()];if(!i){a+=n.space+n.gap;continue}for(let r=0;r<n.h;r++)for(let f=0;f<i.w;f++)i.rows[r][f]&&s(a+f,r);a+=i.w+n.gap}}var Qe=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(o=>(o+.5)/16),Ze={c:0,a:1,l:0,k:0},Y0=new WeakMap,Q=(o,...t)=>typeof o=="function"?o(...t):o,Zt=class{constructor(t){this.frame=t,this.reset()}reset(){let t=this.frame;return this.w=t.w,this.h=t.h,this.ox=t.ox|0,this.oy=t.oy|0,this.C=t.color,this.L=t.light,this.tx=0,this.ty=0,this.fx=1,this.cs=1,this.sn=0,this.fade=1,this.lightK=1,this.layer="front",this}place(t,s,n=!1,a=0){return this.tx=t,this.ty=s,this.fx=n?-1:1,this.cs=Math.cos(a),this.sn=Math.sin(a),this}toX(t,s){return this.tx+t*this.fx*this.cs-s*this.sn}toY(t,s){return this.ty+t*this.fx*this.sn+s*this.cs}fromX(t,s){let n=t-this.tx,a=s-this.ty;return(n*this.cs+a*this.sn)*this.fx}fromY(t,s){let n=t-this.tx,a=s-this.ty;return-n*this.sn+a*this.cs}cellX(t,s){return Math.floor(this.toX(Math.floor(t)+.5,Math.floor(s)+.5))}cellY(t,s){return Math.floor(this.toY(Math.floor(t)+.5,Math.floor(s)+.5))}put(t,s,n,a=1){if(!n||(a*=this.fade,a<1&&a<=Qe[(s&3)<<2|t&3]))return;let e=t-this.ox,i=s-this.oy;e<0||i<0||e>=this.w||i>=this.h||(this.C[i*this.w+e]=n)}add(t,s,n,a=1){if(a*=this.fade*this.lightK,a<=.004)return;let e=t-this.ox,i=s-this.oy;if(e<0||i<0||e>=this.w||i>=this.h)return;let r=i*this.w+e,f=this.L[r],l=Math.min(255,(f&255)+(n&255)*a)|0,c=Math.min(255,(f>>>8&255)+(n>>>8&255)*a)|0,p=Math.min(255,(f>>>16&255)+(n>>>16&255)*a)|0;this.L[r]=255<<24|p<<16|c<<8|l}blendPx(t,s,n,a){if(a*=this.fade,!n||a<=.004)return;let e=t-this.ox,i=s-this.oy;if(e<0||i<0||e>=this.w||i>=this.h)return;let r=i*this.w+e,f=this.C[r],l=(f>>>24)/255,c=a+l*(1-a),p=a/c,h=d=>(n>>>d&255)*p+(f>>>d&255)*(1-p)&255;this.C[r]=(c*255&255)<<24|h(16)<<16|h(8)<<8|h(0)}blend(t,s,n,a){this.blendPx(this.cellX(t,s),this.cellY(t,s),n,a)}disc(t,s,n,a,e){if(n<.5)return this.blend(t,s,Q(a,0,0),Q(e,0,0));this.each(t-n,s-n,t+n,s+n,(i,r,f,l)=>{let c=i-t,p=r-s,h=c*c+p*p;if(h>n*n)return;let d=Math.sqrt(h)/n,u=Math.atan2(p,c);this.blendPx(f,l,Q(a,d,u),Q(e,d,u))})}get(t,s){let n=this.cellX(t,s)-this.ox,a=this.cellY(t,s)-this.oy;return n<0||a<0||n>=this.w||a>=this.h?0:this.C[a*this.w+n]}px(t,s,n){this.put(this.cellX(t,s),this.cellY(t,s),n,1)}dot(t,s,n,a=1){a>0&&this.put(this.cellX(t,s),this.cellY(t,s),n,a)}light(t,s,n,a=1){this.add(this.cellX(t,s),this.cellY(t,s),n,a)}each(t,s,n,a,e){let i=1/0,r=-1/0,f=1/0,l=-1/0;for(let u=0;u<4;u++){let x=u&1?n:t,M=u&2?a:s,g=this.toX(x,M),m=this.toY(x,M);g<i&&(i=g),g>r&&(r=g),m<f&&(f=m),m>l&&(l=m)}let c=Math.max(Math.floor(i),this.ox),p=Math.min(Math.ceil(r),this.ox+this.w-1),h=Math.max(Math.floor(f),this.oy),d=Math.min(Math.ceil(l),this.oy+this.h-1);for(let u=h;u<=d;u++)for(let x=c;x<=p;x++){let M=x+.5,g=u+.5;e(this.fromX(M,g),this.fromY(M,g),x,u)}}shade(t,s,n,a,e){let i=Ze;this.each(t,s,n,a,(r,f,l,c)=>{i.c=0,i.a=1,i.l=0,i.k=0;let p=e(r,f,i)||i.c;p&&this.put(l,c,p,i.a),i.k>0&&this.add(l,c,i.l||p,i.k)})}line(t,s,n,a,e,i=1){let r=this.cellX(t,s),f=this.cellY(t,s),l=this.cellX(n,a),c=this.cellY(n,a),p=Math.abs(l-r),h=-Math.abs(c-f),d=r<l?1:-1,u=f<c?1:-1,x=Math.max(p,-h)||1,M=typeof e=="function",g=typeof i=="function",m=p+h,w=0;for(;;){let v=w++/x;if(this.put(r,f,M?e(v):e,g?i(v):i),r===l&&f===c)break;let k=2*m;k>=h&&(m+=h,r+=d),k<=p&&(m+=p,f+=u)}}polyline(t,s,n=1){for(let a=1;a<t.length;a++)this.line(t[a-1][0],t[a-1][1],t[a][0],t[a][1],s,n)}beam(t,s,n,a,e,i,r=1){let f=e/2,l=n-t,c=a-s,p=l*l+c*c||1e-9;this.shade(Math.min(t,n)-f,Math.min(s,a)-f,Math.max(t,n)+f,Math.max(s,a)+f,(h,d,u)=>{let x=H(((h-t)*l+(d-s)*c)/p),M=t+l*x-h,g=s+c*x-d,m=M*M+g*g;if(m>f*f)return;let w=Math.sqrt(m)/f;u.c=Q(i,x,w),u.a=Q(r,x,w)})}circle(t,s,n,a,e=1){if(n<.6)return this.dot(t,s,Q(a,0,0),Q(e,0,0));this.shade(t-n,s-n,t+n,s+n,(i,r,f)=>{let l=i-t,c=r-s,p=l*l+c*c;if(p>n*n)return;let h=Math.sqrt(p)/n,d=Math.atan2(c,l);f.c=Q(a,h,d),f.a=Q(e,h,d)})}ellipse(t,s,n,a,e,i=1){n<=0||a<=0||this.shade(t-n,s-a,t+n,s+a,(r,f,l)=>{let c=(r-t)/n,p=(f-s)/a,h=c*c+p*p;if(h>1)return;let d=Math.sqrt(h),u=Math.atan2(p,c);l.c=Q(e,d,u),l.a=Q(i,d,u)})}ring(t,s,n,a,e,i=1){let r=Math.max(0,n-a);this.shade(t-n,s-n,t+n,s+n,(f,l,c)=>{let p=f-t,h=l-s,d=p*p+h*h;if(d>n*n||d<r*r)return;let u=a>0?(Math.sqrt(d)-r)/(n-r||1):1,x=Math.atan2(h,p);c.c=Q(e,u,x),c.a=Q(i,u,x)})}arc(t,s,n,a,e,i,r,f=1){let l=i-e,c=typeof a=="function";this.shade(t-n,s-n,t+n,s+n,(p,h,d)=>{let u=p-t,x=h-s,M=Math.sqrt(u*u+x*x);if(M>n)return;let g=Math.atan2(x,u)-e;if(g-=Math.floor(g/(Math.PI*2))*Math.PI*2,g>l)return;let m=g/l,w=c?a(m):a;if(w<=0||M<n-w)return;let v=(M-(n-w))/w;d.c=Q(r,m,v),d.a=Q(f,m,v)})}rect(t,s,n,a,e,i=1){if(this.sn===0){let r=Math.round(t),f=Math.round(s),l=Math.round(t+n),c=Math.round(s+a);for(let p=f;p<c;p++)for(let h=r;h<l;h++)this.put(this.cellX(h,p),this.cellY(h,p),e,i);return}this.shade(t,s,t+n,s+a,(r,f,l)=>{r<t||f<s||r>=t+n||f>=s+a||(l.c=e,l.a=i)})}poly(t,s,n=1){let a=1/0,e=1/0,i=-1/0,r=-1/0;for(let[l,c]of t)l<a&&(a=l),l>i&&(i=l),c<e&&(e=c),c>r&&(r=c);let f=t.length;this.shade(a,e,i,r,(l,c,p)=>{let h=!1;for(let d=0,u=f-1;d<f;u=d++){let[x,M]=t[d],[g,m]=t[u];M>c!=m>c&&l<(g-x)*(c-M)/(m-M)+x&&(h=!h)}h&&(p.c=Q(s,l,c),p.a=Q(n,l,c))})}tri(t,s,n,a,e,i,r,f=1){this.poly([[t,s],[n,a],[e,i]],r,f)}glow(t,s,n,a,e=.5){if(n<1||e<=.004)return;let i=this.toX(t,s),r=this.toY(t,s),f=Math.floor(i-n),l=Math.ceil(i+n),c=Math.floor(r-n),p=Math.ceil(r+n);for(let h=c;h<=p;h++){let d=(h+.5-r)/n;for(let u=f;u<=l;u++){let x=(u+.5-i)/n,M=x*x+d*d;if(M>=1)continue;let g=1-Math.sqrt(M);this.add(u,h,a,g*g*e)}}}glowLine(t,s,n,a,e,i,r=.5){if(e<1||r<=.004)return;let f=this.toX(t,s),l=this.toY(t,s),c=this.toX(n,a),p=this.toY(n,a),h=c-f,d=p-l,u=h*h+d*d||1e-9,x=Math.floor(Math.min(f,c)-e),M=Math.ceil(Math.max(f,c)+e),g=Math.floor(Math.min(l,p)-e),m=Math.ceil(Math.max(l,p)+e);for(let w=g;w<=m;w++)for(let v=x;v<=M;v++){let k=v+.5,y=w+.5,b=H(((k-f)*h+(y-l)*d)/u),A=f+h*b-k,D=l+d*b-y,E=Math.sqrt(A*A+D*D)/e;if(E>=1)continue;let N=1-E;this.add(v,w,i,N*N*r)}}glowRing(t,s,n,a,e,i=.5){if(a<1||i<=.004)return;let r=this.toX(t,s),f=this.toY(t,s),l=n+a;for(let c=Math.floor(f-l);c<=Math.ceil(f+l);c++)for(let p=Math.floor(r-l);p<=Math.ceil(r+l);p++){let h=Math.abs(Math.hypot(p+.5-r,c+.5-f)-n)/a;if(h>=1)continue;let d=1-h;this.add(p,c,e,d*d*i)}}sprite(t,s,n,a,e={}){let i=Y0.get(t);i||Y0.set(t,i=t.map(p=>[...p]));let r=e.scale??1,f=e.a??1,l=i[0]?.length??0,c={};for(let p=0;p<i.length;p++)for(let h=0;h<i[p].length;h++){let d=i[p][h];if(d==="."||d===" ")continue;let u=e.tint;if(u===void 0&&(u=c[d],u===void 0&&(u=c[d]=s[d]===void 0?0:j(s[d]))),!u)continue;let x=e.flip?l-1-h:h,M=e.flipY?i.length-1-p:p;r===1?this.dot(n+x,a+M,u,f):this.rect(n+x*r,a+M*r,r,r,u,f)}}text(t,s,n,a,e={}){let i=e.font??"mini",r=e.scale??1,f=e.a??1,l=Ho(t,i)*r,c=Math.round(e.align==="center"?s-l/2:e.align==="right"?s-l:s),p=Math.round(n),h=e.outline,d=e.shadow;h!==void 0&&Ko(t,i,(u,x)=>this.rect(c+u*r-1,p+x*r-1,r+2,r+2,h,f)),d!==void 0&&Ko(t,i,(u,x)=>this.rect(c+u*r+1,p+x*r+1,r,r,d,f)),Ko(t,i,(u,x)=>this.rect(c+u*r,p+x*r,r,r,Q(a,u,x),f))}measure(t,s={}){let n=s.scale??1;return[Ho(t,s.font??"mini")*n,Fo[s.font??"mini"].h*n]}mask(t,s,n,a,e=1){for(let i=0;i<t.h;i++)for(let r=0;r<t.w;r++)t.data[i*t.w+r]&&this.dot(s+r,n+i,Q(a,r,i),Q(e,r,i))}outline(t,s,n,a,e=1){let i=(r,f)=>r>=0&&f>=0&&r<t.w&&f<t.h&&t.data[f*t.w+r];for(let r=-1;r<=t.h;r++)for(let f=-1;f<=t.w;f++)!i(f,r)&&(i(f-1,r)||i(f+1,r)||i(f,r-1)||i(f,r+1))&&this.dot(s+f,n+r,Q(a,f,r),Q(e,f,r))}};var Rn=["....kkkkk...","..kkhhhhhk..",".khhhhhhhhk.",".khhhhhhhhhk",".khhssssshhk",".khsessesshk",".khsessesshk","..ksssssssk.","...kkSSSkk..","..kttttttk..",".kttTttTttk.",".ksttTTttsk.",".kstttttttk.","..kbbbbbbk..","..kppkkppk..","..kppk.kppk.","..kppk.kppk.","..koook.kook","..kkkkk.kkkk"],J0={k:"#17121f",h:"#7a4128",s:"#f3c49d",S:"#c98b6c",e:"#17121f",t:"#5f6f94",T:"#46536f",b:"#8a5a32",p:"#38334a",o:"#6a4030",H:"#a35d34",w:"#ffffff",m:"#a3564a",g:"#e8c060",L:"#7f90b6",O:"#8f5a3f",P:"#4b4560",c:"#f53cd1",C:"#ff8fe6",D:"#a31f8a"},io={k:"#0e0c14",A:"#e4e6ec",B:"#b6b9c3",C:"#868995",D:"#5c5e6a",E:"#6e707c",F:"#4b4d58",G:"#34353f",J:"#2a2b33",m:"#f53cd1"},Do=["...........kkk..........","..........kAABk.........",".........kAAABJk........",".........kABBJJk........",".........kBBBJCDk.......",".........kBCJDDDk.......",".........kkJJJDk........",".......kkkkABBJCkk......","......kAABCJBCCCkDk.....","......kABBCJCCCmDkDk....","......kBBCDDJCDDDkDk....","......kABCDJDDDDDkk.....",".....kAABDkDDDDJkk......",".....kABCDkDDJJGkk......",".....kABCkJJJGGGkk......","....kJJCDkFFFGGGk.......","....kAJJDkJJJGGGk.......","....kJCJJkABBJGGk.......",".....kJCCkBBCDJJJk......",".....kCCCJBBCDJJDk......",".....kCCCDJCCDkJDDk.....","......kCDDJBCDkDDDk.....",".......kDJJJCDkDDDkk....",".......kJBCJCDkDDDkk....",".......kBDJBCDkCDDkk....","........kJJBCDkCDDk.....","........kBBBCDkCCDDk....","........kBBBCDkCCDDk....",".........kBBCDkJDDDk....","........kBJJJJkCJJJk....","........kBBCCDkCCDDk....","........kBBCDDkCDDk.....","........kBBCDkCCDDk.....","........kBCCDkCCDDk.....","........kBCDDkCDDDk.....",".......kJBCJkkkDJkkkk...",".......kAJJAAAAkCCCCCk..","........kkkkkkkkkkkkk..."];function z0(o,t=1){let s=o.length*t,n=o[0].length*t,a=new Uint8Array(n*s);return o.forEach((e,i)=>[...e].forEach((r,f)=>{if(r!==".")for(let l=0;l<t*t;l++)a[(i*t+(l/t|0))*n+f*t+l%t]=1})),{w:n,h:s,data:a}}var $e={1:z0(Rn,1),2:z0(Do,1)};function L0(o,t){let s=o[0].length,n=new Uint32Array(s*o.length);return o.forEach((a,e)=>[...a].forEach((i,r)=>n[e*s+r]=i==="."?0:j(t[i]))),n}var Ce={1:L0(Rn,J0),2:L0(Do,io)};function Go(o=1){o=o===2?2:1;let t=$e[o],s=-Math.floor(t.w/2),n=-t.h;return{mask:t,pixels:Ce[o],x:s,y:n,w:t.w,h:t.h,k:o,head:[0,n],chest:[0,o===2?-26:n+11],...o===2?{eyes:[[13,3],[15,3]]}:{}}}function _o(o,t,s=0,n=0){return{w:o,h:t,ox:s,oy:n,color:new Uint32Array(o*t),light:new Uint32Array(o*t)}}function Qo(o){return o.color.fill(0),o.light.fill(0),o}var X0=new WeakMap;function Eo(o){let t=X0.get(o);return t||X0.set(o,t=new Zt(o)),t.reset()}var U0=.3,W0=o=>Array.isArray(o)&&o.length>0&&o.every(t=>typeof t=="number"||/^#[0-9a-f]{3,8}$/i.test(t));function H0(o,t={}){let s={...o.options??{},...t};for(let[n,a]of Object.entries(o.options??{}))W0(a)&&W0(t[n])&&t[n].length!==a.length&&(s[n]=J(t[n],a.length).map(I0));return o.actor&&!s.actor&&(s.actor=Go(o.actor===2?2:1)),s}function Bo(o,t={}){let s=o.meta??{},n=H0(s,t),a=o.create?o.create(n):o,e=s.duration??1,i=0,r=1/0;return{meta:s,options:n,get t(){return i},update(f){if(i+=f,!a.update)return;let l=Math.max(1,Math.ceil(f*120-1e-9));for(let c=0;c<l;c++)a.update(f/l,n)},draw(f,l){let c=Eo(f);c.place(n.x??0,n.y??0,!!n.flip,n.angle??0),c.fade=r===1/0?1:H(1-(i-r)/U0),c.lightK=n.light??1;let p=s.loop?i%e:Math.min(i,e);l!=="front"&&a.drawBack&&(c.layer="back",a.drawBack(c,p,n)),l!=="back"&&(c.layer="front",a.draw(c,p,n))},stop(){r===1/0&&(r=i)},done(){return i-r>=U0||!s.loop&&i>=e}}}function Tn(o,t,s=null,n=1){let a=o.w*o.h,e=o.color,i=o.light,r=typeof s=="number";for(let f=0;f<a;f++){let l=e[f],c=i[f]&16777215,p,h,d,u,x=l>>>24;if(x===255)p=l&255,h=l>>>8&255,d=l>>>16&255,u=255;else if(s===null)p=l&255,h=l>>>8&255,d=l>>>16&255,u=x;else{let g=r?s:s[f],m=x/255;p=(l&255)*m+(g&255)*(1-m),h=(l>>>8&255)*m+(g>>>8&255)*(1-m),d=(l>>>16&255)*m+(g>>>16&255)*(1-m),u=255}if(c){let g=(c&255)*n,m=(c>>>8&255)*n,w=(c>>>16&255)*n;if(u<255){let v=u/255,k=p*v+g,y=h*v+m,b=d*v+w,A=Math.min(1,Math.max(v,Math.max(g,m,w)/255));A>0&&(p=Math.min(255,k/A),h=Math.min(255,y/A),d=Math.min(255,b/A),u=A*255)}else p=Math.min(255,p+g),h=Math.min(255,h+m),d=Math.min(255,d+w)}let M=f*4;t[M]=p,t[M+1]=h,t[M+2]=d,t[M+3]=u}return t}var bi=j("#15131d"),ki=j("#0d0b14"),Ai=j("#221d33"),vi=j("#4a4263"),Fi=j("#2b2639"),Di=j("#211d2d"),Ei=j("#1a1724");var xt=Object.fromEntries(Object.entries(io).map(([o,t])=>[o,j(t)>>>0])),Oi=xt.k,Ni=xt.J,Ri=xt.m,Ti=[xt.A,xt.B,xt.C,xt.D],ji=[xt.E,xt.F,xt.G,xt.G],wt=Math.PI/180;var ht=(o,t)=>[o[0]+t[0],o[1]+t[1],o[2]+t[2]],vt=(o,t)=>[o[0]-t[0],o[1]-t[1],o[2]-t[2]],bt=(o,t)=>[o[0]*t,o[1]*t,o[2]*t],$o=(o,t)=>o[0]*t[0]+o[1]*t[1]+o[2]*t[2],No=(o,t)=>[o[1]*t[2]-o[2]*t[1],o[2]*t[0]-o[0]*t[2],o[0]*t[1]-o[1]*t[0]],lo=o=>Math.hypot(o[0],o[1],o[2]),lt=o=>bt(o,1/(lo(o)||1e-6)),ro=o=>{let t=Math.cos(o),s=Math.sin(o);return[t,0,s,0,1,0,-s,0,t]},co=o=>{let t=Math.cos(o),s=Math.sin(o);return[t,-s,0,s,t,0,0,0,1]},fo=(o,t)=>{let s=new Array(9);for(let n=0;n<3;n++)for(let a=0;a<3;a++)s[n*3+a]=o[n*3]*t[a]+o[n*3+1]*t[3+a]+o[n*3+2]*t[6+a];return s},Io=(o,t)=>[o[0]*t[0]+o[1]*t[1]+o[2]*t[2],o[3]*t[0]+o[4]*t[1]+o[5]*t[2],o[6]*t[0]+o[7]*t[1]+o[8]*t[2]];var Ve=o=>Math.max(0,Math.min(1,o)),G={pelvis:19.7,spine1:2.8,spine2:4.6,shoulderUp:2.5,shoulderOut:5.9,neckUp:4,headUp:3.1,hipDown:1.1,hipOut:2.8,thigh:8.6,shin:8.3,upper:7.6,fore:7.4,turn:36*wt},Oo={lean:0,crouch:0,yaw:0,fx:-3,fy:-15,bx:5,by:-15,ffx:-2,ffy:-4,fbx:3,fby:-4};function Po(o,t,s,n,a){let e=vt(t,o),i=lo(e),r=s+n-.02;i>r&&(e=bt(e,r/i),i=r);let f=lt(e),l=(s*s-n*n+i*i)/(2*i),c=Math.sqrt(Math.max(0,s*s-l*l)),p=vt(a,bt(f,$o(a,f)));return p=lo(p)<1e-4?lt(No(f,[0,0,1])):lt(p),{joint:ht(o,ht(bt(f,l),bt(p,c))),end:ht(o,e),u:f,v:p}}function jt(o,t){return{t:o,R:t}}function Tt(o,t,s){let n=lt(vt(t,o)),a=vt(s,bt(n,$o(s,n)));a=lo(a)<1e-4?lt(No(n,[0,0,1])):lt(a);let e=No(n,a);return jt(o,[n[0],a[0],e[0],n[1],a[1],e[1],n[2],a[2],e[2]])}var K0=o=>ls[o];function qe(o){let t={...Oo,...o},s=t.lean,n=t.weapon&&K0(t.weapon),a=t.offWeapon&&K0(t.offWeapon),e=t.sa??0,i=t.wl??1,r=Math.sqrt(Math.max(0,1-i*i))*(t.wz??1),f=[Math.cos(e)*i,-Math.sin(e)*i,r],l=[-Math.sin(e),-Math.cos(e),0],c=!!(t.two&&n),p=t.fz??(c?3:4.5),h=(t.fx-Oo.fx)/24,d=c?0:(t.bx-Oo.bx)/22,u=G.turn+(h>=0?-44*wt*Math.min(1,h):28*wt*Math.min(1,-h*1.8));u+=(d>0?34*wt*Math.min(1,d):0)+(t.twist??0)*4*wt,t.turn!==void 0&&(u=t.turn);let x=G.turn+(u-G.turn)*.45,M=Math.atan2(s,13),g=fo(co(-M*.25),ro(-x)),m=fo(co(-M),ro(-u)),w=[t.ffx,-t.ffy-1.8,t.fzz??2.4],v=[t.fbx,-t.fby-1.8,t.bzz??-2.4],k=[s*.2,G.pelvis-t.crouch,0],y=pt=>ht(k,Io(g,[0,-G.hipDown,pt*G.hipOut])),b=(G.thigh+G.shin)*.995;for(let[pt,ft]of[[1,w],[-1,v]]){let dt=y(pt),Nt=dt[0]-ft[0],Rt=dt[2]-ft[2],so=Nt*Nt+Rt*Rt;if(so<b*b){let yo=ft[1]+Math.sqrt(b*b-so);dt[1]>yo&&(k=[k[0],k[1]-(dt[1]-yo),k[2]])}}let A=ht(k,[Math.sin(M*.45)*G.spine1,Math.cos(M*.45)*G.spine1,0]),D=ht(A,[Math.sin(M)*G.spine2,Math.cos(M)*G.spine2,0]),E=ht(D,Io(m,[0,G.neckUp,0])),N=G.turn*.9+(u-G.turn)*.35,R=M*.35+(t.hy??0)*7*wt,B=(t.hx??0)*7*wt,L=fo(co(-R-B),ro(-N)),S=ht(E,Io(L,[.15,G.headUp,0])),Y=(pt,ft)=>{let dt=ht(D,Io(m,[0,G.shoulderUp,pt*G.shoulderOut])),Nt=vt(ft,dt),Rt=lo(Nt);return ht(dt,bt(lt(Nt),Math.min(1.8,Math.max(0,Rt-11)*.35)))},z=[t.fx,-t.fy,p],W=c?[t.fx+f[0]*n.two,-t.fy+f[1]*n.two,p+f[2]*n.two]:[t.bx,-t.by,t.bz??(t.armsFront?5.5:-4.5)],tt=Y(1,z),oo=Y(-1,W),b0=(pt,ft,dt,Nt)=>{let Rt=Ve((ft[1]-dt[1]+2)/10),so=[-.55+Rt*1.1,-1+Rt*.9,pt*(.45+Rt*.5)];if(!Nt)return so;let yo=lt(vt(ft,dt)),A0=so,v0=1/0;for(let Dn=0;Dn<16;Dn++){let F0=Dn/16*Math.PI*2,D0=lt(No(yo,[.3,1,.2])),Le=No(yo,D0),En=ht(bt(D0,Math.cos(F0)),bt(Le,Math.sin(F0))),E0=Po(dt,ft,G.upper,G.fore,En),Je=lt(vt(E0.end,E0.joint)),B0=Math.abs($o(Je,Nt))*.7+(1-$o(lt(so),En))*.55;B0<v0&&(v0=B0,A0=En)}return A0},Ye=n?n.across?l:f:null,ze=c?n.across?l:f:a?[Math.cos(t.sb??Math.PI),-Math.sin(t.sb??Math.PI),0]:null,no=Po(tt,z,G.upper,G.fore,b0(1,z,tt,Ye)),eo=Po(oo,W,G.upper,G.fore,b0(-1,W,oo,ze)),k0=pt=>Io(g,[1,0,pt*.35]),An=y(1),vn=y(-1),Ht=Po(An,w,G.thigh,G.shin,k0(1)),Kt=Po(vn,v,G.thigh,G.shin,k0(-1)),Wo=pt=>{let ft=x*.6+pt*8*wt;return[Math.cos(ft),0,Math.sin(ft)]},Fn={pelvis:jt(k,g),waist:jt(A,fo(co(-M*.6),ro(-(u+x)/2))),chest:jt(D,m),head:jt(S,L),neck:jt(E,L),upperN:Tt(tt,no.joint,no.v),foreN:Tt(no.joint,no.end,no.v),upperF:Tt(oo,eo.joint,eo.v),foreF:Tt(eo.joint,eo.end,eo.v),thighN:Tt(An,Ht.joint,Ht.v),shinN:Tt(Ht.joint,Ht.end,Ht.v),thighF:Tt(vn,Kt.joint,Kt.v),shinF:Tt(Kt.joint,Kt.end,Kt.v)};return Fn.footN=jt(Ht.end,fo(ro(-Math.atan2(Wo(1)[2],Wo(1)[0])),co(t.toeF?-55*wt:0))),Fn.footF=jt(Kt.end,fo(ro(-Math.atan2(Wo(-1)[2],Wo(-1)[0])),co(t.toeB?-55*wt:0))),{B:Fn,W:n,OW:a,q:t,axis:f,side:l,armN:no,armF:eo,legN:Ht,legF:Kt,sN:tt,sF:oo,hipN:An,hipF:vn,turn:u}}var Ft=300,St=240,ts=150,os=180,G0=new Float32Array(Ft*St),ns=new Float32Array(Ft*St),_0=new Int8Array(Ft*St),es=new Int8Array(Ft*St),ss=new Int8Array(Ft*St),as=new Float32Array(Ft*St),is=new Float32Array(Ft*St),rs=new Uint32Array(Ft*St),cs=[],Si=lt([-.55,.72,.5]);var Z0=0;var Q0=0;function fs(o,t,s,n,a,e,i,r){if(!(Q0&&n!==Q0)){if(_0[o]===0)cs.push(o);else if(t<=G0[o])return;G0[o]=t,ns[o]=s,_0[o]=n,es[o]=a,ss[o]=Z0,as[o]=e,is[o]=i,rs[o]=r}}var hs={pelvis:1,waist:2,chest:3,neck:4,head:5,face:6,upperN:7,elbowN:8,foreN:9,handN:10,upperF:11,elbowF:12,foreF:13,handF:14,thighN:15,kneeN:16,shinN:17,footN:18,thighF:19,kneeF:20,shinF:21,footF:22,weapon:23,offWeapon:24};var T=Object.fromEntries(Object.entries({hi:"#ffffff",a:"#e8edf6",b:"#a4afc6",d:"#68748f",gold:"#ffd84a",goldD:"#b8862a",grip:"#7a3a2a",gripD:"#4a2018",wood:"#8a5a32",woodD:"#5a3820",dark:"#3a3448",darkD:"#262033",olive:"#58663f",oliveA:"#7d8c58",oliveD:"#3a4529"}).map(([o,t])=>[o,j(t)>>>0]));function Zo(o,t,s,n){for(let a=t;a<=t+s+.01;a+=.4){let e=a-t,i=e>s-5?Math.max(0,(s-e)/5*n):n;for(let r=-i;r<=i+.01;r+=.4)o(a,r,r<-n*.4?T.hi:r>n*.4?T.d:T.a)}}var ho=(o,t,s,n,a,e=.8)=>{for(let i=t;i<=s;i+=.4)for(let r=-e;r<=e+.01;r+=.4)o(i,r,r>.1?a:n)},ls={sword:{two:-4.4,draw(o,t){let s=t.two?-6.5:-2.6;ho(o,s,2.2,T.grip,T.gripD);for(let n=-1.4;n<=1.4;n+=.4)o(s-.4,n,T.gold);for(let n=-4.6;n<=4.6;n+=.4)o(2.6,n,Math.abs(n)>3.8?T.goldD:T.gold),o(3,n,T.goldD);Zo(o,3.2,25,2.2)}},greatsword:{two:-4.8,draw(o){ho(o,-7.2,2.2,T.grip,T.gripD);for(let t=-1.8;t<=1.8;t+=.4)o(-7.6,t,T.gold);for(let t=-6.6;t<=6.6;t+=.4)o(2.6,t,Math.abs(t)>5.6?T.goldD:T.gold),o(3,t,T.goldD);Zo(o,3.2,31,3);for(let t=4;t<=28;t+=.4)o(t,0,T.b)}},dagger:{draw(o){ho(o,-2.4,1.8,T.grip,T.gripD);for(let t=-2.6;t<=2.6;t+=.4)o(2.2,t,T.goldD);Zo(o,2.6,10,1.3)}},spear:{two:-12,draw(o){ho(o,-18,36,T.wood,T.woodD,.5),Zo(o,36,11,2);for(let t=-2.4;t<=2.4;t+=.4)o(36,t,T.goldD)}},hammer:{two:-7,draw(o){for(let t of[-.8,0,.8])for(let s=-10;s<=18;s+=.4)for(let n=-.8;n<=.81;n+=.4)o(s,n,n>.1?T.woodD:T.wood,t);for(let t=18;t<=28;t+=.4)for(let s=-9;s<=9;s+=.4){let n=Math.abs(s)>7.4?s<0?T.a:T.d:t<20?T.hi:t>26.4?T.d:Math.abs(s)<2?T.gold:T.b;if(o(t,s,n,4.5),o(t,s,n,-4.5),t<18.4||t>27.6||Math.abs(s)>8.6)for(let a=-4;a<=4;a+=.4)o(t,s,s<0?T.a:t>27.6?T.d:T.b,a)}}},scythe:{two:-11,draw(o){ho(o,-16,31,T.dark,T.darkD,.5);for(let t=0;t<=28;t+=.4){let s=t/28,n=3.2*(1-s)+.3,a=31.5-s*s*12;for(let e=-n;e<=n;e+=.4)o(a+e,t+.8,e>n*.3?T.hi:e<-n*.4?T.d:T.b)}}},claw:{draw(o){for(let t of[-2.4,0,2.4])for(let s=2;s<=9.5;s+=.4){let n=(s-2)/7.5,a=t+n*n*1.8;o(s,a,n>.55?T.hi:T.a),n<.6&&o(s,a+.8,T.d)}}},bow:{across:!0,draw(o,t,s){for(let r=-1;r<=1.001;r+=.025){let f=r*17,l=6*(1-r*r)-1;o(l,f,Math.abs(r)>.85?T.goldD:T.wood),o(l+.8,f,T.woodD)}let n=o.at(-1,-17),a=o.at(-1,17),e=t.pull?s:o.at(-1,0),i=(r,f,l)=>{let c=Math.max(2,Math.ceil(lo(vt(f,r))/.4)),p=T.a;for(let h=0;h<=c;h++){let d=ht(r,bt(vt(f,r),h/c)),u=Math.round(d[0]),x=Math.round(d[1]),M=(os-x)*Ft+(ts+u);Z0=-1,fs(M,d[2]+.05,2,hs.weapon,2,u,x,l??p)}};if(i(n,e),i(a,e),t.nocked){let r=e,f=o.at(13,0);i(r,f,T.wood);for(let l=9;l<=13;l+=.4)for(let c=-(13-l)*.45;c<=(13-l)*.45;c+=.4)o(l,c,T.hi)}}},pistol:{across:!0,draw(o){for(let t=-1;t<=9.5;t+=.4)for(let s=-4.2;s<=-2.4;s+=.4)o(t,s,s<-3.6?T.a:s>-2.9?T.d:T.b);for(let t=-1.2;t<=1.2;t+=.4)for(let s=-2.4;s<=2.4;s+=.4)o(t,s,T.gripD);o(9,-4.6,T.hi)}},launcher:{two:-9,draw(o){for(let t=-14;t<=22;t+=.4)for(let s=-6;s<=-1;s+=.4)o(t,s,s<-4.8?T.oliveA:s>-2.2?T.oliveD:Math.abs(t-3)<1.4?T.gold:T.olive);for(let t=-6.8;t<=-.2;t+=.4)o(22.4,t,T.b),o(-14.4,t,T.d)}},handle:{draw(o){ho(o,-2.6,6,T.grip,T.gripD);for(let t=-1.6;t<=1.6;t+=.4)o(-3,t,T.gold),o(6.4,t,T.gold)}}};var ps=null;ps=qe({}).B;var jn=38,$0=52,O=Object.fromEntries(Object.entries({ink:"#0b0a1a",wood:"#724c2e",woodL:"#a0703a",woodD:"#4e331f",straw:"#d2aa55",strawL:"#f0d98a",burlapD:"#86643a",burlap:"#b38b57",burlapL:"#c9a26c",red:"#9a2f3c",redL:"#c4434f",white:"#ffffff"}).map(([o,t])=>[o,j(t)])),Wi=["#efe7dc","#c9bfb8","#8f8693","#5a5468"].map(j),Ms=new Uint32Array(jn*$0);(function(){let t=(a,e,i)=>{a>=0&&e>=0&&a<jn&&e<$0&&(Ms[e*jn+a]=i)},s=(a,e,i,r,f)=>{for(let l=0;l<r;l++)for(let c=0;c<i;c++)t(a+c,e+l,f)};s(15,38,8,14,O.ink),s(16,34,6,18,O.wood),s(16,34,2,18,O.woodL),s(20,34,2,18,O.woodD),s(1,18,36,1,O.ink),s(1,23,36,1,O.ink),s(1,19,36,4,O.wood),s(1,19,36,1,O.woodL),s(1,22,36,1,O.woodD);for(let[a,e]of[[0,-1],[33,1]]){s(a,17,5,8,O.straw);for(let[i,r,f]of[[2,16,O.straw],[3,15,O.strawL],[1,17,O.strawL],[2,25,O.straw],[1,26,O.strawL],[3,25,O.burlapD],[2,19,O.strawL],[3,21,O.strawL],[1,22,O.burlapD],[2,23,O.strawL]])t(a+i,r,f);t(e<0?a-1:a+5,19,O.straw),t(e<0?a-1:a+5,22,O.strawL)}let n=(a,e,i,r)=>{s(a+1,e,i-2,1,O.ink),s(a+1,e+r-1,i-2,1,O.ink),s(a,e+1,1,r-2,O.ink),s(a+i-1,e+1,1,r-2,O.ink),s(a+1,e+1,i-2,r-2,O.burlap),s(a+i-4,e+1,3,r-2,O.burlapD),s(a+1,e+r-3,i-2,2,O.burlapD),s(a+1,e+1,1,r-4,O.burlapL),s(a+1,e+1,i-6,1,O.burlapL);for(let f=e+2;f<e+r-2;f+=3)for(let l=a+3+f%2;l<a+i-4;l+=4)t(l,f,O.burlapD)};n(9,17,20,24);for(let a=19;a<36;a++)for(let e=11;e<27;e++){let i=Math.hypot(e-18.5,a-27);(i>4&&i<5.4||i<1.9)&&t(e,a,e+a<45?O.redL:O.red)}for(let a=10;a<28;a++)t(a,36,a&1?O.woodL:O.straw),t(a,37,a&1?O.woodD:O.wood);for(let[a,e,i]of[[11,41,O.straw],[12,42,O.strawL],[14,41,O.strawL],[15,42,O.straw],[23,41,O.straw],[24,42,O.strawL],[26,41,O.straw],[13,43,O.straw],[25,43,O.straw]])t(a,e,i);n(10,1,18,16);for(let a of[14,23])for(let e=-2;e<=2;e++)t(a+e,7+e,O.ink),t(a-e,7+e,O.ink);for(let a=14;a<24;a++)t(a,12,a&1?O.ink:O.burlapD);for(let a of[15,18,21])t(a,11,O.ink),t(a,13,O.ink);for(let a=12;a<26;a++)t(a,16,a&1?O.woodL:O.straw),t(a,17,a&1?O.wood:O.woodD);for(let[a,e,i]of[[13,0,O.straw],[15,0,O.strawL],[18,0,O.straw],[21,0,O.strawL],[24,0,O.straw],[9,4,O.straw],[28,6,O.straw],[8,7,O.strawL],[29,3,O.strawL]])t(a,e,i)})();var gs={flash:[O.white,1],char:[j("#1a0c0e"),.72],ice:[j("#a8e8ff"),.72],shadow:[j("#3a1a70"),.5],holy:[j("#fff4c0"),.5],red:[j("#ff2040"),.45],shock:[j("#8fd6ff"),.6],poison:[j("#58c43a"),.5]},Hi=[O.strawL,O.straw,O.straw,O.burlapD,O.burlapD];var C0=new Uint8Array(24*38),ms=new Uint32Array(24*38);Do.forEach((o,t)=>[...o].forEach((s,n)=>{s!=="."&&(C0[t*24+n]=1,ms[t*24+n]=j(io[s]))}));var ys=new Int16Array(24*38).fill(-1);for(let o=0;o<38;o++)for(let t=0;t<24;t++){let s=-1,n=1e9;for(let a=Math.max(0,o-7);a<Math.min(38,o+8);a++)for(let e=Math.max(0,t-7);e<Math.min(24,t+8);e++){let i=(e-t)*(e-t)+(a-o)*(a-o);C0[a*24+e]&&i<n&&(n=i,s=a*24+e)}ys[o*24+t]=s}var Xn={};it(Xn,{draw:()=>Es,drawBack:()=>Ds,meta:()=>Co});var Sn=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(o=>(o+.5)/16);function Mt(o){let[t,s]=o.size,[n,a]=o.origin;return{x0:-n,y0:-a,x1:t-n,y1:s-a,w:t,h:s}}function K(o,t){let s=Mt(t),n=Object.create(o),a;if(o.sn===0){let e=o.toX(s.x0,0),i=o.toX(s.x1,0),r=Math.round(Math.min(e,i)),f=Math.round(Math.max(e,i)),l=Math.round(o.toY(0,s.y0)),c=Math.round(o.toY(0,s.y1));a=(p,h)=>p>=r&&p<f&&h>=l&&h<c}else a=(e,i)=>{let r=o.fromX(e+.5,i+.5),f=o.fromY(e+.5,i+.5);return r>=s.x0&&r<s.x1&&f>=s.y0&&f<s.y1};return n.put=(e,i,r,f)=>a(e,i)&&o.put(e,i,r,f),n.add=(e,i,r,f)=>a(e,i)&&o.add(e,i,r,f),n.blendPx=(e,i,r,f)=>a(e,i)&&o.blendPx(e,i,r,f),n.glow=(e,i,r,f,l)=>ws(n,s,e,i,r,f,l),n}function ws(o,t,s,n,a,e,i){if(a<1||i<=.004)return;let r=Math.max(t.x0,Math.floor(s-a)),f=Math.min(t.x1-1,Math.ceil(s+a)),l=Math.max(t.y0,Math.floor(n-a)),c=Math.min(t.y1-1,Math.ceil(n+a));for(let p=l;p<=c;p++){let h=(p+.5-n)/a;for(let d=r;d<=f;d++){let u=(d+.5-s)/a,x=u*u+h*h;if(x>=1)continue;let M=1-Math.sqrt(x);o.light(d,p,e,M*M*i)}}}var bs={c:0,a:1,b:0,l:0,k:0};function rt(o,t,s,n,a){let e=Mt(t),i=bs;if(s=Math.max(e.y0,Math.floor(s)),n=Math.min(e.y1-1,Math.ceil(n)),s>n)return;if(o.sn!==0){let u=K(o,t);for(let x=s;x<=n;x++)for(let M=e.x0;M<e.x1;M++)i.c=0,i.a=1,i.b=0,i.l=0,i.k=0,a(M+.5,x+.5,i),i.c&&(i.b?u.blend(M,x,i.c,i.a):u.dot(M,x,i.c,i.a)),i.k>0&&u.light(M,x,i.l||i.c,i.k);return}let r=o.C,f=o.L,l=o.w,c=o.fade,p=o.lightK*c,h=o.fx,d=o.tx;for(let u=s;u<=n;u++){let x=Math.floor(o.ty+u+.5),M=x-o.oy;if(M<0||M>=o.h)continue;let g=M*l,m=(x&3)<<2,w=d+(e.x0+.5)*h;for(let v=e.x0;v<e.x1;v++,w+=h){let k=Math.floor(w),y=k-o.ox;if(y<0||y>=l)continue;i.c=0,i.a=1,i.b=0,i.l=0,i.k=0,a(v+.5,u+.5,i);let b=g+y;if(i.c){let A=i.a*c;if(i.b){if(A>.004){let D=r[b],E=(D>>>24)/255,N=A+E*(1-A),R=A/N,B=1-R,L=i.c,S=(L&255)*R+(D&255)*B&255,Y=(L>>>8&255)*R+(D>>>8&255)*B&255,z=(L>>>16&255)*R+(D>>>16&255)*B&255;r[b]=(N*255&255)<<24|z<<16|Y<<8|S}}else(A>=1||A>Sn[m|k&3])&&(r[b]=i.c)}if(i.k>0){let A=i.k*p;if(A>.004){let D=i.l||i.c,E=f[b],N=Math.min(255,(E&255)+(D&255)*A)|0,R=Math.min(255,(E>>>8&255)+(D>>>8&255)*A)|0,B=Math.min(255,(E>>>16&255)+(D>>>16&255)*A)|0;f[b]=255<<24|B<<16|R<<8|N}}}}}var ks={w:0,c:null,a:null,b:null,l:null,k:null};function q(o,t,s,n,a){let e=Mt(t),i=e.w,r=ks;r.w!==i&&Object.assign(r,{w:i,c:new Uint32Array(i),a:new Float32Array(i),b:new Uint8Array(i),l:new Uint32Array(i),k:new Float32Array(i)}),s=Math.max(e.y0,Math.floor(s)),n=Math.min(e.y1-1,Math.ceil(n));let f=o.sn!==0,l=f?K(o,t):null,c=o.C,p=o.L,h=o.w,d=o.fade,u=o.lightK*d,x=o.fx;for(let M=s;M<=n;M++){if(r.c.fill(0),r.k.fill(0),r.a.fill(1),r.b.fill(0),a(M+.5,r),f){for(let y=0;y<i;y++)r.c[y]&&(r.b[y]?l.blend(e.x0+y,M,r.c[y],r.a[y]):l.dot(e.x0+y,M,r.c[y],r.a[y])),r.k[y]>0&&l.light(e.x0+y,M,r.l[y]||r.c[y],r.k[y]);continue}let g=Math.floor(o.ty+M+.5),m=g-o.oy;if(m<0||m>=o.h)continue;let w=m*h,v=(g&3)<<2,k=o.tx+(e.x0+.5)*x;for(let y=0;y<i;y++,k+=x){let b=r.c[y],A=r.k[y];if(!b&&!(A>0))continue;let D=Math.floor(k),E=D-o.ox;if(E<0||E>=h)continue;let N=w+E;if(b){let R=r.a[y]*d;if(r.b[y]){if(R>.004){let B=c[N],L=(B>>>24)/255,S=R+L*(1-R),Y=R/S,z=1-Y,W=(b&255)*Y+(B&255)*z&255,tt=(b>>>8&255)*Y+(B>>>8&255)*z&255,oo=(b>>>16&255)*Y+(B>>>16&255)*z&255;c[N]=(S*255&255)<<24|oo<<16|tt<<8|W}}else(R>=1||R>Sn[v|D&3])&&(c[N]=b)}if(A>0){let R=A*u;if(R>.004){let B=r.l[y]||b,L=p[N],S=Math.min(255,(L&255)+(B&255)*R)|0,Y=Math.min(255,(L>>>8&255)+(B>>>8&255)*R)|0,z=Math.min(255,(L>>>16&255)+(B>>>16&255)*R)|0;p[N]=255<<24|z<<16|Y<<8|S}}}}}var Yt=(o,t)=>Sn[(Math.floor(t)&3)<<2|Math.floor(o)&3],V0=new Map;function nt(o,t=256,s=128,n=[4,8,16,32]){let a=`${o}|${t}|${s}|${n}`,e=V0.get(a);if(e)return e;let i=new Float32Array(t*s),r=.5,f=0;for(let l of n){let c=t/l,p=Math.max(1,Math.round(s/c)),h=(d,u)=>F(_(d,l),_(u,p),o,l);for(let d=0;d<s;d++)for(let u=0;u<t;u++){let x=u/c,M=d/s*p,g=Math.floor(x),m=Math.floor(M),w=x-g,v=M-m,k=w*w*(3-2*w),y=v*v*(3-2*v),b=h(g,m)+(h(g+1,m)-h(g,m))*k,A=h(g,m+1)+(h(g+1,m+1)-h(g,m+1))*k;i[d*t+u]+=(b+(A-b)*y)*r}f+=r,r*=.5}for(let l=0;l<i.length;l++)i[l]/=f;return V0.set(a,e={w:t,h:s,d:i}),e}function Z(o,t,s){let n=Math.floor(t),a=Math.floor(s),e=t-n,i=s-a,r=o.w-1,f=o.h-1,l=o.d,c=n&r,p=n+1&r,h=(a&f)*o.w,d=(a+1&f)*o.w,u=l[h+c],x=l[h+p],M=l[d+c],g=l[d+p];return u+(x-u)*e+(M-u+(u-x-M+g)*e)*i}function st(o,t,s,n,a,e,i){for(let r=0;r<s;r++){let f=a+Math.floor(F(n,r,72)*(e-a+1)),l=o/t*f+F(n,r,71),c=Math.floor(l);i(l-c,c,f,r)}}function $t(o,t,s,n,a,e=.3,i=.4,r=1,f=0){let l=[],c=Math.hypot(n-t,a-s),p=[[t,s],[n,a]],h=c*e;for(;p.length<2+c/3;){let d=[p[0]];for(let u=0;u<p.length-1;u++){let[x,M]=p[u],[g,m]=p[u+1],w=Math.hypot(g-x,m-M)||1,v=o.range(-h,h);d.push([(x+g)/2+-(m-M)/w*v,(M+m)/2+(g-x)/w*v],[g,m])}p=d,h*=.52}if(l.push({pts:p,w:r,depth:f}),f<2){for(let d=2;d<p.length-3;d++)if(o.chance(i/(1+f)/Math.max(4,p.length/6))){let[u,x]=p[d],[M,g]=p[Math.min(p.length-1,d+3)],m=Math.atan2(g-x,M-u)+o.sign()*o.range(.35,.95),w=(c-d/p.length*c)*o.range(.25,.55);l.push(...$t(o,u,x,u+Math.cos(m)*w,x+Math.sin(m)*w,e*1.1,i,r*.55,f+1))}}return l}function q0(o,t,s,n,a,e,i){let r=.3+.12*a,f=n/r;if(f>=1)return;n<.07&&(o.px(t,s-1,e.hot),a>.3&&(o.px(t-1,s-1-(n>.035?1:0),e.hot),o.px(t+1,s-1-(n>.035?1:0),e.hot)),a>.65&&n>.03&&(o.px(t-2,s-2,e.cool),o.px(t+2,s-2,e.cool)));let l=1+(1.2+3.6*a)*Math.sqrt(f),c=Math.max(.5,l*.26),p=Math.ceil(l*6.5);for(let u=0;u<p;u++){let x=u/p*I,M=Math.sin(x);M<-.25||o.dot(t+Math.cos(x)*l,s+M*c,f<.3&&M>0?e.hot:e.cool,f<.45?M>.2?1:.7:(1-f)*1.6*(M>.2?1:.6))}let h=a>.55?3:2,d=Math.floor(i*1e6);for(let u=0;u<h;u++){let x=(F(d,u,1)-.5)*2*(25+35*a),M=-(55+F(d,u,2)*70*(.5+a)),g=s-1+M*n+475*n*n;if(g>s-.5||n>.34)continue;let m=t+x*n;o.px(m,g,n<.12?e.hot:e.cool),M+950*n<-40&&o.dot(m-x*.012,g+1,e.cool,.7)}}function te(o,t,s,n,a,e,i){let r=.22+.14*a,f=n/r,l=Math.round(t),c=Math.round(s);if(f>=1)return!1;if(n<.1){let d=n<.033?1:n<.067?2:2+(a>.5?1:0);o.px(l,c-1,n<.05?e.white:e.hot);for(let u=1;u<=Math.min(d,a>.5?3:1);u++)o.px(l-u,c-1-(u>1?u-1:0),u===1?e.hot:e.cool),o.px(l+u,c-1-(u>1?u-1:0),u===1?e.hot:e.cool)}if(f>.15){let d=Math.round(1+(1.5+3.5*a)*Math.sqrt(f)),u=f>.55?Math.max(0,d-2):-1;for(let x=-d;x<=d;x++)Math.abs(x)>u&&o.px(l+x,c,Math.abs(x)>=d-1&&f<.6?e.hot:e.cool)}let p=a>.5?2:1,h=Math.floor(i*1e6);for(let d=0;d<p;d++){let u=(F(h,d,1)-.5)*2*(20+30*a),x=-(50+F(h,d,2)*60*(.4+a)),M=c-1+x*n+475*n*n;M<c-.5&&n<.3&&o.px(t+u*n,M,n<.1?e.white:e.hot)}return!0}var Co={name:"God rays",desc:"Shafts of light slant down from high on the left, breathing and swaying, pooling on the floor, as drifting dust motes light up whenever they cross a beam.",tags:["weather","god rays","light","sunbeam","dust","ambient","loop"],size:[320,180],origin:[160,170],duration:10,loop:!0,fps:30,bg:"sky",options:{palette:["#1a1208","#3a2810","#7a5a24","#c89a44","#f2d27a","#fff2c4","#ffffff"],seed:3}},zt=10,As=320,Yn=-230,oe=-300,Vo=Math.cos(.94),Ln=Math.sin(.94),zn=-Ln,ne=Vo,vs=[{c:-.27,h:.03,k:.65,b:1,sw:.006},{c:-.17,h:.022,k:.55,b:2,sw:.005},{c:-.07,h:.05,k:1,b:1,sw:.008},{c:.03,h:.018,k:.6,b:3,sw:.004},{c:.12,h:.042,k:.85,b:2,sw:.007},{c:.23,h:.026,k:.6,b:1,sw:.005}],Jn=new Float32Array(512);function Fs(o,t,s){let n=o-Yn,a=t-oe,e=n*Vo+a*Ln,i=(n*zn+a*ne)/e,r=0;for(let c of s){let p=Math.abs(i-c.c)/c.h;p<1&&(r+=c.k*(1-p*p)**1.5)}if(r<=0)return 0;let f=Jn[H(Math.floor((i+.36)*700),0,511)],l=H(1.25-(e-230)/420);return r*l*(.7+.45*f)}function Ds(o,t,s){let n=K(o,Co),a=s.seed,e=J(s.palette,7),i=ee(t,a),r=e.map(h=>X(e[0],h,.75)),f=i.length,l=new Float32Array(f),c=new Float32Array(f),p=new Float32Array(f);i.forEach((h,d)=>(l[d]=h.c,c[d]=1/h.h,p[d]=h.k)),q(o,Co,-170,9,(h,d)=>{let u=h>0,x=h-oe,M=u?.8:.66,g=u?1.6:1,m=(-160+.5-Yn)*Vo+x*Ln,w=(-160+.5-Yn)*zn+x*ne;d.a.fill(M),d.b.fill(1),d.c.fill(e[0]);for(let v=0;v<As;v++,m+=Vo,w+=zn){let k=w/m,y=0;for(let E=0;E<f;E++){let N=(k-l[E])*c[E];if(N>-1&&N<1){let R=1-N*N;y+=p[E]*R*Math.sqrt(R)}}if(y<=0)continue;let b=1.35-(m-200)/330,A=(k+.36)*700|0;if(y*=(b>1?1:b<0?0:b)*(.7+.45*Jn[A<0?0:A>511?511:A])*g,y<.06)continue;let D=y>1.05?6:y>.78?5:y>.52?4:y>.3?3:2;d.c[v]=u?e[D]:r[D],d.a[v]=u?.85:Math.min(.78,.12+y*.5),d.l[v]=e[4],d.k[v]=y*(u?.32:.26)}}),n.glow(-168,-178,130,e[3],.3),n.glow(-168,-178,50,e[5],.35),se(n,t,a,e,i,!1)}function Es(o,t,s){let n=K(o,Co),a=s.seed,e=J(s.palette,7);se(n,t,a,e,ee(t,a),!0)}function ee(o,t){for(let s=0;s<512;s++){let n=s/512;Jn[s]=.5+.5*Math.sin(n*190+Math.sin(I*o/zt)*2+t)*Math.sin(n*77-I*o/zt+t*2)}return vs.map((s,n)=>({c:s.c+s.sw*Math.sin(I*o/zt+n*1.3),h:s.h*(1+.15*Math.sin(I*s.b*o/zt+n)),k:s.k*(.72+.28*Math.sin(I*s.b*o/zt+n*2.1))}))}function se(o,t,s,n,a,e){for(let i=e?0:50;i<(e?50:160);i++){let r=x=>F(s,i,x),f=1+Math.floor(r(1)*2),l=1+Math.floor(r(2)*2),c=-170+r(3)*340+(8+r(4)*14)*Math.sin(I*f*t/zt+r(5)*I),p=-170+r(6)*172+(6+r(7)*10)*Math.sin(I*l*t/zt+r(8)*I)+4*Math.sin(I*3*t/zt+i),h=Fs(c,p,a);if(h<.12)continue;let d=e&&r(9)<.5,u=Math.min(1,h);o.px(c,p,u>.6?P:u>.3?n[5]:n[4]),d&&u>.5&&(o.px(c+1,p,n[4]),o.px(c,p+1,n[4])),o.glow(c,p,d?6:4,n[4],.4*u)}}var Wn={};it(Wn,{draw:()=>Is,drawBack:()=>Bs,meta:()=>qo});var qo={name:"Cherry blossoms",desc:"Pink petals flutter down on a spring breeze, tumbling in little spirals and flashing as they catch the light, with a few whole blossoms spinning among them.",tags:["weather","cherry blossom","sakura","petals","spring","wind","ambient","loop"],size:[320,180],origin:[160,170],duration:10,loop:!0,fps:30,bg:"sky",options:{palette:["#4a1832","#8e3460","#d26a94","#f2a2c0","#ffd2e2","#fff4f8"],seed:12}},Lt=10,Un=1,tn=o=>22*Math.sin(I*o/Lt+.4)+7*Math.sin(I*2*o/Lt-1);function Bs(o,t,s){let n=K(o,qo),a=s.seed,e=J(s.palette,6),i=j("#0e0a14"),r=X(j("#1a0e1a"),e[0],.4);q(o,qo,-170,9,(f,l)=>{let c=(f+170)/180;l.c.fill(X(i,r,c*c)),l.a.fill(.3+.12*c),l.b.fill(1)}),Os(n,a,e),ie(n,t,a,e,0)}function Is(o,t,s){let n=K(o,qo),a=s.seed,e=J(s.palette,6);ie(n,t,a,e,1),Ps(n,t,a,e)}function ie(o,t,s,n,a){let e=a?54:90,i=s*7+a;st(t,Lt,e,i,1,2,(r,f,l,c)=>{let p=_(f,l),h=Y=>F(i,c,p,Y),d=Lt/l,u=d*.84,x=Math.min(r*d,u),M=r*d-u,g=t-r*d,m=-200+h(1)*330,w=-184,v=(Un+(a?2:0)-w)/u,k=9+h(2)*10,y=(a?3:2)+h(3)*3,b=2.2+h(4)*2.8,A=h(5)*I,D=a?1:.6,E=Y=>[m+k*Y+(tn(g+Y)-tn(g))*D+y*Math.cos(b*Y+A),w+v*Y+y*.6*Math.sin(b*Y+A)],N=(a?3.6:2.6)+h(6)*1.1;if(M>0){let[Y,z]=E(u),W=1-M/(d-u);return void(W>.15&&on(o,Y,z,N*(.35+.65*W),(h(7)-.5)*1.2,.5,n,1))}let[R,B]=E(x),L=Math.cos(h(8)*I+x*(3+h(9)*5)),S=h(10)*I+x*(h(11)-.5)*3;if(on(o,R,B,N,S,L,n,1),L>.9){let Y=(L-.9)/.1;o.px(R,B-1,P),o.glow(R,B,a?7:5,n[4],(a?.32:.22)*Y)}})}function on(o,t,s,n,a,e,i,r){let f=.3+.7*Math.abs(e),l=e<-.2,c=Math.cos(a),p=Math.sin(a),h=n+1,d=l?[i[1],i[2],i[3]]:[i[2],i[3],i[4]],u=l?i[3]:i[5];o.shade(t-h,s-h,t+h,s+h,(x,M,g)=>{let m=x-t,w=M-s,v=(m*c+w*p)/n,k=(-m*p+w*c)/(n*f);if(v<-1||v>1)return;let y=.55*Math.sqrt(1-v*v)*(1+.35*v);Math.abs(k)>y||v>.7&&Math.abs(k)<.12||(g.c=v>.45&&k<.1?u:v<-.45?d[0]:k<0?d[2]:d[1],g.a=r)})}function Ps(o,t,s,n){st(t,Lt,7,s*31,1,1,(a,e,i,r)=>{let f=u=>F(s*31,r,u),l=-190+(Un+2+190)*Math.min(1,a/.9),c=t-a*Lt;if(a>.9)return;let p=-190+f(1)*330+14*a*Lt*.1+(tn(t)-tn(c))+6*Math.sin(a*I*2+f(2)*6),h=f(3)*I+a*Lt*(f(4)-.5)*2,d=3.6+f(5)*1.2;for(let u=0;u<5;u++){let x=h+u*I/5;on(o,p+Math.cos(x)*d*.75,l+Math.sin(x)*d*.75,d*.7,x,1,n,1)}o.px(p,l,j("#ffe08a")),o.glow(p,l,8,n[4],.2)})}var ae=new Map;function Os(o,t,s){let n=t+s.join(),a=ae.get(n);if(!a){a=[];let e={shade(i,r,f,l,c){let p={c:0,a:1};for(let h=Math.floor(r);h<=Math.ceil(l);h++)for(let d=Math.floor(i);d<=Math.ceil(f);d++){p.c=0;let u=c(d+.5,h+.5,p)||p.c;u&&a.push(d+.5,h+.5,u,p.a)}}};for(let i=0;i<46;i++)on(e,-164+F(t,i,71)*328,Un+Math.floor(F(t,i,72)*3)*2,2.6+F(t,i,73),(F(t,i,74)-.5)*1.2,.5,s,1);ae.set(n,a)}for(let e=0;e<a.length;e+=4)o.dot(a[e],a[e+1],a[e+2],a[e+3])}var Hn={};it(Hn,{draw:()=>js,drawBack:()=>Ts,meta:()=>po});var po={name:"Rain",desc:"Slanted rain at four depths: far drops fade into the dark, near ones glint and splash, drops ring the puddles and a low mist drifts over the wet floor.",tags:["weather","rain","storm","water","ambient","loop"],size:[320,180],origin:[160,170],duration:8,loop:!0,fps:30,bg:"sky",options:{palette:["#0e1322","#1a2440","#283a5e","#3a5482","#5674a8","#84a6d6","#c0dcf8","#f2f8ff"],density:1,seed:4}},jo=8,nn=-.2,Ro=nn/Math.hypot(nn,1),To=1/Math.hypot(nn,1),Ns=[{n:200,m:[10,13],len:2,col:[2,2,3],stop:[-80,-6]},{n:150,m:[14,17],len:4,col:[2,3,4],stop:[-45,-2]},{n:96,m:[19,23],len:7,col:[3,4,5],z:[0,1.4],size:[.15,.4]},{n:42,m:[25,29],len:13,col:[3,5,7],z:[2,6.5],size:[.6,1],near:!0}];function re(o){return Array.from({length:5},(t,s)=>{let n=-150+s*66+F(o,s,61)*30,a=16+F(o,s,63)*26;return{x0:n,x1:n+a,y:3+Math.floor(F(o,s,62)*3)}})}var Rs=(o,t,s)=>o.find(n=>t>=n.x0+2&&t<=n.x1-2&&Math.abs(s-n.y)<1.5);function Ts(o,t,s){t=Math.round(t*3e4)/3e4;let n=K(o,po),a=s.seed,e=J(s.palette,8),i=re(a),r=X(e[0],e[1],.6);rt(o,po,-170,-.5,(f,l,c)=>{c.c=r,c.a=.3+.26*C(-170,0,l),c.b=1}),Ys(n,t,a,e,i);for(let f=0;f<3;f++)ce(n,t,a,e,i,f,s.density);zs(o,t,a,e)}function js(o,t,s){t=Math.round(t*3e4)/3e4;let n=K(o,po),a=s.seed,e=J(s.palette,8),i=re(a);ce(n,t,a,e,i,3,s.density)}function ce(o,t,s,n,a,e,i){let r=Ns[e],f=s*11+e,[l,c,p]=r.col.map(M=>n[M]),h=r.len,d=Math.round(r.n*i),u=nt(s+21,256,128,[4,8,16]),x=256*t/jo;st(t,jo,d,f,r.m[0],r.m[1],(M,g,m,w)=>{let v=_(g,m);if(e<2&&F(f,w,v,7)>.35+1.3*(Z(u,(-166+F(f,w,v,2)*332)*.8+x,9+e*40)-.32))return;let k=r.z?r.z[0]+F(f,w,v,1)*(r.z[1]-r.z[0]):r.stop[0]+F(f,w,v,1)*(r.stop[1]-r.stop[0]),y=-172-h,b=y+(k-y)*M,A=-166+F(f,w,v,2)*332-(k-b)*nn,D=r.z?1:Math.min(1,(1-M)*5);if(h<=2?(o.dot(A,b,p,D),o.dot(A-Ro,b-To,c,D*.8)):(o.line(A-Ro*h,b-To*h,A-Ro*h*.45,b-To*h*.45,l,N=>D*(.35+.65*N)),o.line(A-Ro*h*.45,b-To*h*.45,A-Ro,b-To,c,D),o.dot(A,b,p,D)),r.near&&o.glow(A,b-2,4,n[5],.12),!r.z)return;let E=jo/m;for(let N=1;N<4;N++){let R=M*E+(N-1)*E;if(R>.7)break;let B=_(g-N,m),L=r.z[0]+F(f,w,B,1)*(r.z[1]-r.z[0]),S=-166+F(f,w,B,2)*332;if(F(f,w,B,5)>(r.near?1:.7))continue;let Y=r.size[0]+(L-r.z[0])/(r.z[1]-r.z[0])*(r.size[1]-r.size[0]),z=r.near&&Rs(a,S,L);z?Ss(o,S,z,R,n):te(o,S,L,R,Y,{hot:n[6],cool:n[4],white:P},F(f,w,B,4))&&r.near&&R<.1&&o.glow(S,L-1,5,n[5],.3*(1-R/.1))}})}function Ss(o,t,s,n,a){let e=Math.round(t),i=s.y;n<.05&&o.px(e,i,a[7]);for(let r=0;r<2;r++){let f=n-r*.16,l=f/.5;if(l<=0||l>=1)continue;let c=Math.round(1+7*Math.sqrt(l)),p=l<.4&&!r?a[6]:a[5];for(let h of[-1,1])for(let d=0;d<(l<.6?2:1);d++){let u=e+h*(c-d);u>s.x0&&u<s.x1&&o.px(u,i,p)}}}function Ys(o,t,s,n,a){rt(o,po,0,9.5,(e,i,r)=>{if(i<1)return r.c=n[4],r.l=n[5],void(r.k=.08);if(i<2)return void(r.c=n[1]);r.c=n[0],r.a=.55,r.b=1;for(let f of a)if(e>=f.x0&&e<f.x1&&Math.floor(i)===f.y){let l=e<f.x0+2||e>=f.x1-2;r.c=l?n[3]:n[4],r.a=1,r.b=0,r.l=n[5],r.k=.06}}),a.forEach((e,i)=>{let r=Math.round(e.x0+3+(e.x1-e.x0-6)*(.5+.5*Math.sin(Math.PI*2*t/jo+i*1.9)));o.px(r,e.y,n[6]),o.glow(r,e.y,4,n[5],.2)})}function zs(o,t,s,n){let a=nt(s+9,256,128,[4,8,16,32]),e=256*t/jo,i=X(n[4],n[5],.5),r=(f,l)=>C(-22,-4,l)*(1-C(7,10,l))*(.62+(Z(a,f*.45+e,l*4+30)-.5)*2);rt(o,po,-20,9,(f,l,c)=>{let p=r(f,l);if(p<.28)return;let h=Yt(f,l)*.06;c.b=1,p>.46+h&&r(f,l-1)<.43?(c.c=i,c.a=.5):(c.c=p>.58+h?n[4]:n[3],c.a=H((p-.28)*1.6)*.5),c.l=n[4],c.k=(p-.3)*.1})}var Zn={};it(Zn,{draw:()=>Ws,drawBack:()=>Us,meta:()=>_n});var _n={name:"Fog",desc:"Slow banks of moonlit fog at three depths drift past each other, crests catching the light, while thin streaks of mist slide by in front.",tags:["weather","fog","mist","haze","night","ambient","loop"],size:[320,180],origin:[160,170],duration:12,loop:!0,fps:30,bg:"sky",options:{palette:["#14121e","#24213a","#363250","#4f4a6c","#6d688b","#918cab","#bdb8d4","#ece8f6"],seed:5}},en=12,Jt=320,uo=[.3,.5,.7],Ls=.06,Qn=[{top:-84,base:-40,bot:-20,sx:1.6,sy:2.2,lap:1,alpha:.24,tone:[2,3,4],crest:5,warp:16,crestFrom:3},{top:-62,base:-24,bot:-2,sx:1.0667,sy:2.5,lap:1,alpha:.3,tone:[2,3,4],crest:5,warp:22,crestFrom:2},{top:-42,base:-8,bot:10,sx:.8,sy:2.8,lap:1,alpha:.36,tone:[2,3,5],crest:6,warp:28,crestFrom:1}],fe=new Float32Array(Jt),Js=Qn.map(()=>new Float32Array(Jt)),Xs=Qn.map(()=>new Float32Array(Jt)),Kn=new Float32Array(Jt);function Us(o,t,s){let n=s.seed,a=J(s.palette,8);Gn(o,t,n,a,0),Gn(o,t,n,a,1)}function Ws(o,t,s){let n=s.seed,a=J(s.palette,8);Gn(o,t,n,a,2),Hs(o,t,n,a,1)}function Gn(o,t,s,n,a){let e=Qn[a],i=nt(s*7+a,256,128),r=nt(s*7+11,256,128,[4,8,16]),f=256*e.lap*t/en,l=128*t/en,c=Js[a],p=Xs[a],h=e.tone.map(u=>n[u]),d=X(n[e.crest],P,.12+.08*a);c.fill(0),p.fill(0);for(let u=0;u<Jt;u++)fe[u]=2*Math.sin(I*t/en+(u-160)*.006+a*1.7);q(o,_n,e.top-2,e.bot,(u,x)=>{let M=C(e.top,e.base,u)*(1-C(e.bot-(e.bot<10?14:4),e.bot+1,u));for(let g=0;g<Jt;g+=2)Kn[g]=Kn[g+1]=Z(r,g*.35+a*70,u*.5+l)-.5;for(let g=0;g<Jt;g++){let m=g-160+.5,w=Kn[g],v=H((Z(i,m*e.sx+f+w*e.warp,(u+fe[g])*e.sy+w*8)-.5)*2.6+.5)-.5,k=M<=.01?0:(M*.72+v*.95)*(.6+.5*M),y=p[g];if(p[g]=c[g],c[g]=k,k<=uo[0])continue;let b=Yt(g,u)*Ls,A=k>uo[2]+b?2:k>uo[1]+b?1:0,D=k>uo[2]?2:k>uo[1]?1:0;D>=e.crestFrom&&y<uo[D]?(x.c[g]=d,x.a[g]=e.alpha*.95,x.l[g]=n[6],x.k[g]=.07):(x.c[g]=h[A],x.a[g]=e.alpha*(.55+.25*A),A===2&&(x.l[g]=n[5],x.k[g]=.03+.02*a)),x.b[g]=1}})}function Hs(o,t,s,n,a){let e=nt(s*7+20+a,256,128),i=256*t/en,r=a?.4:.5,f=a?-40:-96,l=a?6:-30;q(o,_n,f,l,(c,p)=>{let h=C(f,f+10,c)*(1-C(l-10,l,c));for(let d=0;d<Jt;d++){let u=d-160+.5,x=(Z(e,u*r+i,c*6.5+30)-.64)*3*h;x<=.05||(p.c[d]=x>.35?n[5]:n[4],p.a[d]=Math.min(.4,x),p.b[d]=1,p.l[d]=n[5],p.k[d]=x*.05)}})}var $n={};it($n,{draw:()=>Gs,drawBack:()=>Ks,meta:()=>an});var an={name:"Fireflies",desc:"Fireflies wander over a meadow at night, each glowing up and fading on its own rhythm, trailing light and lighting the grass tips beneath them.",tags:["weather","fireflies","night","glow","meadow","nature","ambient","loop"],size:[320,180],origin:[160,170],duration:12,loop:!0,fps:30,bg:"sky",options:{palette:["#2a3a10","#5a7a1a","#9ad02a","#d6ff5a","#f4ffb8","#ffffff"],grass:["#070f0b","#0c1a12","#13281a","#1d3a24","#2b5232","#3f6e40"],seed:2}},sn=12,rn=(o,t,s=0)=>I*t*o/sn+s;function he(o,t,s){let n=m=>F(o,t,m),a=t<14?0:t<26?1:2,e=[.5,.8,1][a],i=-150+n(1)*300,r=-16-n(2)*(a===2?70:130),f=(14+n(3)*26)*e,l=(8+n(4)*14)*e,c=1+Math.floor(n(5)*2),p=1+Math.floor(n(6)*3),h=m=>[i+f*Math.sin(rn(m,c,n(7)*I))+10*e*In(m/sn,1.5,t*3),r+l*Math.sin(rn(m,p,n(8)*I))+6*e*In(m/sn,1.5,t*3+1)],d=sn/(3+Math.floor(n(9)*4)),u=((s/d+n(10))%1+1)%1,x=n(11)<.35,M=m=>m<.06?m/.06:m<.14?1:m<.4?1-(m-.14)/.26:0,g=Math.max(M(u),x?M(u-.22)*.8:0);return{pos:h,depth:a,glow:g,R:n}}function Ks(o,t,s){let n=K(o,an),a=s.seed,e=J(s.palette,6),i=J(s.grass,6);q(o,an,-170,9,(f,l)=>{let c=(f+170)/180;l.c.fill(X(i[0],i[1],c)),l.a.fill(.48+.14*c),l.b.fill(1)});let r=Array.from({length:32},(f,l)=>he(a,l,t));pe(n,t,a,i,e,r,!1);for(let f of r)f.depth<2&&le(n,t,f,e)}function Gs(o,t,s){let n=K(o,an),a=s.seed,e=J(s.palette,6),i=J(s.grass,6),r=Array.from({length:32},(f,l)=>he(a,l,t));pe(n,t,a,i,e,r,!0);for(let f of r)f.depth===2&&le(n,t,f,e)}function le(o,t,s,n){let[a,e]=s.pos(t),i=s.glow,r=Math.round(a),f=Math.round(e);if(s.depth===0){if(i<.08)return;o.dot(r,f,i>.6?n[4]:n[3],Math.min(1,i*1.6)),o.glow(a,e,6,n[2],.45*i);return}if(i>.3)for(let h=1;h<=4;h++){let[d,u]=s.pos(t-h*.05);o.dot(d,u,n[2],(i-.3)*(1-h/5)*1.3)}if(s.depth===1){o.px(r,f,i>.5?n[5]:i>.15?n[3]:n[1]),i>.4&&o.px(r,f+1,n[2]),o.glow(a,e,9,n[2],.5*i),o.glow(a,e,3,n[4],.5*i);return}let[l]=s.pos(t+.05),c=l>=a?1:-1,p=Math.floor(t*30)%2;if(o.px(r+c,f,n[0]),o.px(r+c*2,f,n[0]),o.dot(r,f-1-p,X(n[1],P,.4),.7),o.dot(r+c,f-1-p,X(n[1],P,.4),.7),o.px(r,f,i>.3?n[5]:n[1]),o.px(r-c,f,i>.5?n[4]:i>.15?n[3]:n[1]),i>.6&&o.px(r-c,f+1,n[3]),i>.7)for(let[h,d]of[[0,-2],[0,2],[-2,0],[2,0]])o.dot(r-c+h,f+d,n[3],(i-.7)*3);o.glow(a,e,28,n[2],.45*i),o.glow(a,e,10,n[4],.5*i),o.glow(a,e,4,n[5],.5*i)}function pe(o,t,s,n,a,e,i){let r=e.filter(l=>l.glow>.25&&l.depth>0).map(l=>[...l.pos(t),l.glow]),f=i?150:230;for(let l=0;l<f;l++){let c=g=>F(s*3+(i?1:0),l,g),p=-162+(l+c(1))*(324/f),h=(i?4:5)+c(2)*(i?8:11)+(c(3)<.1?6:0),d=(i?9:2)-c(4)*3,u=(1.2+c(5))*Math.sin(rn(t,2,-p*.03)+c(6))+.6*Math.sin(rn(t,5,p*.07)),x=i?1+Math.floor(c(7)*3):1+Math.floor(c(7)*2),M=0;for(let[g,m,w]of r){let v=Math.hypot(g-(p+u),m-(d-h));v<28&&(M=Math.max(M,w*(1-v/28)))}for(let g=0;g<h;g++){let m=g/h,w=m>.8&&M>.2?M>.55&&m>.9?a[3]:a[2]:m>.7?n[Math.min(5,x+1)]:n[x];o.px(p+u*m*m,d-g,w)}if(c(8)<.07){let g=p+u,m=d-h;o.px(g,m-1,M>.2?a[3]:n[5]),o.px(g-1,m,n[4]),o.px(g+1,m,n[4])}}}var Vn={};it(Vn,{draw:()=>Qs,meta:()=>Cn});var Cn={name:"Clouds",desc:"Layers of clouds drift past a bright moon at night: silver-lit tops, dark bellies, edges that flare where they cross the moon, forming and thinning as they go.",tags:["weather","clouds","moon","night","sky","ambient","loop"],size:[320,180],origin:[160,180],duration:12,loop:!0,fps:30,bg:"sky",options:{palette:["#0c0c18","#16172a","#232540","#363a5a","#545a80","#8088ae","#bcc4e2","#f2f4ff"],seed:7}},cn=12,Ct=92,Vt=-128,So=12,_s=[{n:7,w:[40,70],h:[6,11],y:[-150,-110],v:3,life:[8,11],tone:[2,3,4,5],alpha:.7},{n:6,w:[60,100],h:[9,15],y:[-120,-70],v:6,life:[8,11],tone:[1,2,4,6],alpha:.88},{n:5,w:[90,140],h:[12,20],y:[-80,-30],v:10,life:[9,12],tone:[1,2,3,6],alpha:1}];function Qs(o,t,s){let n=K(o,Cn),a=s.seed,e=J(s.palette,8);Zs(n,e),_s.forEach((i,r)=>{for(let f=0;f<i.n;f++)$s(n,t,a,e,i,r,f)}),n.glow(Ct,Vt,110,e[4],.14),n.glow(Ct,Vt,40,e[5],.25),n.glow(Ct,Vt,18,e[6],.3)}function Zs(o,t){o.shade(Ct-So-1,Vt-So-1,Ct+So+1,Vt+So+1,(s,n,a)=>{let e=s-Ct,i=n-Vt,r=Math.hypot(e,i)/So;if(r>1)return;let f=(e+4)**2+(i+2)**2<14||(e-3)**2+(i-4)**2<9||(e-5)**2+(i+5)**2<4;a.c=r>.86?e+i<0?t[6]:P:f?t[5]:r<.5&&e+i<0?P:t[7]})}function $s(o,t,s,n,a,e,i){let r=k=>F(s,e,i,k),f=a.life[0]+r(1)*(a.life[1]-a.life[0]),l=_(t-r(2)*cn,cn);if(l>=f)return;let c=l/f,p=Math.min(1,c*4)*Math.min(1,(1-c)*4),h=(a.w[0]+r(3)*(a.w[1]-a.w[0]))*(.6+.4*p),d=-200+r(4)*330+a.v*l,u=a.y[0]+r(5)*(a.y[1]-a.y[0]),x=(a.h[0]+r(6)*(a.h[1]-a.h[0]))*p;if(x<1.5)return;let M=4+Math.floor(r(7)*4),g=[];for(let k=0;k<M;k++){let y=(k+.5)/M,b=x*(.5+.35*Math.sin(Math.PI*y))*(.75+.5*r(10+k))*(1+.06*Math.sin(I*t/cn+k+i));g.push([d+h*(y-.5)+(r(20+k)-.5)*6,u-b*.3-r(30+k)*x*.15,b])}for(let k=0;k<1+Math.floor(r(8)*3);k++){let y=.3+r(40+k)*.4,b=x*(.75+.35*r(50+k))*(1+.05*Math.sin(I*t/cn+k*2+i));g.push([d+h*(y-.5),u-x*.55-b*.2,b])}let m=d-h/2-x,w=d+h/2+x,v=Mt(Cn);for(let k=Math.max(v.x0,Math.floor(m));k<=Math.min(v.x1-1,Math.ceil(w));k++){let y=k+.5,b=1/0,A=1/0;for(let[B,L,S]of g){let Y=y-B;if(Y*Y>=S*S)continue;let z=L-Math.sqrt(S*S-Y*Y);z<b?(A=b,b=z):z<A&&(A=z)}if(b===1/0)continue;let D=Math.min(y-m,w-y)/x,E=u+1.5+Math.sin(y*.21+i)*.8-(D<1?(1-D)*4:0);if(E<=b)continue;let N=E-b,R=A-b>2.5&&A<E-2?Math.floor(A):-999;for(let B=Math.floor(b);B<E;B++){let L=B+.5-b,S=L/N,Y=Yt(k,B)*.12,z=Math.hypot(y-Ct,B-Vt),W=L<1?a.tone[3]:S<.25+Y?a.tone[2]:S<.62+Y?a.tone[1]:a.tone[0];B===R&&(W=Math.max(W,a.tone[2])),E-B-.5<1&&S>.5&&(W=Math.max(0,a.tone[0]-1)),z<46&&(L<2||B===R||S<.3)&&(W=Math.min(7,W+(z<24?2:1)));let tt=a.alpha*Math.min(1,p*1.5);tt>=1?o.px(k,B,n[W]):o.blend(k,B,n[W],tt),L<1&&z<46&&o.light(k,B,n[6],.35*(1-z/46))}}}var n0={};it(n0,{draw:()=>qs,drawBack:()=>Vs,meta:()=>Yo});var Yo={name:"Blizzard",desc:"Snow driven almost flat by a gale: streaks at three depths race past, gusts throw translucent sheets of snow across the sky and spindrift streams off the drifts.",tags:["weather","blizzard","snow","wind","storm","winter","ambient","loop"],size:[320,180],origin:[160,170],duration:8,loop:!0,fps:30,bg:"sky",options:{palette:["#0d111f","#182035","#27324d","#3e4d6e","#64779c","#9cb0d0","#d8e4f6","#ffffff"],seed:9}},Xt=8,o0=(o,t)=>.5+.5*Math.sin(I*((o+160)/400-2*t/Xt)+.8),qn=o=>-2+1.2*Math.sin(o*.05+2)+.8*Math.sin(o*.15+1),Cs=[{n:240,m:[3,4],len:[2,4],drop:[10,40],col:[3,4,5]},{n:130,m:[4,5],len:[5,8],drop:[20,60],col:[4,5,6]},{n:34,m:[6,7],len:[10,16],drop:[30,70],col:[4,6,7],near:!0}];function Vs(o,t,s){let n=K(o,Yo),a=s.seed,e=J(s.palette,8);de(o,t,a,e,0),t0(n,t,a,e,0),t0(n,t,a,e,1),ta(o,n,t,a,e)}function qs(o,t,s){let n=K(o,Yo),a=s.seed,e=J(s.palette,8);de(o,t,a,e,1),t0(n,t,a,e,2)}function t0(o,t,s,n,a){let e=Cs[a],i=s*17+a,[r,f,l]=e.col.map(c=>n[c]);st(t,Xt,e.n,i,e.m[0],e.m[1],(c,p,h,d)=>{let u=_(p,h),x=E=>F(i,d,u,E),M=e.drop[0]+x(3)*(e.drop[1]-e.drop[0]),g=-190+380*c,m=-178+x(1)*182+M*c+3*Math.sin(c*I*(1+x(5))+x(6)*6);if(m>qn(g)-1)return;let w=o0(g,t);if(!e.near&&x(7)>.45+.75*w)return;let v=(e.len[0]+x(2)*(e.len[1]-e.len[0]))*(.7+.6*w),k=380/(Xt/h),y=M/(Xt/h),b=Math.hypot(k,y),A=k/b,D=y/b;o.line(g-A*v,m-D*v,g-A*v*.45,m-D*v*.45,r,E=>.3+.7*E),o.line(g-A*v*.45,m-D*v*.45,g-A,m-D,f),o.px(g,m,w>.6&&e.near?P:l),e.near&&o.glow(g,m,5,n[5],.12+.12*w)})}var fn=new Float32Array(320),hn=new Float32Array(320);function de(o,t,s,n,a){let e=nt(s*3+7+a,256,128),i=256*(a?3:2)*t/Xt,r=a?n[6]:n[5],f=a?-110:-170,l=X(n[2],n[3],.5),c=a?4.5:3.2,p=a?.58:.54;for(let h=0;h<320;h++)fn[h]=o0(h-160+.5,t),hn[h]=5*Math.sin((h-160)*.021-I*t/Xt+a*2);q(o,Yo,f,4,(h,d)=>{let u=a?C(-110,-40,h):1;for(let x=0;x<320;x++){let M=fn[x],g=Z(e,(x-160)*.16-i,(h+hn[x])*c+40),m=(g-p)*2.2*(.35+M)*u;if(a){if(m<=.02)continue;d.c[x]=r,d.a[x]=Math.min(.5,m)}else d.c[x]=m>.08?r:l,d.a[x]=.3+.12*M+Math.min(.42,Math.max(0,m));d.b[x]=1,m>.05&&(d.l[x]=n[5],d.k[x]=m*.08)}})}function ta(o,t,s,n,a){let e=nt(n*5+1,256,128),i=256*4*s/Xt;for(let r=0;r<320;r++)fn[r]=o0(r-160+.5,s),hn[r]=qn(r-160+.5);q(o,Yo,-16,9,(r,f)=>{for(let l=0;l<320;l++){let c=l-160+.5,p=hn[l],h=r-p;if(h>=0){f.c[l]=h<1?P:h<2?a[6]:h<4?a[5]:a[4],h<1&&(f.l[l]=a[6],f.k[l]=.1);continue}if(r<-14)continue;let d=Z(e,c*.5-i,r*3+9),u=(d-.5)*3*C(-14,-1,r)*(.4+fn[l]);u>.02&&(f.c[l]=a[6],f.a[l]=Math.min(.55,u),f.b[l]=1)}}),st(s,Xt,40,n*23,8,10,(r,f,l,c)=>{let p=_(f,l),h=-175+350*r,d=qn(h)-1-F(n,c,p,1)*6*Math.abs(Math.sin(r*9+c));t.px(h,d,F(n,c,p,2)<.5?P:a[6]),t.px(h-1,d,a[5])})}var a0={};it(a0,{draw:()=>aa,meta:()=>ln});var ln={name:"Aurora",desc:"Rippling curtains of green-to-violet light over a starfield: folding hems burn bright, rays shimmer up into violet, and the whole sky slowly breathes.",tags:["weather","aurora","northern lights","sky","night","ambient","loop"],size:[320,180],origin:[160,180],duration:12,loop:!0,fps:30,bg:"sky",options:{palette:["#081a1e","#0d3a36","#13664e","#1fa06a","#3fd88e","#9af7bf","#e6fff0"],upper:["#120b2a","#26164f","#41208a","#6a34c0","#9c62e8","#d2b4ff","#f6eeff"],seed:3}},s0=12,V=320,kt=180,oa=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(o=>(o+.5)/16),zo=new Float32Array(V*kt),pn=new Float32Array(V*kt),ue=new Float32Array(V*kt),e0=new Float32Array(V*kt),na=Float32Array.from({length:201},(o,t)=>{let s=t/200;return s<.035?2.6:s<.22?1.15-s:(1-s)**1.5*.9});function ea(o,t,s){let n=2*s+1;for(let a=0;a<kt;a++){let e=0,i=a*V;for(let r=-s;r<V+s;r++)r+s<V&&(e+=o[i+Math.min(V-1,r+s)]),r-s-1>=0&&(e-=o[i+r-s-1]),r>=0&&r<V&&(e0[i+r]=e/n)}for(let a=0;a<V;a++){let e=0;for(let i=-s;i<kt+s;i++)i+s<kt&&(e+=e0[Math.min(kt-1,i+s)*V+a]),i-s-1>=0&&(e-=e0[(i-s-1)*V+a]),i>=0&&i<kt&&(t[i*V+a]=e/n)}}var xo=(o,t,s=0)=>I*t*o/s0+s,sa=[{y:-132,slope:-.08,amp:8,lam:210,fold:14,flam:150,height:40,k:.6,s0:-210,s1:210,rip:1.6,c:[1,1,2],hue:.35},{y:-88,slope:.22,amp:13,lam:250,fold:19,flam:165,height:82,k:1.5,s0:-195,s1:180,rip:2.4,c:[1,2,3],hue:0},{y:-38,slope:-.05,amp:5,lam:150,fold:10,flam:110,height:20,k:.45,s0:-210,s1:210,rip:1.4,c:[2,1,3],hue:0}];function aa(o,t,s){let n=K(o,ln),a=Mt(ln),e=s.seed,i=J(s.palette,7),r=J(s.upper,7);ra(n,t,e,i,r),zo.fill(0),pn.fill(0);let f=nt(e*5+1,256,128,[8,16,32]),l=.75+.25*Math.sin(xo(t,1,-1.2)),c=[];sa.forEach((h,d)=>ia(n,h,d,t,f,l,c,i)),ea(zo,ue,5);let p=i.map((h,d)=>X(h,r[d],.5));q(o,ln,a.y0,-12,(h,d)=>{let u=(Math.floor(h)-a.y0)*V,x=(Math.floor(h)&3)<<2;for(let M=0;M<V;M++){let g=u+M,m=zo[g],w=ue[g],v=w>.015?Math.min(.4,w*.6):0;if(m>=.03){let k=m*1.5/(1+m*1.5),y=pn[g]/m,b=k>.45?oa[x|M&3]*.06:0,A=k>.86+b?6:k>.72+b?5:k>.56+b?4:k>.4+b?3:k>.24?2:1;y>.35&&(A=Math.min(A,5));let D=y<.3?i[A]:y<.5?p[A]:r[A];A>=3&&(d.c[M]=D,d.a[M]=H((k-.3)*2.2),d.b[M]=A<5?1:0),d.l[M]=A>=3?y<.4?i[4]:r[4]:D===i[A]?i[4]:D===r[A]?r[4]:p[4],v+=k*(A>=3?.28:.72)}else d.l[M]=i[4];d.k[M]=v}});for(let h of c){let d=Math.round(h.h);for(let u=1;u<d;u++){let x=u/d;n.blend(h.x,h.hem-u,x<.35?i[5]:x<.6?X(i[5],r[5],.5):r[5],h.k*(1-x)**1.3)}n.px(h.x,h.hem,i[6])}}function ia(o,t,s,n,a,e,i,r){let c=512*n/s0,p=256*n/s0,h=0,d=0,u=-999;for(let x=t.s0;x<t.s1;x+=.5){let M=x+t.fold*Math.sin(I*x/t.flam+xo(n,t.c[0],s*2))+5*Math.sin(I*x/64+xo(n,t.c[2],s));if(M<-162||M>=-160+V+1)continue;let g=t.y+t.slope*x+t.amp*Math.sin(I*x/t.lam+xo(n,t.c[1],s*1.7))+t.rip*Math.sin(I*x/23-xo(n,7,s)),m=C(t.s0,t.s0+60,x)*(1-C(t.s1-70,t.s1,x)),w=H((Z(a,x*5-c+s*40,10+s*30)-.38)*3.2),v=H((Z(a,x*4.3+c*.7+s*90,50+s*13)-.35)*3),k=Z(a,x*.7+p+s*17,80+s*9),y=t.k*m*e*(.2+.8*w)*(.3+1.4*Math.max(0,k-.3));if(y<.01)continue;let b=t.height*(.45+.75*v)*(.75+.5*k),A=Math.floor(M- -160),D=M- -160-A;if(h>.75&&h>=d&&h>=w&&Math.abs(M-u)>2&&y>.25&&(i.push({x:M,hem:g-1,h:b*.9,k:Math.min(.85,y*.9)}),u=M),d=h,h=w,A<-1||A>=V)continue;let E=Math.max(0,Math.floor(g-b- -180)),N=Math.min(kt-1,Math.floor(g- -180)+3),R=1/b,B=y*.5*(1-D),L=y*.5*D,S=(g- -180-.5-E)*R;for(let Y=E;Y<=N;Y++,S-=R){let z=S>=0?na[Math.min(200,S*200|0)]:Math.max(0,.45+S*b*.16),W=Y*V+A,tt=S+t.hue<0?0:S+t.hue>1?1:S+t.hue;z<=0||(A>=0&&(zo[W]+=B*z,pn[W]+=B*z*tt),A+1<V&&(zo[W+1]+=L*z,pn[W+1]+=L*z*tt))}}}function ra(o,t,s,n,a){for(let e=0;e<150;e++){let i=-160+F(s,e,1)*320,r=-180+F(s,e,2)*175,f=F(s,e,3),l=1+Math.floor(F(s,e,4)*4),c=.5+.5*Math.sin(xo(t,l,F(s,e,5)*I)),p=f<.6?X(a[3],P,.2):f<.9?X(a[5],P,.5):P;f<.6?o.dot(i,r,p,.35+.5*c):f<.95?(o.px(i,r,p),o.glow(i+.5,r+.5,3,a[5],.25*c)):yt(o,i,r,1+Math.round(c*2),X(a[5],P,.6),a[4],.35*c)}}var c0={};it(c0,{draw:()=>ha,drawBack:()=>fa,meta:()=>Lo});var Lo={name:"Snow",desc:"Snow at three depths in a gusty breeze: far specks, drifting flakes, big near crystals that spin and glow; they settle on a sparkling drift and melt away.",tags:["weather","snow","winter","cold","ambient","loop"],size:[320,180],origin:[160,170],duration:12,loop:!0,fps:30,bg:"sky",options:{palette:["#0c1020","#161d36","#24304f","#3a4a72","#5f74a3","#93abd6","#cfe0fa","#ffffff"],seed:6}},Jo=12,i0=o=>-3+1.6*Math.sin(o*.045+1.3)+1.1*Math.sin(o*.12+.4)+.6*Math.sin(o*.31+2),xe=o=>10*Math.sin(I*o/Jo+.6)+4*Math.sin(I*2*o/Jo+2.1),ca=[{n:230,m:[1,2],air:1,sway:[1,3],wind:3,gust:.4},{n:140,m:[2,3],air:.8,sway:[3,7],wind:6,gust:.7},{n:24,m:[2,3],air:.74,sway:[8,15],wind:9,gust:1}];function fa(o,t,s){let n=K(o,Lo),a=s.seed,e=J(s.palette,8),i=X(e[1],e[2],.4);rt(o,Lo,-170,9,(r,f,l)=>{l.c=i,l.a=.26+.22*C(-170,0,f),l.b=1}),r0(n,t,a,e,0),pa(n,t,a,e),r0(n,t,a,e,1)}function ha(o,t,s){let n=K(o,Lo),a=s.seed,e=J(s.palette,8);r0(n,t,a,e,2)}function r0(o,t,s,n,a){let e=ca[a],i=s*13+a;st(t,Jo,e.n,i,e.m[0],e.m[1],(r,f,l,c)=>{let p=_(f,l),h=Jo/l,d=B=>F(i,c,p,B),u=h*e.air,x=Math.min(r*h,u),M=e.sway[0]+d(3)*(e.sway[1]-e.sway[0]),g=.25+d(4)*.35,m=d(5)*I,w=B=>-175+d(2)*350+e.wind*B+(xe(t-r*h+B)-xe(t-r*h))*e.gust+M*Math.sin(I*g*B+m),v=w(x),k=w(u),y=-176,b=a?i0(k)-.5:-110+d(1)*106,A=y+(b-y)*(x/u),D=r*h-u;if(a===0){let B=Math.min(1,(1-r)*6);o.dot(v,A,d(6)<.5?n[4]:n[5],B);return}let E=D>0?1-D/(h-u):1;if(a===1){let B=d(6)<.3;if(D>0)return void o.dot(k,b,n[7],E*.9);if(o.px(v,A,B?P:n[7]),B)for(let[L,S]of[[1,0],[-1,0],[0,1],[0,-1]])o.px(v+L,A+S,n[5]);else o.px(v+1,A,n[6]),o.px(v,A+1,n[6]),o.px(v+1,A+1,n[5]);return}let N=d(6)<.4?3:d(6)<.8?4:5,R=1.5+d(7)*2.5;if(D>0){o.dot(k-1,b,n[6],E),o.dot(k,b,P,E),o.dot(k+1,b,n[6],E),o.glow(k,b,5,n[5],.25*E);return}la(o,v,A,N,Math.floor(x*R+d(8)*2)%2,n)})}var Me=[[1,0],[-1,0],[0,1],[0,-1]],ge=[[1,1],[-1,-1],[1,-1],[-1,1]];function la(o,t,s,n,a,e){let i=Math.round(t),r=Math.round(s),f=a?ge:Me,l=a?Me:ge,c=a?n-1:n;for(let[p,h]of f){for(let u=1;u<=c;u++)o.px(i+p*u,r+h*u,u===c?P:e[6]);let d=a?c>=3?[c-1]:[]:c>=5?[c-1,c-2]:c>=4?[c-1]:[];for(let u of d){let x=a?p:h,M=a?-h:-p;o.px(i+p*u+(a?0:x),r+h*u+M,e[4]),o.px(i+p*u+(a?-p:-x)+(a?p:0),r+h*u+(a?h*0:-M),e[4])}}for(let[p,h]of l)for(let d=1;d<=(a?1:Math.max(1,Math.floor(c/2)));d++)o.px(i+p*d,r+h*d,d===1?e[6]:e[5]);o.px(i,r,P),o.glow(i+.5,r+.5,n*2.5+5,e[5],.13),o.light(i,r,e[6],.4)}function pa(o,t,s,n){rt(o,Lo,-7,9,(a,e,i)=>{let r=i0(a),f=e-r;f<0||(i.c=f<1?P:f<2?n[7]:f<3.5?n[6]:f<6?n[5]:n[4],f<1&&(i.l=n[6],i.k=.12))});for(let a=0;a<18;a++){let e=-156+F(s,a,81)*312,i=1+Math.floor(F(s,a,82)*3),r=Math.sin(I*i*t/Jo+F(s,a,83)*I);if(r<.55)continue;let f=Math.ceil(i0(e))+Math.floor(F(s,a,84)*3),l=(r-.55)/.45;if(o.px(e,f,P),l>.5)for(let[c,p]of[[1,0],[-1,0],[0,-1]])o.px(e+c,f+p,n[6]);o.glow(e+.5,f+.5,6,n[6],.35*l)}}var l0={};it(l0,{draw:()=>xa,drawBack:()=>ua,meta:()=>dn});var dn={name:"Falling leaves",desc:"Autumn leaves swing down through the air, tilting and flipping to show their pale backs, ride a gust, land flat in the litter and fade.",tags:["weather","leaves","autumn","fall","wind","nature","ambient","loop"],size:[320,180],origin:[160,170],duration:10,loop:!0,fps:30,bg:"sky",options:{palette:["#4a1d0c","#8a3a14","#c8621e","#f0982e","#ffcf72","#fff0c4"],reds:["#40101a","#7c1c22","#b8302a","#e85a3c","#ff9a72","#ffd8c4"],golds:["#3e300c","#7a5c14","#b8901e","#e8c23a","#fff09a","#fffbe0"],seed:8}},un=10,f0=1,me=o=>16*Math.sin(I*o/un-1.2)+5*Math.sin(I*3*o/un),ye=o=>{let t=Math.floor((o+Math.PI/2)/Math.PI);return 2*t+1+Math.sin(o-t*Math.PI)},da=[(o,t)=>Math.abs(o)>=1?9:t*t/(.36*(1-o*o)*(1.15-.3*o)),(o,t)=>{let s=Math.hypot(o,t*1.1),n=Math.atan2(t,o);return s/(.62+.38*Math.abs(Math.cos(2.5*n))**1.5)},(o,t)=>Math.abs(o)>=1?9:t*t/(.16*(1-o*o))];function ua(o,t,s){let n=K(o,dn),a=s.seed,e=be(s),i=e[0],r=j("#0e0a12"),f=X(j("#140c14"),i[0],.3);q(o,dn,-170,9,(l,c)=>{let p=(l+170)/180,h=X(r,f,p*p);c.c.fill(h),c.a.fill(.32+.1*p),c.b.fill(1)}),Ma(n,a,e),ke(n,t,a,e,!1)}function xa(o,t,s){ke(K(o,dn),t,s.seed,be(s),!0)}var be=o=>[J(o.palette,6),J(o.reds,6),J(o.golds,6)];function ke(o,t,s,n,a){st(t,un,62,s*19,2,3,(e,i,r,f)=>{let l=_(i,r),c=z=>F(s*19,f,l,z),p=c(1)<.35;if(p!==a)return;let h=un/r,d=.72,u=h*d,x=Math.min(e*h,u),M=e*h-u,g=1.7+c(2)*1.2,m=c(3)*I,w=(p?14:8)+c(4)*10,v=-180+c(5)*340,k=-186,y=z=>.45*z+.9*(ye(g*z+m)-ye(m))/g,b=(f0-k)/y(u),A=t-e*h,D=z=>v+7*z+Math.sin(g*z+m)*w+(me(A+z)-me(A))*(p?1:.7),E=(p?5.8:4.2)+c(6)*1.6,N=Math.floor(c(7)*3),R=n[Math.floor(c(8)*3)];if(M>0){let z=1-M/(h-u);h0(o,D(u),f0-1,E,(c(9)-.5)*.5,.42,N,R,z);return}let B=D(x),L=k+b*y(x),S=Math.cos(g*x+m)*.75+(p?0:.3),Y=Math.cos(c(10)*I+x*(c(11)<.3?5:1.2));if(h0(o,B,L,E,S,Y,N,R,1),Y>.86){let z=(Y-.86)/.14,W=B-Math.cos(S)*E*.3,tt=L-Math.sin(S)*E*.3-1;o.px(W,tt,R[5]),o.glow(W,tt,5+E*.5,R[4],.22*z)}})}function h0(o,t,s,n,a,e,i,r,f){let l=e<-.25,c=.35+.65*Math.abs(e),p=Math.cos(a),h=Math.sin(a),d=n,u=n*.9,x=d+1.5,M=da[i],g=l?[X(r[1],j("#9c8a78"),.2),X(r[2],j("#c8b49c"),.22),X(r[3],j("#e0d0b8"),.22)]:[r[2],r[3],r[4]],m=r[0],w=l?X(r[2],j("#e8dcc8"),.5):r[1];o.shade(t-x,s-x,t+x,s+x,(v,k,y)=>{let b=v-t,A=k-s,D=(b*p+A*h)/d,E=(-b*h+A*p)/(u*c),N=M(D,E);if(!(D<-1.25||D>1.1)){if(D<-.92&&Math.abs(E*u*c)<.5)return y.c=m,void(y.a=f);N>1.32||(y.a=f,N>1?y.c=m:Math.abs(E*u*c)<.45&&D>-.9&&D<.75?y.c=w:y.c=E<-.15?g[2]:E<.35?g[1]:g[0])}})}var we=new Map;function Ma(o,t,s){let n=t+s.flat().join(),a=we.get(n);if(!a){a=[];let e={shade(i,r,f,l,c){let p={c:0,a:1};for(let h=Math.floor(r);h<=Math.ceil(l);h++)for(let d=Math.floor(i);d<=Math.ceil(f);d++){p.c=0,p.a=1;let u=c(d+.5,h+.5,p)||p.c;u&&a.push(d+.5,h+.5,u,p.a)}}};for(let i=0;i<64;i++){let r=-164+F(t,i,91)*328,f=f0-2+Math.floor(F(t,i,92)*4)*2,l=s[Math.floor(F(t,i,93)*3)];h0(e,r,f,3.6+F(t,i,94)*1.8,(F(t,i,95)-.5)*.7,.45+F(t,i,96)*.25,Math.floor(F(t,i,97)*3),l.map(c=>X(c,l[0],.12)),1)}we.set(n,a)}for(let e=0;e<a.length;e+=4)o.dot(a[e],a[e+1],a[e+2],a[e+3])}var p0={};it(p0,{draw:()=>ma,meta:()=>xn});var xn={name:"Shooting stars",desc:"Meteors burn across a starry sky, white heads trailing gold and rose; the big ones flare and break up, and each leaves a glowing train that twists and fades.",tags:["weather","meteor","shooting star","night","sky","stars","ambient","loop"],size:[320,180],origin:[160,180],duration:10,loop:!0,fps:30,bg:"sky",options:{palette:["#3a1e5a","#7a3a8a","#e0607a","#ffa86a","#ffe6a8","#ffffff"],sky:["#141428","#2a2a4a","#4c4c7c","#8e8ec4","#dcdcff"],seed:4}},ve=10,ga=[{t0:.5,x:60,y:-170,a:2.45,v:260,life:.55,s:.6},{t0:1.9,x:-40,y:-176,a:2.2,v:220,life:.7,s:.8},{t0:3.4,x:150,y:-150,a:2.62,v:300,life:.45,s:.5},{t0:4.6,x:130,y:-178,a:2.35,v:240,life:1.05,s:1.4,flare:!0},{t0:6.7,x:-90,y:-168,a:2.05,v:200,life:.6,s:.7},{t0:7.9,x:20,y:-160,a:2.5,v:280,life:.5,s:.6},{t0:9.2,x:-10,y:-176,a:2.28,v:230,life:.8,s:1,flare:!0}],Ae=1.6;function ma(o,t,s){let n=K(o,xn),a=Mt(xn),e=s.seed,i=J(s.palette,6),r=J(s.sky,5);ya(o,n,t,e,r),ga.forEach((f,l)=>wa(n,_(t-f.t0,ve),f,l,e,i))}function ya(o,t,s,n,a){q(o,xn,-180,-1,(e,i)=>{for(let r=0;r<320;r++){let f=r-160+.5,l=Math.abs(e+110-f*-.32)/36;if(l>=1)continue;let c=(1-l)*(1-l);i.l[r]=a[2],i.k[r]=.1*c,F(r,Math.floor(e),n,5)<.05*c&&(i.c[r]=a[2],i.a[r]=.7)}});for(let e=0;e<130;e++){let i=-160+F(n,e,1)*320,r=-180+F(n,e,2)*178,f=F(n,e,3),l=1+Math.floor(F(n,e,4)*4),c=.5+.5*Math.sin(I*l*s/ve+F(n,e,5)*I);f<.6?t.dot(i,r,a[3],.35+.5*c):f<.94?(t.px(i,r,f<.8?a[4]:P),t.glow(i+.5,r+.5,3,a[3],.22*c)):yt(t,i,r,1+Math.round(c*2),a[4],a[3],.3*c)}}function wa(o,t,s,n,a,e){let i=Math.cos(s.a),r=Math.sin(s.a),f=s.life+(s.flare?.5:0)+Ae;if(t>f)return;let l=w=>[s.x+i*s.v*w,s.y+r*s.v*w],c=Math.min(t,s.life),[p,h]=l(c),d=t<s.life?1:1-(t-s.life)/(Ae+(s.flare?.5:0));if(d>0){let w=s.v*c,v=-r,k=i;for(let y=0;y<w;y+=1){let b=t-y/s.v;if(b<.08)continue;let A=d*Math.min(1,(b-.08)*4)*(.35+.65*Math.sin(Math.PI*y/w))*s.s,D=Math.sin(y*.09+b*1.7)*Math.min(4,b*3),E=s.x+i*y+v*D+b*4,N=s.y+r*y+k*D;o.dot(E,N,b<.6?e[2]:e[1],A*.75),y%6===0&&o.glow(E,N,6+b*4,e[1],.12*A)}}if(t>s.life+(s.flare?.5:0))return;let u=t/s.life,x=t<s.life?Math.min(1,u*6)*(u>.75?1-(u-.75)/.25:1):0;if(x>0){let w=(24+40*s.s)*Math.min(1,u*3);for(let v=0;v<=w;v+=.5){let k=v/w,y=p-i*v,b=h-r*v;o.dot(y,b,k<.08?P:P0(e.slice(1).reverse(),k*.95),x*(k<.6?1:(1-k)/.4)),s.s>.9&&k<.4&&o.dot(y-r*.9,b+i*.9,k<.15?e[4]:e[3],x*(1-k/.4))}o.px(p,h,P),s.s>.9&&(o.px(p+1,h,P),o.px(p,h+1,e[4])),o.glow(p,h,8+10*s.s,e[4],.45*x),o.glow(p-i*w*.3,h-r*w*.3,10+8*s.s,e[3],.2*x)}if(!s.flare||t<s.life*.82)return;let M=(t-s.life*.82)/(s.life*.18+.5),[g,m]=l(s.life*.86);M<.35&&(yt(o,g,m,9*Math.sin(Math.PI*M/.35)+2,e[4],e[3],.6),o.glow(g,m,40,e[3],.5*(1-M/.35)));for(let w=0;w<7;w++){let v=F(a,n,w,5)*I,k=5+F(a,n,w,6)*16,y=F(a,n,w,7)*.3,b=(M-y)/.45;if(b<=0||b>=1)continue;let A=g+Math.cos(v)*k*(.6+b*.5),D=m+Math.sin(v)*k*(.6+b*.5)-b*3,E=Math.round(2.5*Math.sin(Math.PI*b));E>=1?yt(o,A,D,E,w%3?e[4]:P,e[3],.3*(1-b)):o.px(A,D,e[4])}for(let w=0;w<4;w++){let v=(F(a,n,w,1)-.5)*.5,k=s.v*(.5+F(a,n,w,2)*.4),y=M*(s.life*.18+.5),b=1-M,A=g+Math.cos(s.a+v)*k*y,D=m+Math.sin(s.a+v)*k*y;b<=0||(o.line(A-Math.cos(s.a+v)*5*b,D-Math.sin(s.a+v)*5*b,A,D,e[3],b),o.px(A,D,b>.5?P:e[4]),o.glow(A,D,5,e[3],.35*b))}}var x0={};it(x0,{draw:()=>Fa,drawBack:()=>va,meta:()=>Et});var Et={name:"Storm",desc:"Driving rain at two depths under a churning cloud deck; a forked bolt strikes in a double flash that lights the sky and the rain, then sheet lightning glows in the clouds.",tags:["weather","storm","rain","lightning","thunder","ambient","loop"],size:[320,180],origin:[160,170],duration:10,loop:!0,fps:30,bg:"sky",options:{palette:["#09080f","#121120","#1b1a30","#262541","#363a5c","#4f5d8c","#7790c6","#c2d6ff"],bolt:["#2a1a6e","#4835c2","#6a6cff","#78b8ff","#c6ebff","#ffffff"],seed:5}},Bt=10,Dt=.42,qt=2.62,Ut=3,Mo=3.3,De=6.4,ba=8.6,gn=62,Xo=-136,et=52,ct=3,Ee=[1,.62,.95,.4,.7,.22],Be=[.92,.5,.8,.3,.12],d0=(o,t,s)=>{let n=Math.floor((o-t)*30+.001);return n>=0&&n<s.length?s[n]:0},u0=o=>Math.max(d0(o,Ut,Ee),d0(o,Mo,Be));function ka(o){let t=o-De;if(t<0||t>.9)return 0;let s=Math.exp(-(((t-.08)/.05)**2)),n=Math.exp(-(((t-.3)/.09)**2)),a=t>.3?Math.exp(-(t-.3)*6)*.5:0;return Math.min(1,.7*s+n+a)*(Math.floor(t*30)%3===1?.75:1)}var Ie=(o,t)=>o<0||o>.3?0:t*(Math.exp(-(((o-.06)/.04)**2))+.65*Math.exp(-(((o-.18)/.05)**2))),Aa=o=>Ie(o-ba,.45),Fe=o=>Ie(o-.9,.3),Pe=o=>Math.round(o*3e4)/3e4;function va(o,t,s){t=Pe(t);let n=K(o,Et),a=Mt(Et),e=s.seed,i=J(s.palette,8),r=J(s.bolt,6),f=u0(t),l=ka(t),c=Aa(t),p=t>qt&&t<Ut?.25+.2*Math.sin(t*70):0,h=t>qt-.5&&t<qt?.12*Math.max(0,Math.sin((t-qt)*41)):0,d=[];f+p+h>0&&d.push([gn,Xo-6,150,f+p*.5+h]),l>0&&d.push([-96,-146,120,l]),c>0&&d.push([128,-156,80,c]),Fe(t)>0&&d.push([-40,-160,70,Fe(t)]);let u=(x,M)=>{let g=0;for(let[m,w,v,k]of d){let y=Math.hypot(x-m,(M-w)*1.5)/v;y<1&&(g+=k*(1-y)*(1-y))}return Math.min(1,g)};Da(o,t,f,r),l>.05&&rt(o,Et,-170,0,(x,M,g)=>{let m=Math.hypot(x+96,(M+150)*1.3)/170;m<1&&(g.l=r[2],g.k=l*.3*(1-m)*(1-m))}),Ia(o,t,e,i,r,f),Oe(n,t,e,i,r,f,0),t>qt&&t<Mo+.7&&Na(n,t,e,r),Pa(n,a,t,e,i,r,u,d.length>0),Ra(n,t,e,r),Sa(n,a,t,e,i,r,f),ja(n,t,e,i,r)}function Fa(o,t,s){t=Pe(t);let n=K(o,Et),a=s.seed,e=J(s.palette,8),i=J(s.bolt,6),r=u0(t);Oe(n,t,a,e,i,r,1)}function Da(o,t,s,n){let a=s*.36;if(a<=.01)return;let e=X(n[2],n[3],.6);rt(o,Et,-170,9,(i,r,f)=>{let l=Math.abs(i-(gn+et)/2)/230;f.l=e,f.k=a*(.2+.8*Math.max(0,1-l)**2.2)})}var Mn=[{base:-161,wob:3,n:18,rx:[16,30],ry:.8,drift:15,life:[4,7],tone:[1,2,3,4],tex:1},{base:-150,wob:3,n:22,rx:[10,20],ry:.85,drift:10,life:[3.5,6.5],tone:[1,2,3,5],tex:1},{base:-140,wob:3,n:26,rx:[7,14],ry:.9,drift:6,life:[3,6],tone:[2,2,3,5],tex:0,haze:!0}],Ea=o=>9*Math.exp(-(((o-40)/95)**2))-3;function Ba(o,t){return Mn.map((s,n)=>{let a=[];for(let e=0;e<s.n;e++){let i=s.life[0]+F(o,n,e,1)*(s.life[1]-s.life[0]),r=_(t-F(o,n,e,2)*Bt,Bt);if(r>=i)continue;let f=r/i,l=Math.sin(Math.PI*f)**.6,c=s.rx[0]+F(o,n,e,3)*(s.rx[1]-s.rx[0]),p=c*s.ry,h=-200+F(o,n,e,4)*400+s.drift*(r-i/2);a.push({x:h,h:p*l*(.6+.4*F(o,n,e,5)),rx:c*(.8+.2*l)})}return a})}function Ia(o,t,s,n,a,e){let i=nt(s+11,256,128,[4,8,16]),r=256*2*t/Bt,f=X(n[3],a[3],.5);rt(o,Et,-170,-.5,(l,c,p)=>{let h=Z(i,(l-c*Dt)*1.9-r,c*.16+7),d=H(.45+(h-.5)*2.6);p.c=e>.05?X(n[1],f,Math.min(1,e*d*.7*Math.max(.25,1-Math.abs(l-et)/220))):n[1],p.a=.4+.38*d,p.b=1})}function Pa(o,t,s,n,a,e,i,r){let f=Ba(n,s),l=nt(n*3+1,256,128),c=256*s/Bt,p=Mn.length,h=Math.cos(Math.PI*s/Bt)**2,d=[a[0],a[1],a[2],a[3],a[4],a[5],a[6],e[4],P],u=new Float32Array(p),x=new Float32Array(p),M=new Float32Array(p);for(let g=t.x0;g<t.x1;g++){let m=g+.5,w=-170;for(let y=0;y<p;y++){let b=Mn[y],A=(Z(l,m*.55+y*91,3)*h+Z(l,m*.55+y*91,60)*(1-h)-.5)*2,D=b.base+Ea(m)*(.4+y*.3)+7*A+b.wob*2*(Z(l,m*1.8+y*61-c*(.5-y*.1),20+y*17)-.5),E=0;for(let R of f[y]){let B=(m-R.x)/R.rx;B*B<1&&(E=Math.max(E,R.h*Math.sqrt(1-B*B)))}let N=D+E;u[y]=-999,x[y]=N,M[y]=E,w=Math.max(w,N)}let v=-1,k=-999;for(let y=t.y0;y<w;y++){let b=y+.5,A=0;for(;A<p&&!(b>=u[A]&&b<x[A]);)A++;if(A>=p){v=-1;continue}A!==v&&(v>=0&&v<A&&(k=b),v=A);let D=Mn[A],E=x[A]-b,N=D.tone,R=Yt(g,y),B;if(E<1)B=M[A]>3?N[3]:N[3]-1;else if(b-k<1.5&&A>0)B=Math.max(0,N[0]-1);else if(E<2+M[A]*.25+R*2)B=N[2];else if(E<6+M[A]*.4+R*3)B=N[1];else{let S=Z(l,m*.9+A*77-c*(.6-A*.12),b*1.7+A*31);B=N[0]+(D.tex&&S>.6?1:0)}let L=0;if(r){let S=i(m,b);S>.02&&(B=Math.min(8,B+Math.round(S*(E<1?4.4:E<4?3.8:3.1))),L=S)}D.haze&&!L&&E>=1?o.blend(g,y,d[B],.75):o.px(g,y,d[Math.max(0,B)]),L>.03&&o.light(g,y,e[3],L*(E<3?.4:.22))}}}function Oe(o,t,s,n,a,e,i){let r=p=>{let h=e*(.3+.7*Math.max(0,1-Math.abs(p-et)/170));return h>.45?2:h>.15?1:0};if(!i){let p=[n[4],n[4],n[5]],h=[n[5],n[6],n[6]];st(t,Bt,300,s*7+1,22,28,(d,u,x,M)=>{let g=_(u,x),m=-14-F(s,M,g,1)*90,w=-176+(m+176)*d,v=-170+F(s,M,g,2)*360-(m-w)*Dt,k=3+F(s,M,g,3)*2,y=Dt/Math.hypot(Dt,1),b=1/Math.hypot(Dt,1),A=r(v),D=p[A],E=h[A];o.line(v-y*k,w-b*k,v-y*k*.4,w-b*k*.4,D),o.line(v-y*k*.4,w-b*k*.4,v,w,E)});return}let f=[n[6],n[6],a[4]],l=[n[7],P,P],c=[n[4],n[5],a[3]];st(t,Bt,84,s*7+2,30,38,(p,h,d,u)=>{let x=_(h,d),M=1+F(s,u,x,1)*4,g=-180+(M+180)*p,m=-175+F(s,u,x,2)*370-(M-g)*Dt,w=9+F(s,u,x,3)*5,v=Dt/Math.hypot(Dt,1),k=1/Math.hypot(Dt,1),y=r(m),b=f[y],A=l[y],D=c[y];o.line(m-v*w,g-k*w,m-v*w*.55,g-k*w*.55,D),o.line(m-v*w*.55,g-k*w*.55,m-v,g-k,b),o.px(m,g,A);let E=Bt/d,N=p*E;if(N<.4){let R=_(h-1,d),B=1+F(s,u,R,1)*4,L=-175+F(s,u,R,2)*370,S=r(L);q0(o,L,B,N,.25+(B-1)/5.3,{hot:S?P:n[7],cool:[n[5],n[6],a[4]][S]},F(s,u,R,4))}})}function Oa(o){let t=new ot(o*31+1),s=$t(t,gn,Xo,et,ct,.26,.18),n=s[0].pts,a=t.sign();return[.2,.38,.55].forEach((e,i)=>{let r=Math.floor(e*(n.length-1)),[f,l]=n[r],[c,p]=n[Math.min(n.length-1,r+3)],h=Math.atan2(p-l,c-f)+(i%2?-a:a)*t.range(.6,1),d=t.range(36,56)*(1-e*.45);s.push(...$t(t,f,l,f+Math.cos(h)*d,l+Math.sin(h)*d,.3,.5,.6,1))}),s}function Na(o,t,s,n){let a=Oa(s);if(t<Ut){let c=Xo+(ct-Xo)*Math.pow(Math.floor((t-qt)/(Ut-qt)*9)/9,1.25);for(let p of a)for(let h=0;h<p.pts.length-1;h++){let[d,u]=p.pts[h],[x,M]=p.pts[h+1];if(M>c)break;o.line(d,u,x,M,p.w>=1?n[2]:n[1]),h%4===0&&o.glow(d,u,6,n[3],.22*p.w)}return}let e=[a[0],...$t(new ot(s*31+2),gn,Xo,et,ct,.3,.3).slice(1).filter((c,p)=>p<2)],i=t>=Mo?2:1,r=t-(i===2?Mo:Ut),f=d0(t,i===2?Mo:Ut,i===2?Be:Ee),l=i===2?e:a;if(f>0)Ta(o,l,f,n);else if(r<.5){let c=1-r/.5;for(let p of l)if(p.w>=1)for(let[h,d]of p.pts)o.dot(h,d,n[1],c*.9)}}function Ra(o,t,s,n){let a=t-De-.22;if(a<0||a>.17)return;let e=$t(new ot(s*7+3),-150,-138,-26,-134,.2,.7),i=-150+130*Math.min(1,(Math.floor(a*30)+1)/3),r=a<.1?1:.5;for(let f of e)for(let l=0;l<f.pts.length-1;l++){let[c,p]=f.pts[l],[h,d]=f.pts[l+1];if(c>i)break;o.line(c,p,h,d,f.w>=1&&r>.6?n[4]:n[3]),f.w>=1&&o.dot(c,p+1,n[2],r),l%3===0&&o.glow(c,p,10,n[3],.35*r*f.w)}}function Ta(o,t,s,n){for(let a of[0,1,2])for(let e of t){let i=e.w>=1;if(!(!i&&(s<.4||a===0&&e.w<.5)))for(let r=0;r<e.pts.length-1;r++){let[f,l]=e.pts[r],[c,p]=e.pts[r+1],h=Math.max(1,Math.hypot(c-f,p-l));for(let d=0;d<=h;d+=.5){let u=f+(c-f)*d/h,x=l+(p-l)*d/h;a===0?o.circle(u,x,i?s>.6?2.3:1.7:1.2,s>.6?n[2]:n[1]):a===1?o.circle(u,x,i?s>.6?1.4:.9:.6,i?n[4]:n[3]):i?(o.px(u,x,s>.3?P:n[4]),s>.85&&o.px(u+1,x,P)):e.w>.4&&s>.6&&o.px(u,x,n[4])}a===0&&r%3===0&&o.glow(f,l,i?18:8,n[3],(i?.5:.3)*s*e.w)}}}function ja(o,t,s,n,a){let e=t-Ut;if(e<0||e>1.8)return;let i=u0(t);if(i>0){let d=Math.floor(t*30+.001),u=new ot(s*977+d);for(let x=0;x<4;x++){let M=x%2?1:-1,g=u.range(10,30)*(.6+.4*i);for(let m of $t(u,et+M,ct-1,et+M*g,ct+u.range(-2,3),.35,.5,.6,1))o.polyline(m.pts,i>.6&&m.w>.5?a[4]:a[3]),o.glow(m.pts[m.pts.length>>1][0],m.pts[m.pts.length>>1][1],8,a[3],.3*i)}o.circle(et,ct-1,2+3*i,a[4]),o.circle(et,ct-1,1+2*i,P),o.glow(et,ct-12,95,a[2],.55*i),o.glow(et,ct-4,40,a[3],.5*i),o.glow(et,ct-2,14,P,.6*i)}let r=new ut({rng:new ot(s*13+5),ground:()=>4,sparks:[P,a[4],a[3],a[2]],haze:a[2]}),f=r.R,l=X(n[4],a[3],.3),c=(d,u)=>{for(let x=0;x<d;x++){let M=-Math.PI/2+f.range(-1.35,1.35),g=f.range(110,420)*u;r.spawn(U.SPARK,et,ct-1,Math.cos(M)*g,Math.sin(M)*g,f.range(.18,.6))}for(let x=0;x<6*u;x++){let M=f.sign();r.spawn(U.VAPOUR,et+M*f.range(2,8),ct-f.range(1,3),M*f.range(30,90),-f.range(4,16),f.range(.6,1.2),l,f.range(2.5,4.5),f.range(0,.08))}};c(48,1);let p=0,h=!1;for(let d=1/120;p+d<=e;p+=d)!h&&p>=Mo-Ut&&(h=!0,c(16,.7)),r.update(d);r.draw(o),e<1.6&&o.glow(et,ct,16,a[2],.4*(1-e/1.6)**2)}function Sa(o,t,s,n,a,e,i){let r=nt(n+3,256,128),f=nt(n+4,256,128,[4,8,16]),l=256*3*s/Bt;if(rt(o,Et,-14,-.5,(c,p,h)=>{let d=Z(f,c*1.1-l,p*4+9)-.4;d<=0||(h.c=i>.1?X(a[4],e[3],i):a[4],h.a=Math.min(.3,d*.9)*(1+p/14),h.b=1)}),rt(o,Et,0,9,(c,p,h)=>{let d=M=>Z(r,c*1.3+31,M*9)>.6-M*.006,u=d(p),x=u&&!d(p-1);if(h.b=1,h.c=a[1],h.a=.5,p<1)h.c=Z(r,c*2,50)>.5?a[4]:a[3],h.a=1,h.b=0;else if(u){let M=Math.abs(c-et)/150;i>.06?(h.c=M<.25&&i>.5||x?e[4]:e[3],h.a=H(i*(1.35-M)*(x?1.4:1)),h.b=0):(h.c=x?a[5]:a[3],h.a=x?1:.7),h.l=e[3],h.k=i*.25*Math.max(0,1-M)}}),i>.2)for(let c=1;c<10;c++)F(c,Math.floor(s*30),3)<.8&&o.dot(et+Math.sin(c*1.7+s*40)*1.2,c,c<4?P:e[4],i*(1.1-c/12))}var g0={};it(g0,{create:()=>Ja,meta:()=>Te});var $=320,at=180;function mn({name:o,desc:t,tags:s,duration:n,options:a}){return{name:o,desc:t,tags:["transition","screen",...s,"one-shot"],size:[$,at],origin:[0,0],duration:n,loop:!1,fps:30,bg:"sky",options:{color:"#0b0a10",seed:1,...a}}}var M0=class extends Zt{inside(t,s){let n=this.fromX(t+.5,s+.5),a=this.fromY(t+.5,s+.5);return n>=0&&a>=0&&n<$&&a<at}put(t,s,n,a){this.inside(t,s)&&super.put(t,s,n,a)}add(t,s,n,a){this.inside(t,s)&&super.add(t,s,n,a)}blendPx(t,s,n,a){this.inside(t,s)&&super.blendPx(t,s,n,a)}},Ne=new WeakMap;function yn(o){let t=Ne.get(o);return t||Ne.set(o,t=new M0(o.frame)),t.reset(),t.tx=o.tx,t.ty=o.ty,t.fx=o.fx,t.cs=o.cs,t.sn=o.sn,t.fade=o.fade,t.lightK=o.lightK,t.layer=o.layer,t}var Ya=o=>o.sn===0&&o.cs===1,za=o=>o.fx>0?Math.floor(o.tx+.5):Math.floor(o.tx-.5);function It(o,t,s,n,a,e){if(!Ya(o))return o.rect(t,s,n,a,e);let i=Math.round(t),r=Math.round(t+n),f=Math.round(s),l=Math.round(s+a),c=o.fx,p=za(o);for(let h=f;h<l;h++){let d=Math.floor(o.ty+h+.5);for(let u=i;u<r;u++)o.put(p+c*u,d,e,1)}}function Wt(o,t,s,n,a,e,i,r=1){if(!(n<.8||r<=0)){for(let f=0;f<8;f++){let l=f%2===1,c=a+f*I/8,p=l?n*.42:n,h=Math.cos(c),d=Math.sin(c);for(let u=0;u<=p;u+=.5){let x=u/p,M=l?x<.5?e:i:x<.3?P:x<.65?e:i;o.dot(t+h*u,s+d*u,M,r*(x<.7?1:1-(x-.7)/.35)),!l&&x<.22&&n>4&&(o.dot(t+h*u-d,s+d*u+h,e,r),o.dot(t+h*u+d,s+d*u-h,e,r))}}o.dot(t,s,P,r),o.glow(t,s,4+n*1.4,e,.5*r),o.glow(t,s,2+n*.5,P,.4*r)}}var Te=mn({name:"Iris",desc:"A lit iris closes onto a warm spotlight where dust drifts, holds as its rim twinkles, snaps shut into a glint, then pops open from a flash with a white-hot rim throwing sparks.",tags:["iris","circle","spotlight","wipe"],duration:2.2,options:{palette:["#1c140c","#3b2a18","#6e5233","#a8875a","#d9bd8a","#f3e2bd","#fff7e8","#ffffff"],focus:[160,100],seed:1}}),La=Te.duration,Pt=.62,Ot=.9,to=.99,gt=1.2,wn=1.75,bn=24,Re=5,kn=16;function Ja(o){let t=J(o.palette,8),s=j(o.color),n=new ot(o.seed),[a,e]=o.focus,i=Math.max(...[[0,0],[$,0],[0,at],[$,at]].map(([x,M])=>Math.hypot(x-a,M-e)))+Re+2,r=new ut({rng:n,sparks:[P,t[6],t[5],t[4]]}),f=new Qt,l=x=>x<Pt?bn+(i-bn)*(1-At.inOutCubic(x/Pt)):x<Ot?bn+Math.sin((x-Pt)*22)*.8*(1-(x-Pt)/(Ot-Pt)):x<to?bn*(1-At.inCubic((x-Ot)/(to-Ot))):x<gt?0:i*At.outQuart(H((x-gt)/(wn-gt))),c=0,p=!1,h=!1,d=i,u=La-.05;return{update(x){c+=x;let M=l(c);if(c>Pt-.25&&c<Ot&&n.chance(.25)){let g=n.range(0,I),m=Math.sqrt(n.next())*M*.9;r.spawn(U.EMBER,a+Math.cos(g)*m,e+Math.sin(g)*m,n.range(-6,6),-n.range(4,14),n.range(.4,.8),0,1)}if(c>Pt-.1&&c<Ot&&n.chance(.3)){let g=n.range(0,I);r.spawn(U.STAR,a+Math.cos(g)*(M+1),e+Math.sin(g)*(M+1),0,0,n.range(.2,.4),n.chance(.5)?P:t[6],n.range(1,2.4))}if(!p&&c>=to&&(p=!0,f.add(a,e,50,t[5],.7,.3)),!h&&c>=gt){h=!0,f.add(a,e,140,t[5],.7,.45),f.add(a,e,50,P,.9,.12);for(let g=0;g<40;g++){let m=n.range(0,I),w=n.range(150,420);r.spawn(U.SPARK,a+Math.cos(m)*3,e+Math.sin(m)*3,Math.cos(m)*w,Math.sin(m)*w,n.range(.2,.5))}}if(c>gt&&c<wn-.1){let g=(M-d)/x;for(let m=0;m<2;m++){if(!n.chance(.6))continue;let w=n.range(0,I),v=a+Math.cos(w)*M,k=e+Math.sin(w)*M;v<0||k<0||v>=$||k>=at||r.spawn(U.MOTE,v,k,Math.cos(w)*g*.35,Math.sin(w)*g*.35,Math.min(n.range(.2,.45),u-c),n.chance(.5)?t[6]:t[5],.7)}}d=M,r.update(x),f.update(x)},draw(x){let M=yn(x),g=l(c),m=c>=gt?1-C(gt,wn,c):c<Ot?.45+.25*C(Pt-.2,Pt,c):.7,w=Re+(c>=gt?3*m:0);if(c<wn+.05&&!(c>=to&&c<gt&&g<=0))for(let y=0;y<at;y++){let b=y+.5-e,A=Math.sqrt(Math.max(0,(g+w)**2-b*b)),D=Math.abs(b)<g?Math.sqrt(g*g-b*b):0;if(A<=0){It(x,0,y,$,1,s);continue}let E=H(Math.floor(a-A),0,$),N=H(Math.ceil(a+A),0,$);E>0&&It(x,0,y,E,1,s),N<$&&It(x,N,y,$-N,1,s);let R=g>kn?Math.sqrt(Math.max(0,(g-kn)**2-b*b)):0;for(let B=E;B<N;B++){let L=B+.5-a;if(Math.abs(L)<R)continue;let S=Math.hypot(L,b)-g;if(S>=0){let Y=S/w,z=.5-.5*(L*.7+b*.7)/(g+S+.01),W=m*(.55+.6*z);x.px(B,y,Y>=1?s:Y<.2?W>.5?P:W>.3?t[6]:t[5]:Y<.4?W>.38?t[6]:t[5]:Y<.65?W>.3?t[5]:t[4]:Y<.85?t[3]:t[2]),Y<.5&&x.light(B,y,t[5],.45*W*(1-Y*2))}else S>-kn&&x.light(B,y,t[5],(.18+.3*m)*(1+S/kn)**2)}}else c>=to&&c<gt&&It(x,0,0,$,at,s);if(g>0&&g<80&&c<to){let y=1-g/80;M.glow(a,e,g*1.15+6,t[5],.18+.32*y),M.glow(a,e,g*.6+3,t[6],.25*y)}if(c>.08&&c<Ot){let y=-2.4+(c-.08)/(Ot-.08)*I,b=a+Math.cos(y)*(g+1),A=e+Math.sin(y)*(g+1);b>2&&A>2&&b<$-2&&A<at-2&&Wt(M,b,A,7+3*Math.sin(c*9),c*3,t[6],t[5],.9)}let v=c-to;v>-.06&&v<.22&&Wt(M,a,e,14*(1-Math.abs(v+.01)/.23),v*4,t[6],t[5]);let k=c-gt;k>=0&&k<.18&&(Wt(M,a,e,20*(1-k/.18),.4-k*3,t[6],t[5]),M.glow(a,e,60,P,.6*(1-k/.18))),r.draw(M),f.draw(M)}}}var w0={};it(w0,{create:()=>Wa,meta:()=>Se});var Se=mn({name:"Star iris",desc:"A five-point star iris spins shut on the middle of the screen, its gold rim lit and its tips twinkling and shedding motes; it closes on a glint and spins open again from a flash.",tags:["iris","star","gold","wipe"],duration:2.2,options:{palette:On.gold,focus:[160,96],seed:1}}),go=.98,mo=1.16,Xa=2,y0=430,Ua=.46,Uo=4;function m0(o){if(o<go)return{r:y0*(1-At.inOutQuad(o/go))**1.3,a:-Math.PI/2+At.inOutCubic(o/go)*1.6*I};if(o<mo)return{r:0,a:0};let t=H((o-mo)/(Xa-mo));return{r:y0*At.inOutCubic(t)**1.15,a:-Math.PI/2-At.inOutCubic(t)*1.6*I}}var je=(o,t,s,n)=>Array.from({length:10},(a,e)=>{let i=e%2?s*Ua:s,r=n+e*Math.PI/5;return[o+Math.cos(r)*i,t+Math.sin(r)*i]});function Wa(o){let t=J(o.palette,8),s=j(o.color),n=new ot(o.seed),[a,e]=o.focus,i=new ut({rng:n,sparks:[P,t[6],t[5],t[4]]}),r=new Qt,f=0,l=!1,c=!1,p=m0(0),h=Se.duration-.05;return{update(d){f+=d;let u=m0(f),x=je(a,e,u.r,u.a),M=(u.a-p.a)/d;if(u.r>2)for(let g=0;g<10;g+=2){let[m,w]=x[g];if(m<0||w<0||m>=$||w>=at||!n.chance(.35))continue;let v=u.a+g*Math.PI/5,k=M*u.r*.25;i.spawn(n.chance(.6)?U.STAR:U.MOTE,m,w,-Math.sin(v)*k+Math.cos(v)*20,Math.cos(v)*k+Math.sin(v)*20,Math.min(n.range(.25,.55),h-f),n.chance(.5)?t[6]:t[5],n.range(.6,1.8))}if(!l&&f>=go&&(l=!0,r.add(a,e,60,t[5],.7,.3)),!c&&f>=mo){c=!0,r.add(a,e,120,t[5],.7,.4),r.add(a,e,40,P,.8,.12);for(let g=0;g<24;g++){let m=n.range(0,I),w=n.range(60,200);i.spawn(U.STAR,a,e,Math.cos(m)*w,Math.sin(m)*w,n.range(.3,.6),n.chance(.5)?P:t[6],n.range(.6,2))}}p=u,i.update(d),r.update(d)},draw(d){let u=yn(d),x=m0(f);if(f>=go&&f<mo)It(d,0,0,$,at,s);else if(x.r<y0-2){let m=je(a,e,x.r,x.a);for(let w=0;w<at;w++){let v=w+.5,k=[];for(let b=0,A=9;b<10;A=b++){let[D,E]=m[b],[N,R]=m[A];E>v!=R>v&&k.push(D+(v-E)*(N-D)/(R-E))}k.sort((b,A)=>b-A);let y=0;for(let b=0;b+1<k.length;b+=2){let A=H(Math.round(k[b]),0,$);A>y&&It(d,y,w,A-y,1,s),y=Math.max(y,H(Math.round(k[b+1]),0,$))}y<$&&It(d,y,w,$-y,1,s)}for(let w=0,v=9;w<10;v=w++){let[k,y]=m[v],[b,A]=m[w],D=Math.hypot(b-k,A-y);if(D<.5)continue;let E=(b-k)/D,N=(A-y)/D,R=-N,B=E,L=R*-.6+B*-.8>.1;for(let S=0;S<=D;S+=.5){let Y=k+E*S,z=y+N*S;if(!(Y<-Uo||z<-Uo||Y>$+Uo||z>at+Uo)){for(let W=0;W<Uo;W+=.5){let tt=W<1?L?P:t[6]:W<2?t[5]:W<3?t[4]:t[3];u.px(Y+R*W,z+B*W,tt)}S%2===0&&u.light(Y,z,t[5],.5)}}}for(let w=0;w<10;w+=2){let[v,k]=m[w];v<2||k<2||v>$-2||k>at-2||Wt(u,v,k,5+3*Math.sin(f*13+w),f*2+w,t[6],t[5])}x.r<140&&u.glow(a,e,x.r*.7+8,t[5],.35*(1-x.r/140))}let M=f-go;M>-.05&&M<.2&&Wt(u,a,e,14*(1-Math.abs(M)/.2),M*4,t[6],t[5]);let g=f-mo;g>=0&&g<.16&&(Wt(u,a,e,18*(1-g/.16),.3-g*5,t[6],t[5]),u.glow(a,e,50,P,.5*(1-g/.16))),i.draw(u),r.draw(u)}}}window.PFX={createFrame:_o,clearFrame:Qo,composite:Tn,createFx:Bo,painterFor:Eo,Particles:ut,Bits:vo,P:U,PF:mt,B:_t,Rng:ot,hex:j,sparkle:yt,fx:{godRays:Xn,cherryBlossoms:Wn,rain:Hn,fog:Zn,fireflies:$n,clouds:Vn,blizzard:n0,aurora:a0,snow:c0,fallingLeaves:l0,shootingStars:p0,storm:x0,iris:g0,starIris:w0}};})();
+</script>
+<!-- /pixelfx -->
 <script>
 'use strict';
 /* =====================================================================
    GRUDGE  -  a tiny troll platformer
    "The level never forgets. Neither do you."
-   10 phases x 5 levels. Each phase has its own palette, backdrop and trick.
+   20 phases x 5 levels, plus a bonus phase. Each phase has its own palette, backdrop, weather and trick.
 
    Sections:
      1. CONFIG        6. LEVEL LOADING   11. MENUS
@@ -324,9 +330,9 @@ const SKINS = [
   { id: 'gold',     name: 'GOLD',     style: 'gold',
     need: { text: '25 DEATHLESS CLEARS', have: () => deathlessCount(), goal: 25 } },
   { id: 'party',    name: 'PARTY',    hat: ['...55...', '..5445..', '.555555.'], c5: '#e0508f',
-    need: { text: 'CLEAR GRUDGE MATCH', have: () => phaseCleared(10), goal: 5 } },
+    need: { text: 'CLEAR GRUDGE MATCH', have: () => phaseCleared(PHASES.length - 1), goal: 5 } },
 ];
-const skinUnlocked = s => !s.need || s.need.have() >= s.need.goal;
+const skinUnlocked = s => !s.need || save.got.includes(s.id) || s.need.have() >= s.need.goal;   // once won, kept
 const skinById = id => SKINS.find(s => s.id === id) || SKINS[0];
 
 let SPR = {};
@@ -385,6 +391,7 @@ function bakeSprites() {
     down to the screen edge, so write only the interesting part):
       .  empty            #  ground           ^  spike (up)      v  spike (down)
       P  player start     D  exit door        F  fake door (kills)
+      =  ice (slippery)   *  spring           <  >  conveyor belts (carry you left / right)
       a-z (except v)  trap group tiles, configured in `groups`:
           {}                     solid block drawn like ground (fake floor, falling ceiling...)
           {spike:1}  {down:1}    spike tile (pointing down)    {hide:1}  starts sunk out of sight
@@ -395,10 +402,20 @@ function bakeSprites() {
           {patrol:{dx,dy,speed,wait,phase}}   moves back and forth forever (ferries, presses, lifts)
           {blink:[period, phase]}             hidden spikes that pop in and out on a rhythm
     Traps: { when:{...}, do:'action', g:'letters', say:'narrator line', delay, repeat }
-      when: x (player tile x >=), xl (<=), up (tiles above spawn >=), touch:'a', jump:true,
+      when: x (player tile x >=), xl (<=), up (tiles above spawn >=), low (tiles above spawn <=), touch:'a', stand:'a' (on top of it), jump:true,
             deaths:n, t:secs, after:trapIndex
       do:   fall | pop | move(dx,dy,speed) | chase(speed) | show | vanish | say
-            door(x, dy, speed) | flee(speed, max) | reverse(time)                         */
+            door(x, dy, speed, blink: vanish and reappear) | flee(speed, max) | reverse(time)
+            flood(speed) | gust(dir, speed, time) | gravity(k) | belts | lights(on)
+    Level-wide tricks (phases 11-20):
+      wrap: true                      walk off one side, come in the other (no side walls)
+      wind: {speed, on, off, dir}     gusts on a clock; dir 1 / -1, or 'alt' to swap each gust
+      flood: {speed, delay, top}      the water rises from below; 'trigger: true' waits for a trap
+      dark: {r, flash}                only a circle of light around you; a flash every `flash` s
+      echo: secs                      your own shadow walks your path that many seconds behind
+      grav: k                         gravity times k (the moon)
+      belt: px/s, spring: px/s        conveyor speed, spring launch speed
+      solve: {stones, deaths, via}    for tools/solve.mjs: start as if you had died there; via = [[tx, ty], ...] route */
 const G40 = '########################################';
 const E40 = '........................................';
 
@@ -942,6 +959,541 @@ const PHASES = [
     ] },
  ] },
 
+ /* ==== Phases 11-20. "THE LAST DOOR" said no more tricks. It lied. ==== */
+ { name: 'THE LOOP', tag: 'WHAT GOES AROUND COMES AROUND.', motif: 'rings',
+   pal: ['#7fc8a9', '#72bb9c', '#1b3a2f', '#0a1712', '#e6f7ef'],
+   levels: [
+  { name: 'THE LONG WAY', hint: 'THE DOOR IS RIGHT THERE. JUST WALK.', pity: 'GO LEFT. OFF THE EDGE. THE WORLD IS ROUND.',
+    quips: ['WRONG WAY ROUND.'], wrap: true,
+    map: ['................##......................',
+          '................##......................',
+          '................##......................',
+          '..........P.....##.....D................',
+          G40, G40],
+    traps: [ { when: { x: 30 }, do: 'say', say: 'WAIT. HOW DID YOU GET OVER THERE?' } ] },
+  { name: 'MIND THE SEAM', hint: 'THE DOOR IS ON THE LEFT. GO LEFT.', pity: 'GO RIGHT. JUMP THE EDGE EARLY AND LONG.',
+    quips: ['THE SEAM WAS POINTY.'], wrap: true,
+    groups: { a: { spike: 1, hide: 1 } },
+    map: ['....................##..................',
+          '....................##..................',
+          '....................##..................',
+          '.aa....D............##..........P.......',
+          '^######################################^',
+          G40],
+    traps: [ { when: { x: 35 }, g: 'a', do: 'pop', say: 'THE OTHER LEFT.' } ] },
+  { name: 'OUROBOROS', hint: 'NOTHING IS BEHIND YOU. NOTHING.', pity: 'RUN RIGHT. NEVER STOP. THE DOOR IS JUST PAST THE EDGE.',
+    quips: ['IT CAME ALL THE WAY ROUND.'], wrap: true,
+    groups: { a: { spike: 1, hide: 1 } },
+    map: ['.....##.................................',
+          '.....##.................................',
+          '..D..##.aa.P.......^..........^^...^....',
+          '########################...#############',
+          '########################...#############'],
+    traps: [ { when: { x: 13 }, g: 'a', do: 'chase', speed: 7.5, say: 'OKAY. SOMETHING.' } ],
+    solve: { via: [[30, 2], [39, 2]] } },
+  { name: 'DIZZY', hint: 'ALMOST THERE. A BIT TO THE LEFT.', pity: 'PAST THE EDGE THE CONTROLS FLIP. HOLD LEFT TO GO RIGHT.',
+    quips: ['ROUND AND ROUND.'], wrap: true,
+    map: ['..............##........................',
+          '..............##........................',
+          '..............##........................',
+          '...........D..##.....P..................',
+          '###^####^###############################',
+          G40],
+    traps: [ { when: { x: 37 }, do: 'reverse', time: 2.6, say: 'THE OTHER SIDE IS BACKWARDS.' } ] },
+  { name: 'LAP TWO', hint: 'ONE LAP. THAT IS ALL. PROMISE.', pity: 'IT RUNS PAST THE WALL. GO ROUND AGAIN. JUMP THE NEW SPIKES AND THE FLOOR.',
+    quips: ['DIZZY YET?'], wrap: true,
+    groups: { a: { spike: 1, hide: 1 }, b: {} },
+    map: ['...................##...................',
+          '...................##...................',
+          '...................##...................',
+          '....P..............##.........D......aa.',
+          '##bbbb##################################',
+          '##bbbb##################################'],
+    traps: [
+      { when: { x: 26, xl: 34 }, do: 'door', x: 11, blink: true, say: 'MISSED IT. AGAIN.' },
+      { when: { x: 31, after: 0 }, g: 'a', do: 'pop' },
+      { when: { touch: 'b', after: 0 }, g: 'b', do: 'fall', shake: 0.15, say: 'LAP TWO HAS FEWER FLOORS.' },
+    ],
+    solve: { via: [[1, 3], [34, 3], [30, 3], [38, 3]] } },
+ ] },
+
+ { name: 'FROSTBITE', tag: 'EVERY FLOOR IS A SLIDE.', motif: 'pines',
+   pal: ['#8fb4d6', '#84a8cb', '#1a3049', '#0a1320', '#f2f8ff'],
+   levels: [
+  { name: 'SKATING', hint: 'NICE AND SMOOTH. NO SURPRISES.', pity: 'YOU CANNOT STOP ON ICE. JUMP EARLY.',
+    quips: ['SLIPPED.'],
+    map: ['..P.........^..........^^...........D...',
+          '========================================',
+          G40],
+    traps: [ { when: { x: 5 }, do: 'say', say: 'WHEEE.' } ] },
+  { name: 'THIN ICE', hint: 'THE ICE IS VERY THICK.', pity: 'IT CRACKS WHEN YOU LAND. NEVER STOP. HOP THE GAPS.',
+    quips: ['CRACK.'],
+    groups: { a: { ice: 1 }, b: { ice: 1 }, c: { ice: 1 }, d: { ice: 1 } },
+    map: ['..P..................................D..',
+          '=====aaaa..bbbb..cccc..dddd....=========',
+          '#####......................#############'],
+    traps: [
+      { when: { touch: 'a' }, g: 'a', do: 'fall', shake: 0.3, say: 'CRACK.' },
+      { when: { touch: 'b' }, g: 'b', do: 'fall', shake: 0.3 },
+      { when: { touch: 'c' }, g: 'c', do: 'fall', shake: 0.3 },
+      { when: { touch: 'd' }, g: 'd', do: 'fall', shake: 0.2, say: 'CRACK. CRACK.' },
+    ] },
+  { name: 'TURNAROUND', hint: 'THE DOOR IS IN THE MIDDLE. EASY.', pity: 'IT JUMPS BEHIND YOU. BRAKE HARD. THE SPIKES POP AHEAD.',
+    quips: ['NO BRAKES.'],
+    groups: { a: { spike: 1, hide: 1 } },
+    map: ['..P.................D..........aa.......',
+          '##======================================',
+          G40],
+    traps: [
+      { when: { x: 15 }, do: 'door', x: 5, blink: true, say: 'BEHIND YOU.' },
+      { when: { x: 18, after: 0 }, g: 'a', do: 'pop', say: 'AND STOP.' },
+    ] },
+  { name: 'HOCKEY', hint: 'SKATE AT YOUR OWN PACE.', pity: 'THEY DO NOT SLIP. YOU DO. GET GOING AND STAY GOING.',
+    quips: ['CHECKED INTO THE BOARDS.'],
+    groups: { a: { spike: 1, hide: 1 } },
+    map: ['aa.P..........^...........^^........D...',
+          '=================...==========...=======',
+          '#################...##########...#######'],
+    traps: [ { when: { x: 6 }, g: 'a', do: 'chase', speed: 7, say: 'FACE OFF.' } ] },
+  { name: 'WHITEOUT', hint: 'A GENTLE SNOWFALL.', pity: 'ICE, HAIL, THIN ICE, MIRROR. NEVER STOP.',
+    quips: ['BURIED IN SNOW.'],
+    groups: { d: { ice: 1 } },
+    map: ['..........aa.......bb.........cc........',
+          E40, E40, E40, E40,
+          '..P.................................D...',
+          '===================dddd..===============',
+          '###################......###############'],
+    traps: [
+      { when: { x: 8 }, g: 'a', do: 'fall', say: 'HAIL.' },
+      { when: { x: 16 }, g: 'b', do: 'fall' },
+      { when: { touch: 'd' }, g: 'd', do: 'fall', shake: 0.25 },
+      { when: { x: 27 }, g: 'c', do: 'fall' },
+      { when: { x: 31 }, do: 'reverse', time: 1.0, say: 'SLIP. FLIP.' },
+    ] },
+ ] },
+
+ { name: 'THE GALE', tag: 'HOLD ON TO SOMETHING.', motif: 'windmills',
+   pal: ['#d9a35f', '#cd9653', '#3b2410', '#160c04', '#fbecd2'],
+   levels: [
+  { name: 'BREEZY', hint: 'NOT A BREATH OF WIND.', pity: 'JUMP ONLY IN THE CALM. THE GUSTS SHORTEN EVERY JUMP.',
+    quips: ['GONE WITH THE WIND.'], wind: { speed: 48, on: 1.3, off: 1.7, dir: -1, phase: 0.6 },
+    map: ['..P.........^...............^^......D...',
+          '#################...####################',
+          '#################...####################'],
+    traps: [] },
+  { name: 'TAILWIND', hint: 'THE WIND IS ON YOUR SIDE.', pity: 'IN A GUST, HOLD LEFT TO STAY PUT. HOP ONLY IN THE CALM.',
+    quips: ['BLOWN AWAY.'], wind: { speed: 55, on: 1.2, off: 1.4, dir: 1 },
+    map: ['..P.....^^^..^^^..^^^..^^^..^^^......D..',
+          G40, G40],
+    traps: [] },
+  { name: 'CROSSWIND', hint: 'IT ONLY BLOWS ONE WAY.', pity: 'IT SWAPS SIDES EVERY GUST. LEAN INTO IT ON EACH PILLAR.',
+    quips: ['WHICH WAY NOW?'], wind: { speed: 50, on: 1.1, off: 1.2, dir: 'alt' },
+    map: ['..P.................................D...',
+          '#####...##....##....##....##....########',
+          '#####...##....##....##....##....########',
+          '........##....##....##....##............'],
+    traps: [] },
+  { name: 'KITE', hint: 'TOO WIDE. GIVE UP.', pity: 'WAIT FOR THE GUST. JUMP WITH IT. IT CARRIES YOU OVER.',
+    quips: ['NOT QUITE A BIRD.'], wind: { speed: 60, on: 1.4, off: 2.0, dir: 1, phase: 2.3 },
+    map: ['..P...................................D.',
+          '##############.......###################',
+          '##############.......###################'],
+    traps: [ { when: { x: 18 }, do: 'say', say: 'OH. YOU CAN FLY.' } ] },
+  { name: 'HURRICANE', hint: 'THE STORM HAS PASSED.', pity: 'JUMP WITH THE GUSTS, NOT AGAINST THEM. OUTRUN THE SPIKES.',
+    quips: ['SWEPT AWAY.'], wind: { speed: 46, on: 1.0, off: 1.3, dir: 'alt', phase: 0.4 },
+    groups: { a: { spike: 1, hide: 1 }, b: {} },
+    map: ['aa.P........^.........^.........^....D..',
+          '###############bbbb###########...#######',
+          '###############bbbb###########...#######'],
+    traps: [
+      { when: { x: 6 }, g: 'a', do: 'chase', speed: 6.5, say: 'HERE IT COMES.' },
+      { when: { touch: 'b' }, g: 'b', do: 'fall', shake: 0.25, say: 'THE ROOF WENT FIRST.' },
+    ] },
+ ] },
+
+ { name: 'THE FLOOD', tag: 'THE WATER IS ALWAYS LATE. UNTIL IT IS NOT.', motif: 'waves',
+   pal: ['#5fa3a8', '#56979c', '#0f2f36', '#05151a', '#e1f5f3'],
+   levels: [
+  { name: 'HIGH WATER', hint: 'NO NEED TO HURRY.', pity: 'CLIMB AND DO NOT LOOK DOWN. THE WATER WAITS FOR NO ONE.',
+    quips: ['GLUB.'], flood: { speed: 6, delay: 1.2 },
+    map: ['..............................D.........',
+          '............................######......',
+          E40,
+          '........................####............',
+          E40,
+          '..................####..................',
+          E40,
+          '............####........................',
+          E40,
+          '......####..............................',
+          '..P.....................................',
+          G40],
+    traps: [] },
+  { name: 'SINKING FEELING', hint: 'SOLID STEPS ALL THE WAY UP.', pity: 'EVERY STEP CRUMBLES. DO NOT STAND STILL.',
+    quips: ['SANK.'], flood: { speed: 7, delay: 1.0 },
+    groups: { a: {}, b: {}, c: {}, d: {} },
+    map: ['..D.....................................',
+          '#####...................................',
+          E40,
+          '......dddd..............................',
+          E40,
+          '.............cccc.......................',
+          E40,
+          '....................bbbb................',
+          E40,
+          '...........................aaaa.........',
+          '..P.................................#...',
+          G40],
+    traps: [
+      { when: { stand: 'a' }, g: 'a', do: 'fall', shake: 0.5 },
+      { when: { stand: 'b' }, g: 'b', do: 'fall', shake: 0.5 },
+      { when: { stand: 'c' }, g: 'c', do: 'fall', shake: 0.5 },
+      { when: { stand: 'd' }, g: 'd', do: 'fall', shake: 0.5, say: 'ALMOST.' },
+    ],
+    solve: { via: [[28, 8], [21, 6], [14, 4], [7, 2]] } },
+  { name: 'LIFEGUARD', hint: 'TAKE THE LIFT. RELAX.', pity: 'RIDE THE FIRST LIFT UP, CROSS, CATCH THE SECOND AT THE TOP, HOP UP.',
+    quips: ['MISSED THE LIFT.'], flood: { speed: 6, delay: 2.0 },
+    groups: { a: { plat: 1, patrol: { dy: -6, speed: 3, wait: 0.8 } }, b: { plat: 1, patrol: { dy: -6, speed: 3, wait: 0.8, phase: 1.4 } } },
+    map: ['.....................................D..',
+          '..............................#########.',
+          E40,
+          '................######..................',
+          E40, E40, E40, E40, E40,
+          '..P.......aaa.............bbb...........',
+          G40],
+    traps: [],
+    solve: { via: [[11, 8], [11, 2], [19, 2], [27, 2], [32, 0]], nodes: 600000 } },
+  { name: 'UNDERTOW', hint: 'THE DOOR IS DOWN HERE. NO WATER.', pity: 'THE WATER COMES WHEN YOU GET CLOSE. CHASE THE DOOR UP.',
+    quips: ['THE DOOR CAN SWIM.'], flood: { speed: 9, trigger: true },
+    map: ['..............................######....',
+          E40,
+          '....................######..............',
+          '...................................####.',
+          '..........######........................',
+          '..P.................................D...',
+          G40],
+    traps: [
+      { when: { x: 30, low: 0 }, do: 'flood', speed: 9, say: 'HIGH TIDE.' },
+      { when: { x: 30, low: 0 }, do: 'door', x: 33, dy: -6, blink: true },
+    ],
+    solve: { via: [[31, 5], [12, 3], [22, 1], [32, -1]] } },
+  { name: 'TSUNAMI', hint: 'A LITTLE DRIZZLE.', pity: 'OUTRUN THE SPIKES, CLIMB FAST, MIND THE FALLING BLOCK AT THE TOP.',
+    quips: ['WIPED OUT.'], flood: { speed: 9, delay: 1.6 },
+    groups: { a: { spike: 1, hide: 1 }, c: {} },
+    map: ['............................cc..........',
+          '......................................D.',
+          '....................................####',
+          E40,
+          '...........................######.......',
+          E40,
+          '..................######................',
+          E40,
+          '.........######.........................',
+          'aa.P....................................',
+          G40],
+    traps: [
+      { when: { x: 6 }, g: 'a', do: 'chase', speed: 6, say: 'SURF IS UP.' },
+      { when: { x: 26, up: 6 }, g: 'c', do: 'fall', say: 'AND A ROCK.' },
+    ] },
+ ] },
+
+ { name: 'LIGHTS OUT', tag: 'WHAT YOU CANNOT SEE CAN SEE YOU.', motif: 'lamps',
+   pal: ['#1a1826', '#232133', '#8f89b0', '#f2d16b', '#0b0a11'],
+   levels: [
+  { name: 'LIGHTS OUT', hint: 'NOTHING TO SEE HERE.', pity: 'WAIT FOR THE FLASH. REMEMBER. THEN GO.',
+    quips: ['WHO TURNED OFF THE LIGHTS?'], dark: { r: 34, flash: 2.2 },
+    map: ['..P........^.........^^........^.....D..',
+          '###################...##################',
+          '###################...##################'],
+    traps: [] },
+  { name: 'BLIND FAITH', hint: 'THE BRIDGE IS PERFECTLY VISIBLE.', pity: 'THE BRIDGE IS THERE. IT HAS ONE GAP IN THE MIDDLE.',
+    quips: ['FAITH IS NOT A FLOOR.'], dark: { r: 30, flash: 2.6 },
+    groups: { a: { ghost: 1 }, b: { ghost: 1 } },
+    map: ['..P..................................D..',
+          '#######aaaaaaaaaaa...bbbbbbbbbb#########',
+          '#######..........................#######'],
+    traps: [] },
+  { name: 'NIGHT SHIFT', hint: 'ALL ALONE IN THE DARK.', pity: 'THEY FOLLOW YOU. KEEP MOVING. TWO GAPS, THEN A SPIKE.',
+    quips: ['SOMETHING WAS THERE.'], dark: { r: 32, flash: 3 },
+    groups: { a: { spike: 1, hide: 1 } },
+    map: ['aa.P..................^.............D...',
+          '###########...############...###########',
+          '###########...############...###########'],
+    traps: [ { when: { x: 6 }, g: 'a', do: 'chase', speed: 6.5, say: 'DID YOU HEAR THAT?' } ] },
+  { name: 'POWER CUT', hint: 'LOOK. EVERYTHING IS LIT.', pity: 'LEARN IT WHILE THE LIGHTS ARE ON. HOP, HOP, GAP, HOP.',
+    quips: ['FUSE BLOWN.'], dark: { r: 26, lit: true },
+    groups: { a: { spike: 1, hide: 1 } },
+    map: ['..P........^......^^.........a.......D..',
+          '####################....################',
+          '####################....################'],
+    traps: [
+      { when: { x: 5 }, do: 'lights', on: false, say: 'OOPS.' },
+      { when: { x: 26 }, g: 'a', do: 'pop' },
+    ] },
+  { name: 'NIGHTMARE', hint: 'SWEET DREAMS.', pity: 'ONLY THE REAL DOOR GLOWS. CRUMBLE, GAP, SPIKE, FAKE, WALL.',
+    quips: ['WAKE UP.'], dark: { r: 24, flash: 3.4 },
+    groups: { b: {}, g: { ghost: 1 } },
+    map: ['....................................g...',
+          '..P..........^..........F..........gD...',
+          '########bbbb######....##################',
+          '########bbbb######....##################'],
+    traps: [ { when: { touch: 'b' }, g: 'b', do: 'fall', shake: 0.3, say: 'BOO.' } ] },
+ ] },
+
+ { name: 'THE ECHO', tag: 'YOU ARE YOUR OWN WORST ENEMY.', motif: 'ripples',
+   pal: ['#a597c4', '#9a8bba', '#2b2142', '#120c1d', '#f3effb'],
+   levels: [
+  { name: 'ECHO', hint: 'TAKE YOUR TIME. THERE IS NO RUSH.', pity: 'YOUR SHADOW WALKS WHERE YOU WALKED. NEVER STOP.',
+    quips: ['YOUR PAST CAUGHT UP.'], echo: 2.0,
+    map: ['..P...........^............^^.......D...',
+          '######################...###############',
+          '######################...###############'],
+    traps: [ { when: { x: 8 }, do: 'say', say: 'DO YOU HEAR FOOTSTEPS?' } ] },
+  { name: 'BACKTRACK', hint: 'STRAIGHT AHEAD. NO TURNING BACK.', pity: 'THE DOOR GOES BACK. JUMP OVER YOUR SHADOW ON THE WAY.',
+    quips: ['YOU MET YOURSELF.'], echo: 1.6,
+    map: ['..P.......................D.............',
+          G40, G40],
+    traps: [ { when: { x: 22 }, do: 'door', x: 4, blink: true, say: 'BACK THERE. MIND YOURSELF.' } ] },
+  { name: 'DETOUR', hint: 'THE SHORT WAY IS OPEN.', pity: 'GO UP AND OVER. COME DOWN AWAY FROM YOUR OWN TRACKS.',
+    quips: ['TRAFFIC JAM.'], echo: 1.4,
+    map: ['....................####................',
+          '..............####......####............',
+          '........####....................####....',
+          '..P.................##..............D...',
+          '####################..##################',
+          G40],
+    traps: [] },
+  { name: 'PRESS ON', hint: 'WAIT FOR THE PRESSES. PATIENCE.', pity: 'YOU CANNOT WAIT IN ONE PLACE. HOP BACK AND FORTH.',
+    quips: ['FLATTENED BY HISTORY.'], echo: 1.8,
+    groups: { a: { patrol: { dy: 4, speed: 7, wait: 0.8, phase: 0.0 } }, b: { patrol: { dy: 4, speed: 7, wait: 0.8, phase: 1.1 } } },
+    map: ['############aa##########bb##############',
+          '############aa##########bb##############',
+          E40, E40, E40,
+          '..P..................................D..',
+          G40, G40],
+    traps: [] },
+  { name: 'MIRROR MIRROR', hint: 'JUST YOU AND YOUR REFLECTION.', pity: 'MIRROR, THEN DOOR BACK, THEN JUMP YOURSELF. IN THAT ORDER.',
+    quips: ['WHICH ONE WAS YOU?'], echo: 1.5,
+    map: ['..P.........^..........^.........D......',
+          G40, G40],
+    traps: [
+      { when: { x: 14 }, do: 'reverse', time: 1.3, say: 'MIRROR.' },
+      { when: { x: 29 }, do: 'door', x: 18, blink: true, say: 'MIRROR, MIRROR.' },
+    ] },
+ ] },
+
+ { name: 'BOUNCE HOUSE', tag: 'WHAT GOES UP COMES DOWN WRONG.', motif: 'balloons',
+   pal: ['#ee8ea5', '#e3819a', '#3f1422', '#16060c', '#fff1f4'],
+   levels: [
+  { name: 'BOING', hint: 'THE DOOR IS UP THERE. WALK UP.', pity: 'STEP ON THE SPRING. STEER ONTO THE LEDGE.',
+    quips: ['BOING. SPLAT.'],
+    map: ['..........................######...D....',
+          '..........................##############',
+          E40, E40, E40, E40, E40,
+          '..P..................*..................',
+          G40],
+    traps: [] },
+  { name: 'LOW CEILING', hint: 'BOUNCE ALL YOU WANT.', pity: 'DO NOT TOUCH THE SPRINGS. JUMP OVER THEM.',
+    quips: ['HEAD FIRST.'],
+    map: ['vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv',
+          E40, E40, E40,
+          '..P......**.......*........***.....D....',
+          G40],
+    traps: [] },
+  { name: 'TRAMPOLINES', hint: 'SOLID GROUND ALL THE WAY.', pity: 'LET THE SPRINGS CARRY YOU. STEER A LITTLE EACH TIME.',
+    quips: ['MISSED THE TRAMPOLINE.'],
+    map: ['vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv',
+          E40, E40, E40, E40, E40, E40, E40, E40,
+          '..P...................................D.',
+          '#####*^^^^*^^^^*^^^^*^^^^*^^^^*^^^^#####',
+          G40],
+    traps: [] },
+  { name: 'POGO PANIC', hint: 'TAKE A BREAK. YOU EARNED IT.', pity: 'SPRING, LEDGE, SPRING. THEY CANNOT CLIMB.',
+    quips: ['BOUNCED INTO TROUBLE.'],
+    groups: { a: { spike: 1, hide: 1 } },
+    map: ['......................................D.',
+          '...............................#########',
+          E40, E40, E40, E40,
+          '..................######................',
+          E40, E40, E40, E40,
+          'aa.P.........*................*.........',
+          G40],
+    traps: [ { when: { x: 6 }, g: 'a', do: 'chase', speed: 7, say: 'TAG. YOU ARE IT.' } ] },
+  { name: 'CIRCUS', hint: 'THE SHOW IS CANCELLED. GO HOME.', pity: 'THE FIRST SPRING. STEER RIGHT. THE REAL DOOR HAS A WALL.',
+    quips: ['THE CLOWNS WIN.'],
+    groups: { g: { ghost: 1 }, a: { spike: 1, hide: 1 } },
+    map: ['..................................g.....',
+          '..............................F...gD....',
+          '..........................##############',
+          E40, E40, E40,
+          '..P.........a.....*.................^^^.',
+          G40],
+    traps: [ { when: { x: 9 }, g: 'a', do: 'pop', say: 'TA-DA.' } ] },
+ ] },
+
+ { name: 'THE FACTORY', tag: 'KEEP MOVING. THE FLOOR DOES.', motif: 'gears',
+   pal: ['#a9a395', '#9d9788', '#2c2a24', '#110f0c', '#f4f1e8'],
+   levels: [
+  { name: 'CONVEYOR', hint: 'THE FLOOR WILL CARRY YOU.', pity: 'IT CARRIES YOU THE WRONG WAY. WALK AGAINST IT. HOP THE SPIKES.',
+    quips: ['PROCESSED.'],
+    map: ['..P.........^..............^^........D..',
+          '#####<<<<<<<<<<<<<<<<<<<<<<<<<<<<<######',
+          G40],
+    traps: [] },
+  { name: 'ASSEMBLY LINE', hint: 'THE PRESSES ARE ON BREAK.', pity: 'LET THE BELT CARRY YOU. GO WHEN EACH PRESS LIFTS.',
+    quips: ['STAMPED.'],
+    groups: { a: { patrol: { dy: 4, speed: 9, wait: 0.5, phase: 0.3 } }, b: { patrol: { dy: 4, speed: 9, wait: 0.5, phase: 1.2 } },
+              c: { patrol: { dy: 4, speed: 9, wait: 0.5, phase: 0.75 } } },
+    map: ['##########aa#######bb#######cc##########',
+          '##########aa#######bb#######cc##########',
+          E40, E40, E40,
+          '..P..................................D..',
+          '#####>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>#####',
+          G40],
+    traps: [] },
+  { name: 'SHIFT CHANGE', hint: 'THE BELTS ALWAYS GO ONE WAY.', pity: 'HALFWAY THEY REVERSE. KEEP RUNNING. HOP THE SPIKES.',
+    quips: ['REASSIGNED.'],
+    map: ['..P..........^............^.........D...',
+          '####>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>#####',
+          G40],
+    traps: [ { when: { x: 18 }, do: 'belts', say: 'SHIFT CHANGE.' } ] },
+  { name: 'QUALITY CONTROL', hint: 'EVERY DOOR PASSED INSPECTION.', pity: 'THE BLOCK DROPS, THE BELT SPEEDS YOU, THE FIRST DOOR IS FAKE.',
+    quips: ['REJECTED.'],
+    map: ['................aa............bb........',
+          E40, E40, E40,
+          '..P.....................F.........D.....',
+          '####>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>####',
+          G40],
+    traps: [
+      { when: { x: 13 }, g: 'a', do: 'fall', say: 'DEFECT.' },
+      { when: { x: 27 }, g: 'b', do: 'fall', say: 'ANOTHER ONE.' },
+    ] },
+  { name: 'OVERTIME', hint: 'LAST SHIFT. EASY WORK.', pity: 'BELT, SPRING, PRESS, REVERSE BELT. NEVER STOP.',
+    quips: ['WORKED TO DEATH.'],
+    groups: { a: { spike: 1, hide: 1 }, p: { patrol: { dy: 3, speed: 9, wait: 0.4 } } },
+    map: ['..............................pp........',
+          '..............................pp........',
+          E40, E40,
+          'aa.P..........^.......*..............D..',
+          '####<<<<<<<<<<<<<<<<<#.#>>>>>>>>>>>>>>##',
+          G40],
+    traps: [
+      { when: { x: 6 }, g: 'a', do: 'chase', speed: 6, say: 'CLOCK IN.' },
+      { when: { x: 26 }, do: 'belts', say: 'CLOCK OUT.' },
+    ] },
+ ] },
+
+ { name: 'THE MOON', tag: 'ONE SMALL STEP. ONE GIANT MISTAKE.', motif: 'planet',
+   pal: ['#161a2a', '#1f2438', '#c9cee2', '#8fd3ff', '#0a0c15'],
+   levels: [
+  { name: 'MOONWALK', hint: 'GRAVITY IS THE SAME HERE.', pity: 'TINY TAPS. THE CEILING IS CLOSER THAN IT LOOKS.',
+    quips: ['HOUSTON, WE HAVE A PROBLEM.'], grav: 0.45,
+    map: ['vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv',
+          E40, E40, E40, E40, E40,
+          '..P.................................D...',
+          '#######.........###.........############',
+          '#######.........###.........############'],
+    traps: [] },
+  { name: 'HIGH JUMP', hint: 'NO WAY UP THERE.', pity: 'ONE BIG JUMP TO EACH LEDGE. WAIT FOR THE PEAK.',
+    quips: ['LOST IN SPACE.'], grav: 0.45,
+    map: ['................................D.......',
+          '..............................######....',
+          E40, E40, E40,
+          '....................####................',
+          E40, E40, E40,
+          '..........####..........................',
+          E40, E40, E40,
+          '..P.....................................',
+          G40],
+    traps: [] },
+  { name: 'GRAVITY IS BACK', hint: 'ENJOY THE FLOAT.', pity: 'HALFWAY, GRAVITY RETURNS. JUMP THE BIG PIT BEFORE THE LINE.',
+    quips: ['DOWN TO EARTH.'], grav: 0.45,
+    map: ['..P.....................................',
+          '#########..........##########.....##D###',
+          '#########..........##########.....######'],
+    traps: [ { when: { x: 25 }, do: 'gravity', k: 1, say: 'GRAVITY IS BACK.' } ] },
+  { name: 'ORBIT', hint: 'THE DOOR IS JUST BEHIND THAT WALL.', pity: 'GO RIGHT, OVER THE EDGE. A MEDIUM JUMP. THE CEILING IS LOW.',
+    quips: ['ORBIT DECAYED.'], grav: 0.45, wrap: true,
+    map: ['vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv',
+          '.....................##.................',
+          '.....................##.................',
+          '.....................##.................',
+          '.....................##.................',
+          '........D............##.......P.........',
+          '.....##################...##########....',
+          '.....##################...##########....'],
+    traps: [ { when: { x: 36 }, do: 'say', say: 'WHERE ARE YOU GOING?' } ] },
+  { name: 'SPACE JUNK', hint: 'THE SKY IS CLEAR.', pity: 'THE JUNK FALLS FAST. YOU FALL SLOW. KEEP ONE STEP AHEAD.',
+    quips: ['HIT BY DEBRIS.'], grav: 0.45,
+    groups: { a: { spike: 1, hide: 1 } },
+    map: ['..........bb..........cc.........dd.....',
+          E40, E40, E40, E40,
+          'aa.P................................D...',
+          '##########....##########....############',
+          '##########....##########....############'],
+    traps: [
+      { when: { x: 6 }, g: 'a', do: 'chase', speed: 5.5, say: 'INCOMING.' },
+      { when: { x: 8 }, g: 'b', do: 'fall' },
+      { when: { x: 19 }, g: 'c', do: 'fall' },
+      { when: { x: 30 }, g: 'd', do: 'fall', say: 'MORE JUNK.' },
+    ] },
+ ] },
+
+ { name: 'THE END', tag: 'NO MORE LIES. (THAT WAS A LIE.)', motif: 'bigdoor',
+   pal: ['#101826', '#172235', '#dbe4f0', '#ff7a59', '#070b12'],
+   levels: [
+  { name: 'HIGH TIDE', hint: 'DRY AS A BONE.', pity: 'THE BELTS FIGHT YOU ON THE WAY UP. JUMP FROM THEIR FAR ENDS.',
+    quips: ['DROWNED AT WORK.'], flood: { speed: 6, delay: 1.5 },
+    map: ['.............................D..........',
+          '.........................#########......',
+          E40,
+          '............>>>>>>>>>>>.................',
+          E40,
+          '.....<<<<<<<<<<.........................',
+          '..P.....................................',
+          G40],
+    traps: [] },
+  { name: 'COLD FRONT', hint: 'A NICE WARM DAY.', pity: 'ICE AND WIND. JUMP IN THE CALM. BRAKE BEFORE THE END.',
+    quips: ['FROZEN SOLID.'], wind: { speed: 40, on: 1.2, off: 1.5, dir: 1 },
+    map: ['..P...........^..............^......D...',
+          '=================...==================##',
+          '#################...##################^#'],
+    traps: [] },
+  { name: 'BAD MOON', hint: 'NOTHING FOLLOWS YOU UP HERE.', pity: 'FLOAT FORWARD. NEVER LAND WHERE YOU JUST WERE.',
+    quips: ['OUTRUN BY YOURSELF.'], grav: 0.45, echo: 1.8,
+    map: ['vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv',
+          E40, E40, E40, E40,
+          '..P.................................D...',
+          '#####.....####.....####.....##########..',
+          '#####.....####.....####.....##########..'],
+    traps: [] },
+  { name: 'ECLIPSE', hint: 'THE SUN IS OUT.', pity: 'IN THE DARK, ROUND THE EDGE. THEY FOLLOW. THE WALL IS NOT THE WAY.',
+    quips: ['TOTAL ECLIPSE.'], dark: { r: 30, flash: 2.6 }, wrap: true,
+    groups: { a: { spike: 1, hide: 1 } },
+    map: ['..............##........................',
+          '..............##........................',
+          '..............##........................',
+          '..D...........##..aa.P.........^........',
+          '#######################...##############',
+          '#######################...##############'],
+    traps: [ { when: { x: 23 }, g: 'a', do: 'chase', speed: 7, say: 'IT IS DARK. THEY ARE NOT.' } ] },
+  { name: 'THE REAL LAST DOOR', hint: 'THIS IS THE END. NO TRICKS. CROSS MY HEART.', pity: 'ICE, SPRING, BELT, LEDGE. THEN IT JUMPS BEHIND YOU. HOP YOUR SHADOW.',
+    quips: ['IT REMEMBERS.', 'SO CLOSE. NOT REALLY.'], flood: { speed: 5, delay: 2.5 }, echo: 2.2,
+    map: ['......................................D.',
+          '.........................###############',
+          E40,
+          '.............<<<<<<<<<<.................',
+          E40, E40, E40, E40,
+          '..P.......^.....^....*..................',
+          '======================##################',
+          G40],
+    traps: [
+      { when: { x: 31, up: 6 }, do: 'door', x: 26, blink: true, say: 'BEHIND YOU. ALWAYS.' },
+      { when: { x: 31, up: 6 }, do: 'reverse', time: 1.0 },
+    ],
+    solve: { via: [[21, 7], [19, 2], [27, 0], [33, 0]] } },
+ ] },
+
  /* Bonus phase, opens after the ending. Levels with `grudge: true` grow a hidden spike
     where you last jumped from before dying, and pop it when you come near. */
  { name: 'GRUDGE MATCH', tag: 'IT REMEMBERS EVERYTHING YOU DID.', motif: 'eyes',
@@ -1005,7 +1557,7 @@ const PHASES = [
 const LEVELS = [];
 PHASES.forEach((ph, pi) => ph.levels.forEach((lv, k) => { lv.phase = pi; lv.num = k; LEVELS.push(lv); }));
 const levelLabel = lv => lv.label || `${lv.phase + 1}-${lv.num + 1}`;
-const MAIN_PHASES = 10, MAIN_LEVELS = MAIN_PHASES * 5;   // the rest is the bonus phase
+const MAIN_PHASES = 20, MAIN_LEVELS = MAIN_PHASES * 5;   // the rest is the bonus phase
 
 const QUIPS = {
   spike:   ['POINTY. WHO KNEW?', 'YOU FOUND THE SHARP PART.', 'SKEWERED. NEATLY.', 'THAT WAS A SPIKE.'],
@@ -1015,6 +1567,8 @@ const QUIPS = {
   restart: ['GAVE UP ALREADY?', 'RESTARTS COUNT. SORRY.'],
   same:    ['SAME SPOT. AGAIN.', 'YOU REALLY LIKE IT THERE.', 'THAT SPOT IS YOURS NOW.', 'I SAVED YOU A SEAT.'],
   grudge:  ['YOU JUMPED HERE LAST TIME.', 'I REMEMBER THIS SPOT.', 'NOT HERE. NOT AGAIN.'],
+  drown:   ['GLUB.', 'THE WATER WAS ON TIME.', 'SHOULD HAVE TAKEN SWIMMING LESSONS.', 'SPLASH. THE END.'],
+  echo:    ['YOUR PAST CAUGHT UP.', 'YOU WALKED INTO YOURSELF.', 'STOP BEING SO PREDICTABLE.', 'YOU WERE IN YOUR WAY.'],
 };
 const pick = a => a[Math.random() * a.length | 0];
 const greeting = () => pick(['YOU AGAIN.', 'OH. YOU CAME BACK.', `I KEPT COUNT. ${deaths} DEATHS.`]);
@@ -1023,12 +1577,25 @@ const greeting = () => pick(['YOU AGAIN.', 'OH. YOU CAME BACK.', `I KEPT COUNT. 
 // sound: 2 music + sfx, 1 sfx only, 0 off.  best: level index -> { d: fewest deaths, t: fastest clear (s) }
 let save = { cleared: [], deaths: 0, sound: 2, shake: true, best: {}, playT: 0, skin: 'blob', got: [] };
 function loadSave() {
-  try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s && Array.isArray(s.cleared)) save = Object.assign(save, s); } catch (_) {}
+  let stored = null;
+  try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s && Array.isArray(s.cleared)) { stored = s; save = Object.assign(save, s); } } catch (_) {}
   if ('muted' in save) { if (save.muted) save.sound = 0; delete save.muted; }   // older saves
+  // Saves from before phases 11-20: the bonus phase was levels 51-55 and is now the last five. Move what was
+  // won there, and if they had seen the ending, keep the bonus phase open for them.
+  if (stored && !stored.layout) {
+    const OLD = 50, NOW = LEVELS.length - 5;
+    for (let k = 0; k < 5; k++) {
+      if (save.cleared[OLD + k]) save.cleared[NOW + k] = true;
+      save.cleared[OLD + k] = false;
+      if (save.best[OLD + k]) { save.best[NOW + k] = save.best[OLD + k]; delete save.best[OLD + k]; }
+    }
+    if (save.cleared[OLD - 1]) { save.bonusOpen = true; save.fakeoutSeen = true; }
+  }
+  save.layout = 2;
 }
 function writeSave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (_) {} }
 const isCleared = i => !!save.cleared[i];
-const isUnlocked = i => i === 0 || isCleared(i - 1) || isCleared(i);
+const isUnlocked = i => i === 0 || isCleared(i - 1) || isCleared(i) || (i === MAIN_LEVELS && !!save.bonusOpen);
 const phaseUnlocked = p => isUnlocked(p * 5);
 const clearedCount = () => LEVELS.reduce((n, _, i) => n + (isCleared(i) ? 1 : 0), 0);
 const firstOpenLevel = () => { for (let i = 0; i < LEVELS.length; i++) if (!isCleared(i)) return i; return -1; };
@@ -1110,13 +1677,18 @@ function startAttempt() {
   while (rows.length < ROWS) rows.push(src[src.length - 1]);
   bannerY = clamp(rows.findIndex(r => /[^.]/.test(r)) * TS + OY - 42, 34, 68);
 
-  grid = new Uint8Array(COLS * ROWS);   // 0 empty, 1 solid, 2 spike up, 3 spike down
+  // 0 empty, 1 solid, 2 spike up, 3 spike down, 4 ice, 5 spring, 6 belt left, 7 belt right (4+ are all solid)
+  grid = new Uint8Array(COLS * ROWS);
   groups = []; gmap = {}; fakeDoors = []; door = null; spawn = { tx: 1, ty: ROWS - 2 };
   rows.forEach((row, ty) => [...row].forEach((ch, tx) => {
     const i = ty * COLS + tx;
     if (ch === '#') grid[i] = 1;
     else if (ch === '^') grid[i] = 2;
     else if (ch === 'v') grid[i] = 3;
+    else if (ch === '=') grid[i] = 4;
+    else if (ch === '*') grid[i] = 5;
+    else if (ch === '<') grid[i] = 6;
+    else if (ch === '>') grid[i] = 7;
     else if (ch === 'P') spawn = { tx, ty };
     else if (ch === 'D') door = { x: tx * TS, y: ty * TS - TS, y0: ty * TS - TS, tx: 0, ty: 0, speed: 0, moving: false, flee: null };
     else if (ch === 'F') fakeDoors.push({ x: tx * TS, y: ty * TS - TS });
@@ -1129,6 +1701,7 @@ function startAttempt() {
                               armed: false, done: false, timer: 0 });
   player = newPlayer();
   levelTime = 0; reverseT = 0;
+  mechReset();
   rec = []; recTick = 0; jumpsThisTry = [];
   setNarr(greet || ((L.pity && levelDeaths >= (L.pityAt || 4)) ? L.pity : L.hint));
   state = 'play';
@@ -1159,7 +1732,12 @@ function newPlayer() {
 const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
 const approach = (v, t, d) => v < t ? Math.min(v + d, t) : Math.max(v - d, t);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const tileAt = (tx, ty) => (tx < 0 || tx >= COLS) ? 1 : (ty < 0 || ty >= ROWS) ? 0 : grid[ty * COLS + tx];
+// Off the sides is a wall, except in levels that wrap around (the left edge meets the right).
+function tileAt(tx, ty) {
+  if (tx < 0 || tx >= COLS) { if (!(L && L.wrap)) return 1; tx = ((tx % COLS) + COLS) % COLS; }
+  return (ty < 0 || ty >= ROWS) ? 0 : grid[ty * COLS + tx];
+}
+const isSolid = v => v === 1 || v >= 4;              // ground, ice, springs and belts
 
 // Every solid rectangle overlapping box b: static tiles, side walls, trap blocks, grudge stones.
 function solidsIn(b) {
@@ -1167,7 +1745,7 @@ function solidsIn(b) {
   const x0 = Math.floor(b.x / TS), x1 = Math.floor((b.x + b.w - 0.001) / TS);
   const y0 = Math.floor(b.y / TS), y1 = Math.floor((b.y + b.h - 0.001) / TS);
   for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++)
-    if (tileAt(tx, ty) === 1) out.push({ x: tx * TS, y: ty * TS, w: TS, h: TS, g: null });
+    if (isSolid(tileAt(tx, ty))) out.push({ x: tx * TS, y: ty * TS, w: TS, h: TS, g: null });
   for (const g of groups) {
     if (!g.solid || g.gone) continue;
     for (const [tx, ty] of g.tiles) {
@@ -1207,11 +1785,20 @@ function moveY(dy) {
   }
 }
 
+// What the player stands on: the static tile under their feet (ice, spring, belt), if any.
+function floorUnder(p) {
+  const ty = Math.floor((p.y + p.h + 0.5) / TS), x0 = Math.floor((p.x + 0.5) / TS), x1 = Math.floor((p.x + p.w - 0.5) / TS);
+  let best = 0;
+  for (let tx = x0; tx <= x1; tx++) { const v = tileAt(tx, ty); if (v >= 4 && (best === 0 || v === 5)) best = v; else if (v === 1 && !best) best = 1; }
+  return best;
+}
+
 function updatePlayer(dt) {
   const p = player;
   let mx = (input.right ? 1 : 0) - (input.left ? 1 : 0);
   if (reverseT > 0) mx = -mx;                       // the level is lying to your fingers
-  const accel = p.onGround ? (mx ? PH.accG : PH.fric) : (mx ? PH.accA : PH.accIdleAir);
+  const under = p.onGround && !p.ground ? floorUnder(p) : 0, icy = under === 4 || (p.onGround && p.ground && p.ground.d.ice) || (L.ice && p.onGround);
+  const accel = p.onGround ? (icy ? (mx ? 240 : 70) : mx ? PH.accG : PH.fric) : (mx ? PH.accA : PH.accIdleAir);
   p.vx = approach(p.vx, mx * PH.run, accel * dt);
   if (mx) p.face = mx;
 
@@ -1225,12 +1812,21 @@ function updatePlayer(dt) {
   }
   if (p.jumping && !input.jump && p.vy < 0) { p.vy *= PH.cut; p.jumping = false; } // variable height
   if (p.vy >= 0) p.jumping = false;
-  p.vy = Math.min(p.vy + PH.grav * dt, PH.maxFall);
+  p.vy = Math.min(p.vy + PH.grav * mech.grav * dt, PH.maxFall * Math.sqrt(mech.grav));
 
   const wasGround = p.onGround, fallV = p.vy;
-  moveX(p.vx * dt);
+  moveX((p.vx + mech.windV) * dt);                              // the wind pushes, whatever you do
+  if (L.wrap) { if (p.x + p.w / 2 < 0) p.x += W; else if (p.x + p.w / 2 >= W) p.x -= W; }
   p.onGround = false; p.ground = null;
   moveY(p.vy * dt);
+  if (p.onGround && !p.ground) {
+    const f = floorUnder(p);
+    if (f === 5) {                                              // a spring: up you go, like it or not
+      p.vy = -(L.spring || 330) * (input.jump ? 1.12 : 1); p.onGround = false; p.jumping = false; p.coyote = 0;
+      p.sx = 0.7; p.sy = 1.4; mech.boingT = 0.18; mech.boingX = Math.floor((p.x + p.w / 2) / TS);
+      sfx.boing(); dust(p.x + p.w / 2, p.y + p.h, 4);
+    } else if (f === 6 || f === 7) moveX((f === 7 ? 1 : -1) * mech.beltDir * (L.belt || 48) * dt);   // conveyors carry you
+  }
   if (p.onGround && !wasGround && fallV > 90) {                 // landing squash
     const k = Math.min(1, fallV / 300);
     p.sx = 1 + 0.45 * k; p.sy = 1 - 0.35 * k;
@@ -1263,6 +1859,65 @@ function checkHazards() {
     if (overlap(hb, { x: f.x + 2, y: f.y + 4, w: 4, h: 12 })) return kill('door', { tx: f.x / TS, ty: f.y / TS + 1 });
 }
 
+/* ======================= 7b. TRICKS (phases 11-20) ======================= */
+// Everything a level's trick needs, in one object so a whole attempt can be saved and replayed (tools/solve.mjs).
+let mech = { windV: 0, grav: 1, beltDir: 1, flood: null, floodSpeed: 0, gustT: 0, gustDir: 0, gustSpeed: 0, echo: null,
+             dark: false, boingT: 0, boingX: 0, sig: '' };
+function mechReset() {
+  const f = L.flood;
+  mech = {
+    windV: 0, grav: L.grav || 1, beltDir: 1, gustT: 0, gustDir: 0, gustSpeed: 0, boingT: 0, boingX: 0,
+    flood: f ? (f.from != null ? f.from : ROWS * TS + 6) : null,            // water surface, in level pixels
+    floodSpeed: f && !f.trigger ? f.speed : 0, floodDelay: f ? (f.delay || 0) : 0,
+    echo: L.echo ? [] : null, dark: !!L.dark && !L.dark.lit, sig: '',
+  };
+}
+function mechSnap() {
+  const e = mech.echo;
+  let ek = '';
+  if (e && e.length) for (let q = 0; q < 4; q++) { const s = e[Math.floor((e.length - 1) * q / 4)]; ek += Math.round(s[0] / 5) + ':' + Math.round(s[1] / 5) + ';'; }
+  mech.sig = `${mech.flood == null ? '' : Math.round(mech.flood / 3)},${mech.beltDir},${mech.grav},${Math.round(mech.windV / 8)},${mech.gustT > 0 ? 1 : 0},${ek}`;
+  return { ...mech, echo: e && e.slice() };
+}
+function mechRestore(m) { mech = { ...m, echo: m.echo && m.echo.slice() }; }
+
+// The wind blows on a clock: `on` seconds of gust, `off` seconds of calm (the last half second of calm warns you).
+function windNow(t) {
+  if (mech.gustT > 0) return { v: mech.gustDir * mech.gustSpeed, warn: false };
+  const w = L.wind;
+  if (!w) return { v: 0, warn: false };
+  const cyc = w.on + w.off, tt = ((t + (w.phase || 0)) % cyc + cyc) % cyc, n = Math.floor((t + (w.phase || 0)) / cyc);
+  const dir = w.dir === 'alt' ? (n % 2 ? -1 : 1) : (w.dir || 1);
+  if (tt < w.on) return { v: dir * w.speed, warn: false };
+  const nextDir = w.dir === 'alt' ? -dir : dir;
+  return { v: 0, warn: tt > cyc - 0.55, nextDir };
+}
+const ECHO_BOX = 5;                                    // the shadow's touchy middle, a bit smaller than you
+
+function updateMech(dt) {
+  const p = player;
+  if (mech.gustT > 0) mech.gustT -= dt;
+  mech.windV = approach(mech.windV, windNow(levelTime).v, 260 * dt);
+  if (mech.boingT > 0) mech.boingT -= dt;
+  // the flood: waits, then rises; drowning is a death like any other
+  if (mech.flood != null) {
+    if (mech.floodDelay > 0) mech.floodDelay -= dt;
+    else mech.flood = Math.max(L.flood.top != null ? L.flood.top * TS : -99, mech.flood - mech.floodSpeed * dt);
+    if (p.y + p.h / 2 > mech.flood) return kill('drown');
+  }
+  // the echo: where you were `echo` seconds ago. Don't be there.
+  if (mech.echo) {
+    mech.echo.push([p.x, p.y, p.face]);
+    const n = Math.round(L.echo * 60);
+    while (mech.echo.length > n) mech.echo.shift();
+    if (mech.echo.length >= n) {
+      const [ex, ey] = mech.echo[0], c = (ECHO_BOX - 1) / 2;
+      if (Math.abs(ex - p.x) < c * 2 && Math.abs(ey - p.y) < c * 2 + 1) return kill('echo');
+    }
+  }
+}
+const echoAt = () => (mech.echo && mech.echo.length >= Math.round(L.echo * 60) ? mech.echo[0] : null);
+
 /* ============================ 8. TRAPS ============================= */
 function updateGroups(dt) {
   const p = player;
@@ -1277,13 +1932,13 @@ function updateGroups(dt) {
       let ny = g.oy + g.vy * dt, lim = Infinity;
       for (const [tx, ty] of g.tiles) {                      // land on static ground if any
         const row = Math.floor((ty * TS + ny + TS - 0.01) / TS);
-        if (row >= 0 && row < ROWS && tileAt(tx, row) === 1) {
+        if (row >= 0 && row < ROWS && isSolid(tileAt(tx, row))) {
           const l = row * TS - (ty * TS + TS);
           if (l >= g.oy - 0.01) lim = Math.min(lim, l);
         }
       }
       if (lim !== Infinity) {
-        ny = lim; g.state = 'landed'; g.vy = 0; shake(3, 0.2); sfx.thud();
+        ny = lim; g.state = 'landed'; g.vy = 0; shake(3, 0.2); sfx.thud(); g.oy = ny; fxLand(g);
         for (const [tx, ty] of g.tiles) dust(tx * TS + 4, ty * TS + ny + TS, 1);
       }
       g.oy = ny;
@@ -1348,7 +2003,9 @@ function cond(w) {
   if (w.x != null && pcx < w.x) return false;
   if (w.xl != null && pcx > w.xl) return false;
   if (w.up != null && spawn.ty - Math.floor((player.y + player.h / 2) / TS) < w.up) return false;
+  if (w.low != null && spawn.ty - Math.floor((player.y + player.h / 2) / TS) > w.low) return false;
   if (w.touch && !touched.has(w.touch)) return false;
+  if (w.stand && !(player.onGround && player.ground && player.ground.id === w.stand)) return false;
   if (w.jump && !jumped) return false;
   if (w.deaths != null && levelDeaths < w.deaths) return false;
   if (w.t != null && levelTime < w.t) return false;
@@ -1408,11 +2065,27 @@ function fire(t) {
     case 'door':
       door.flee = null;
       door.tx = (t.x != null ? t.x : door.x / TS) * TS; door.ty = door.y0 + (t.dy || 0) * TS;
+      if (t.blink) {                                  // poof: gone from here, there instead
+        burst(door.x + 4, door.y + 8, pal.ink, 10, 70, 0.5);
+        door.x = door.tx; door.y = door.ty; door.moving = false;
+        burst(door.x + 4, door.y + 8, pal.glow, 12, 70, 0.5); sfx.door(); break;
+      }
       door.speed = (t.speed || 20) * TS; door.moving = true; sfx.door(); break;
     case 'flee':
       door.flee = { speed: (t.speed || 8) * TS, max: (t.max || 37) * TS }; sfx.door(); break;
     case 'reverse':
       reverseT = t.time || 1.5; sfx.reverse(); break;
+    case 'flood':                                     // start the water, or change its pace
+      if (mech.flood == null) { mech.flood = ROWS * TS + 6; }
+      mech.floodSpeed = t.speed || 10; mech.floodDelay = 0; sfx.flood(); break;
+    case 'gust':
+      mech.gustT = t.time || 1.2; mech.gustDir = t.dir || 1; mech.gustSpeed = t.speed || 60; sfx.gust(); break;
+    case 'gravity':
+      mech.grav = t.k || 1; sfx.reverse(); break;
+    case 'belts':
+      mech.beltDir = -mech.beltDir; sfx.reverse(); break;
+    case 'lights':
+      mech.dark = !t.on; sfx.trap(); break;
   }
 }
 
@@ -1426,11 +2099,13 @@ function kill(cause, tile) {
   shake(cause === 'restart' ? 2 : 6, 0.3);
   if (cause !== 'restart') { hitStop = 0.07; flashT = save.shake && !REDUCED ? 0.07 : 0; }
   skullT = 0.35;
-  burst(p.x + p.w / 2, p.y + p.h / 2, pal.hero, 26, 150, 0.9);
-  burst(p.x + p.w / 2, p.y + p.h / 2, pal.glow, 6, 90, 0.6);
+  if (!fxDeath(p.x + p.w / 2, p.y + p.h / 2)) {
+    burst(p.x + p.w / 2, p.y + p.h / 2, pal.hero, 26, 150, 0.9);
+    burst(p.x + p.w / 2, p.y + p.h / 2, pal.glow, 6, 90, 0.6);
+  }
   sfx.die(); if (cause !== 'restart') buzz(35);
   runs.push({ p: rec, dead: true }); if (runs.length > 40) runs.shift();
-  if (cause !== 'pit' && cause !== 'crush' && cause !== 'restart') placeStone(tile);
+  if (cause !== 'pit' && cause !== 'crush' && cause !== 'restart' && cause !== 'drown' && cause !== 'echo') placeStone(tile);
   if (L.grudge) grudgeAt = pickGrudgeSpot();
   // Dying in (nearly) the same place three times in a row earns a special remark
   const here = tile || { tx: Math.floor((p.x + p.w / 2) / TS), ty: Math.floor((p.y + p.h / 2) / TS) };
@@ -1447,13 +2122,14 @@ function placeStone(tile) {
   const p = player;
   const t = tile || { tx: Math.floor((p.x + p.w / 2) / TS), ty: Math.floor((p.y + p.h / 2) / TS) };
   if (t.tx < 0 || t.tx >= COLS || t.ty < 0 || t.ty >= ROWS) return;
-  if (tileAt(t.tx, t.ty) === 1) return;
+  if (isSolid(tileAt(t.tx, t.ty))) return;
   if (t.tx === spawn.tx && t.ty === spawn.ty) return;
   if (stones.some(s => s.tx === t.tx && s.ty === t.ty)) return;
   stones.push({ tx: t.tx, ty: t.ty, born: time });
+  fxStone(t.tx, t.ty, false);
   if (stones.length > MAX_STONES) {
     const old = stones.shift();
-    burst(old.tx * TS + 4, old.ty * TS + 4, pal.ink, 10, 70, 0.7);
+    if (!fxStone(old.tx, old.ty, true)) burst(old.tx * TS + 4, old.ty * TS + 4, pal.ink, 10, 70, 0.7);
   }
 }
 
@@ -1520,6 +2196,178 @@ function tri(cx, baseY, h, half, c) {                 // flat pixel triangle
   for (let r = 0; r < h; r++) { const w = Math.round(half * (r + 1) / h); ctx.fillRect(Math.round(cx - w), Math.round(baseY - h + r), w * 2, 1); }
 }
 function rng(seed) { let s = seed >>> 0; return () => (s = (s * 1664525 + 1013904223) >>> 0) / 4294967296; }
+
+/* ===================== 9b. PIXEL FX (pixelfx) ====================== */
+// Weather behind every level, debris that lands on the platforms, and an iris that closes on the door. All drawn by
+// pixelfx (https://github.com/patch-gg/pixelfx, MIT; packed in the script above by tools/build-fx.mjs) using only the
+// phase's own five colors. Without that script, or with reduced motion on, the game simply plays without them.
+const PFX = window.PFX || null;
+const fxOn = () => !!PFX && !REDUCED;
+
+// What the sky does in each phase. ramp 'light' keeps an effect to the phase's three lightest colors, so on the
+// bright phases it reads as backdrop; 'full' lets the dark phases glow. over: drawn above the darkness (fireflies).
+const WEATHER = {
+  'THE LOBBY': { fx: 'godRays', ramp: 'light', light: 0.35 },
+  'SHY GARDEN': { fx: 'cherryBlossoms', ramp: 'light', light: 0.2 },
+  'RUNAWAY ROW': { fx: 'rain', ramp: 'light', light: 0.15, opts: { density: 0.35 } },
+  'THE CELLAR': { fx: 'fog', ramp: 'light', light: 0.15 },
+  'BONEYARD': { fx: 'fireflies', ramp: 'light', light: 0.4 },
+  'MIRAGE': { haze: true },
+  'MIRROR HALL': { glints: true },
+  'SKY NURSERY': { fx: 'clouds', ramp: 'light', light: 0.2 },
+  'THE CHASE': { fx: 'blizzard', ramp: 'light', light: 0.1 },
+  'THE HEART': { fx: 'aurora', ramp: 'full', light: 0.55 },
+  'THE LOOP': { fx: 'clouds', ramp: 'light', light: 0.2 },
+  'FROSTBITE': { fx: 'snow', ramp: 'light', light: 0.35 },
+  'THE GALE': { fx: 'fallingLeaves', ramp: 'full', light: 0.15 },
+  'THE FLOOD': { fx: 'rain', ramp: 'light', light: 0.2, opts: { density: 1 } },
+  'LIGHTS OUT': { fx: 'fireflies', ramp: 'full', light: 0.9, over: true },
+  'THE ECHO': { fx: 'fog', ramp: 'light', light: 0.2 },
+  'BOUNCE HOUSE': { fx: 'cherryBlossoms', ramp: 'light', light: 0.2 },
+  'THE FACTORY': { fx: 'godRays', ramp: 'light', light: 0.3 },
+  'THE MOON': { fx: 'shootingStars', ramp: 'full', light: 0.8 },
+  'THE END': { fx: 'storm', ramp: 'full', light: 0.7 },
+  'GRUDGE MATCH': { fx: 'storm', ramp: 'full', light: 0.7 },
+};
+const luma = c => { const n = parseInt(c.slice(1), 16); return (n >> 16) * 0.3 + ((n >> 8) & 255) * 0.59 + (n & 255) * 0.11; };
+const byLight = cs => [...cs].sort((a, b) => luma(a) - luma(b));
+function phaseRamp(pi, kind) {
+  const [bg, deco, ink, hero, glow] = PHASES[pi].pal;
+  return byLight(kind === 'light' ? [deco, bg, glow] : [bg, deco, ink, hero, glow]);
+}
+const darkPhase = pi => luma(PHASES[pi].pal[0]) < 90;
+
+const fx = { phase: -1, weather: null, wt: 0, back: null, front: null, top: null, canvas: null, cx: null, img: null,
+             bursts: [], glints: [], trans: null };
+PHASES.forEach(ph => { ph.weather = WEATHER[ph.name] || null; });
+function fxFrames() {
+  if (fx.back) return;
+  fx.back = PFX.createFrame(W, H); fx.front = PFX.createFrame(W, H); fx.top = PFX.createFrame(W, H);
+  fx.canvas = document.createElement('canvas'); fx.canvas.width = W; fx.canvas.height = H;
+  fx.cx = fx.canvas.getContext('2d'); fx.img = fx.cx.createImageData(W, H);
+}
+// Paint a pixelfx frame onto the game canvas (light becomes see-through color, strong only on dark phases)
+function fxBlit(f, lightK = 1) {
+  PFX.composite(f, fx.img.data, null, lightK);
+  fx.cx.putImageData(fx.img, 0, 0);
+  ctx.drawImage(fx.canvas, 0, 0);
+}
+function fxWeather(pi) {
+  fx.phase = pi; fx.weather = null; fx.bursts = []; fx.glints = [];
+  const w = PHASES[pi].weather;
+  if (!fxOn() || !w || !w.fx) return;
+  const ramp = phaseRamp(pi, w.ramp), full = phaseRamp(pi, 'full');
+  const o = { x: 160, y: 170, seed: 3 + pi, palette: ramp, light: w.light, ...(w.opts || {}) };
+  for (const k of ['grass', 'upper', 'reds', 'golds', 'sky', 'bolt']) o[k] = k === 'reds' || k === 'bolt' ? full : ramp;
+  fx.weather = PFX.createFx(PFX.fx[w.fx], o);
+}
+
+function fxUpdate(dt) {
+  if (!fxOn()) return;
+  if (fx.weather) fx.weather.update(dt);
+  for (const b of fx.bursts) { b.ps.update(dt); b.bits.update(dt); b.t += dt; }
+  fx.bursts = fx.bursts.filter(b => b.t < 2.5);
+  for (const g of fx.glints) g.t += dt;
+  fx.glints = fx.glints.filter(g => g.t < 0.45);
+  const t = fx.trans;
+  if (t) {
+    t.fx.update(dt * t.k); t.t += dt * t.k;
+    if (!t.fired && t.t >= 0.99) { t.fired = true; t.onShut(); }
+    if (t.fx.done()) fx.trans = null;
+  }
+}
+
+// Behind the level: the weather (and Mirror Hall's glints)
+function fxDrawBack(over) {
+  if (!fxOn()) return;
+  const w = PHASES[L.phase].weather || {};
+  if (!!w.over !== over) return;
+  if (fx.phase !== L.phase) fxWeather(L.phase);
+  if (!fx.weather && !w.glints) return;                  // nothing to draw: skip the whole pass (phones thank you)
+  fxFrames();
+  PFX.clearFrame(fx.back);
+  if (fx.weather) fx.weather.draw(fx.back);
+  if (w.glints) {
+    if (Math.random() < 0.08) fx.glints.push({ x: 27 + (Math.random() * 6 | 0) * 54, y: 46 + Math.random() * 110, t: 0 });
+    const p = PFX.painterFor(fx.back).place(0, 0);
+    for (const g of fx.glints) PFX.sparkle(p, g.x, g.y, 6 * Math.sin(Math.PI * g.t / 0.45), PFX.hex(pal.glow), PFX.hex(pal.bg), 0.6);
+  }
+  fxBlit(fx.back, darkPhase(L.phase) ? 1 : 0.5);
+}
+// In front: debris and dust from deaths, stones and falling floors, in level space (so they shake with it)
+function fxDrawFront(sx, sy) {
+  if (!fxOn() || !fx.bursts.length) return;
+  fxFrames();
+  PFX.clearFrame(fx.front);
+  const p = PFX.painterFor(fx.front);
+  for (const b of fx.bursts) { p.place(sx, OY + sy); p.fade = 1; p.lightK = 1; b.bits.draw(p); b.ps.draw(p, 'back'); b.ps.draw(p, 'front'); }
+  fxBlit(fx.front, darkPhase(L.phase) ? 0.9 : 0.25);
+}
+// The ground under a point, in level pixels: debris lands on the real platforms, not on one flat floor
+function floorBelow(y0) {
+  return x => {
+    const tx = Math.floor(x / TS);
+    for (let ty = Math.max(0, Math.floor(y0 / TS)); ty < ROWS; ty++) {
+      if (isSolid(tileAt(tx, ty)) || stones.some(s => s.tx === tx && s.ty === ty)) return ty * TS;
+    }
+    return Infinity;
+  };
+}
+function fxBurst(x, y) {
+  const ground = floorBelow(y), rng = new PFX.Rng((x * 7 + y * 13 + time * 1000) | 0);
+  const b = { ps: new PFX.Particles({ rng, ground, sparks: byLight([pal.ink, pal.hero, pal.glow]).reverse() }), bits: new PFX.Bits({ ground }), t: 0, rng };
+  fx.bursts.push(b);
+  if (fx.bursts.length > 12) fx.bursts.shift();
+  return b;
+}
+const fxRamp = () => byLight([pal.ink, pal.hero, pal.deco, pal.bg, pal.glow]);
+// You: sparks, and bits of you that bounce down and settle on whatever is below
+function fxDeath(x, y) {
+  if (!fxOn()) return false;
+  const b = fxBurst(x, y), R = b.rng, P = PFX.P;
+  for (let i = 0; i < 14; i++) { const a = R.range(0, Math.PI * 2), sp = R.range(60, 170); b.ps.spawn(P.SPARK, x, y, Math.cos(a) * sp, Math.sin(a) * sp - 50, R.range(0.25, 0.6)); }
+  for (let i = 0; i < 10; i++) b.bits.add({ kind: PFX.B.CHUNK, x: x + R.range(-2, 2), y: y + R.range(-2, 2), vx: R.range(-70, 70), vy: R.range(-150, -50), a: R.range(0, 6), va: R.range(-12, 12), s: R.range(0.8, 1.6), ramp: [pal.ink, pal.hero, pal.hero, pal.glow], g: 0.5, bounce: 0.4, drag: 0.4, life: R.range(1.2, 2.2) });
+  for (let i = 0; i < 4; i++) b.ps.spawn(P.DUST, x + R.range(-3, 3), y + 2, R.range(-30, 30), R.range(-20, -5), R.range(0.4, 0.8), PFX.hex(pal.deco), R.range(1.5, 2.5));
+  return true;
+}
+// A grudge stone slams down: a ring of dust. The oldest crumbles: chunks of it tumble away.
+function fxStone(tx, ty, crumble) {
+  if (!fxOn()) return false;
+  const x = tx * TS + 4, y = ty * TS + TS, b = fxBurst(x, y - 1), R = b.rng, P = PFX.P;
+  if (crumble) {
+    for (let i = 0; i < 9; i++) b.bits.add({ kind: PFX.B.CHUNK, x: x + R.range(-3, 3), y: y - R.range(1, 7), vx: R.range(-60, 60), vy: R.range(-120, -30), a: R.range(0, 6), va: R.range(-10, 10), s: R.range(1, 2), ramp: [pal.ink, pal.ink, pal.deco, pal.bg], g: 0.55, bounce: 0.35, drag: 0.3, life: R.range(1.4, 2.3) });
+  } else {
+    for (let i = 0; i < 6; i++) b.ps.spawn(P.DUST, x + R.range(-4, 4), y - 1, (i % 2 ? 1 : -1) * R.range(18, 40), R.range(-10, -2), R.range(0.35, 0.7), PFX.hex(pal.deco), R.range(1.2, 2));
+  }
+  return true;
+}
+// A falling block hits the ground: dust and grit off every tile
+function fxLand(g) {
+  if (!fxOn()) return;
+  const t0 = g.tiles[0], b = fxBurst(t0[0] * TS, t0[1] * TS + g.oy), R = b.rng, P = PFX.P;
+  for (const [tx, ty] of g.tiles.slice(0, 8)) {
+    const x = tx * TS + 4 + g.ox, y = ty * TS + TS + g.oy;
+    b.ps.spawn(P.DUST, x, y - 1, R.range(-25, 25), R.range(-12, -3), R.range(0.4, 0.8), PFX.hex(pal.deco), R.range(1.2, 2));
+    b.ps.spawn(P.GRIT, x, y - 2, R.range(-50, 50), R.range(-90, -30), R.range(0.5, 1), PFX.hex(pal.ink), 1);
+  }
+}
+
+// The way out: an iris closes on the door (a star when a phase is done), and opens again on whatever comes next.
+function fxExit(onShut) {
+  if (!fxOn() || !door) return false;
+  fxFrames();
+  const star = LEVELS[li + 1] && LEVELS[li + 1].phase !== L.phase && !L.custom;
+  fx.trans = { fx: PFX.createFx(star ? PFX.fx.starIris : PFX.fx.iris, { x: 0, y: 0, focus: [door.x + 4, door.y + OY + 9], color: pal.ink,
+               palette: phaseRamp(L.phase, 'full'), light: darkPhase(L.phase) ? 0.8 : 0.4, seed: li + 1 }), k: 1.45, t: 0, fired: false, onShut, light: darkPhase(L.phase) ? 1 : 0.5 };
+  return true;
+}
+function drawTransition() {
+  const t = fx.trans;
+  if (!t || !fxOn()) return;
+  PFX.clearFrame(fx.top);
+  t.fx.draw(fx.top);
+  fxBlit(fx.top, t.light);
+}
 
 // Each phase gets one flat backdrop motif drawn in its fifth color, behind everything.
 function drawBackdrop(motif, t) {
@@ -1599,6 +2447,79 @@ function drawBackdrop(motif, t) {
       }
       break;
     }
+    case 'rings':                                     // a loop that eats its own tail, turning slowly
+      for (let k = 0; k < 3; k++) {
+        const r = 34 + k * 26, gapA = t * (k % 2 ? 0.35 : -0.25) + k;
+        for (let a = 0; a < Math.PI * 2; a += 0.04) {
+          const d = ((a - gapA) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+          if (d < 0.5) continue;
+          rect(Math.round(160 + Math.cos(a) * r * 1.3), Math.round(96 + Math.sin(a) * r * 0.75), 2, 2, c);
+        }
+      }
+      break;
+    case 'pines':
+      for (const [x, r, h] of [[-10, 70, 60], [120, 90, 70], [260, 80, 56]]) disc(x + 50, 180 + r - h, r, c);
+      for (let i = 0; i < 13; i++) {
+        const x = 6 + i * 25 + Math.floor(R() * 10), h = 26 + Math.floor(R() * 30), y = 150 + Math.floor(R() * 12);
+        for (let k = 0; k < 3; k++) tri(x, y - k * (h / 4), Math.round(h / 2), Math.round(h / 4) - k * 2, c);
+        rect(x - 1, y, 3, 30, c);
+      }
+      break;
+    case 'windmills':
+      tri(80, 180, 40, 130, c); tri(250, 180, 50, 150, c);
+      for (const [x, y, s] of [[70, 92, 22], [190, 76, 26], [280, 100, 18]]) {
+        tri(x, 180, 180 - y, 5, c); disc(x, y, 3, c);
+        for (let b = 0; b < 4; b++) {
+          const a = t * 2.4 + b * Math.PI / 2 + x;
+          for (let k = 3; k < s; k++) rect(Math.round(x + Math.cos(a) * k), Math.round(y + Math.sin(a) * k), 2, 2, c);
+        }
+      }
+      break;
+    case 'waves':
+      disc(250, 40, 16, c);
+      for (let row = 0; row < 4; row++) for (let x = 0; x < W; x += 2) {
+        const y = 108 + row * 18 + Math.round(Math.sin(x * 0.05 + t * (1.2 + row * 0.4) + row) * (3 + row));
+        rect(x, y, 2, 180 - y, row % 2 ? c : pal.bg);
+      }
+      break;
+    case 'lamps':
+      disc(270, 34, 12, c); disc(276, 30, 10, pal.bg);
+      for (let i = 0; i < 6; i++) {
+        const x = 20 + i * 56, sw = Math.round(Math.sin(t * 1.5 + i) * 2);
+        rect(x, 70, 2, 110, c); rect(x - 6 + sw, 66, 14, 2, c); rect(x - 4 + sw, 60, 10, 6, c);
+      }
+      break;
+    case 'ripples':
+      for (const [x, y, off] of [[70, 60, 0], [240, 90, 1.3], [150, 140, 2.6]])
+        for (let k = 0; k < 4; k++) {
+          const r = ((t * 14 + off * 20 + k * 22) % 88) + 4;
+          for (let a = 0; a < Math.PI * 2; a += 0.05) rect(Math.round(x + Math.cos(a) * r * 1.6), Math.round(y + Math.sin(a) * r * 0.55), 2, 1, c);
+        }
+      break;
+    case 'balloons':
+      for (let i = 0; i < 9; i++) {
+        const x = 18 + i * 36 + Math.round(Math.sin(t + i) * 3), y = ((200 - (t * (10 + i * 2) + i * 47) % 240) | 0);
+        disc(x, y, 7 + (i % 3), c); tri(x, y + 12, 4, 2, c);
+        for (let k = 0; k < 26; k++) rect(x + Math.round(Math.sin(k * 0.4 + t * 2) * 1.2), y + 10 + k, 1, 1, c);
+      }
+      break;
+    case 'gears':
+      for (const [x, y, r, sp] of [[60, 70, 30, 0.6], [128, 118, 22, -0.82], [250, 60, 36, 0.5], [300, 150, 24, -0.75]]) {
+        disc(x, y, r, c); disc(x, y, Math.round(r * 0.35), pal.bg);
+        for (let k = 0; k < 10; k++) { const a = t * sp + k * Math.PI / 5; rect(Math.round(x + Math.cos(a) * (r + 2)) - 3, Math.round(y + Math.sin(a) * (r + 2)) - 3, 6, 6, c); }
+      }
+      break;
+    case 'planet':
+      for (let i = 0; i < 50; i++) { const x = R() * W, y = R() * 120; if (((t * 1.5 + i) | 0) % 7) rect(x, y, 1, 1, c); }
+      disc(250, 46, 13, c); disc(245, 43, 4, pal.bg); disc(254, 50, 3, pal.bg);
+      disc(160, 410, 280, c);
+      for (const [x, y, r] of [[60, 150, 8], [140, 140, 5], [210, 152, 10], [280, 160, 6]]) disc(x, y, r, pal.bg);
+      break;
+    case 'bigdoor':                                   // the real last door, waiting in the dark
+      for (let i = 0; i < 40; i++) { const x = R() * W, y = R() * 170; if (((t * 2 + i) | 0) % 6) rect(x, y, 1, 1, c); }
+      rect(118, 22, 84, 158, c); rect(126, 30, 68, 150, pal.bg); rect(132, 36, 56, 144, c);
+      rect(176, 100, 6, 6, pal.bg);
+      break;
     case 'heart': {
       for (let i = 0; i < 40; i++) { const x = R() * W, y = R() * 140; if (((t * 2 + i) | 0) % 5) rect(x, y, 1, 1, c); }
       const r = 22 + ((t * 1.6 | 0) % 2);
@@ -1620,6 +2541,7 @@ function render() {
   else if (state === 'levels') drawLevels();
   else if (state === 'card') drawPhaseCard();
   else if (state === 'ending') drawEnding();
+  else if (state === 'fakeout') drawFakeout();
   else if (state === 'skins') drawSkins();
   else if (state === 'editor') drawEditor();
   else if (state === 'shared') drawSharedCard();
@@ -1627,10 +2549,14 @@ function render() {
   if (flashT > 0) { ctx.globalAlpha = 0.45; ctx.fillStyle = pal.glow; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }
   drawToast();
   drawFade();
+  drawTransition();
 }
 
 function drawGame() {
   drawBackdrop(PHASES[L.phase].motif, time);
+  if ((PHASES[L.phase].weather || {}).haze && !REDUCED)              // MIRAGE: the air above the dunes wobbles
+    for (let y = 70; y < H; y += 2) { const dx = Math.round(Math.sin(y * 0.31 + time * 5) * (y - 60) / 60); if (dx) ctx.drawImage(cv, 0, y, W, 2, dx, y, W, 2); }
+  fxDrawBack(false);
   let sx = 0, sy = 0;
   if (shakeT > 0) {
     const m = shakeMag * Math.min(1, shakeT / 0.2);
@@ -1646,6 +2572,7 @@ function drawGame() {
       const x = Math.round(tx * TS + g.ox + jx), y = Math.round(ty * TS + g.oy);
       if (g.spike) drawSprite(g.down ? SPR.spikeDown : SPR.spike, x, y);
       else if (g.plat) drawSprite(SPR.plat, x, y);
+      else if (g.d.ice) { rect(x, y, TS, TS, pal.ink); rect(x, y, TS, 1, pal.glow); if ((tx + ty) % 3 === 0) rect(x + 2, y + 3, 2, 1, pal.glow); }
       else { ctx.fillStyle = pal.ink; ctx.fillRect(x, y, TS, TS); }
     }
   }
@@ -1655,6 +2582,7 @@ function drawGame() {
     if (v === 1) ctx.fillRect(tx * TS, ty * TS, TS, TS);
     else if (v === 2) ctx.drawImage(SPR.spike, tx * TS, ty * TS);
     else if (v === 3) ctx.drawImage(SPR.spikeDown, tx * TS, ty * TS);
+    else if (v >= 4) { drawTrickTile(v, tx, ty); ctx.fillStyle = pal.ink; }
   }
   for (const s of stones) {
     const k = Math.min(1, (time - s.born) / 0.18);
@@ -1662,11 +2590,101 @@ function drawGame() {
   }
   for (const f of fakeDoors) drawSprite(SPR.door, f.x, f.y);
   if (door) drawSprite(SPR.door, door.x, door.y);
+  drawEcho();
   if (state === 'replay') drawReplay(); else drawPlayer();
   for (const q of particles) { ctx.fillStyle = q.color; ctx.fillRect(Math.round(q.x), Math.round(q.y), q.size, q.size); }
+  drawFlood();
+  drawWind();
   ctx.restore();
+  fxDrawFront(sx, sy);
+  drawDark();
+  fxDrawBack(true);
   drawHUD();
 }
+
+// The tiles the new phases brought: ice that shines, springs, belts whose chevrons run.
+function drawTrickTile(v, tx, ty) {
+  const x = tx * TS, y = ty * TS;
+  if (v === 4) {
+    rect(x, y, TS, TS, pal.ink); rect(x, y, TS, 1, pal.glow);
+    if ((tx + ty) % 3 === 0) { rect(x + 2, y + 3, 1, 1, pal.glow); rect(x + 3, y + 2, 1, 1, pal.glow); }
+  } else if (v === 5) {
+    const squash = mech.boingT > 0 && mech.boingX === tx ? 2 : 0;
+    rect(x, y + 6, TS, 2, pal.ink);
+    for (let i = 0; i < 3 - (squash ? 1 : 0); i++) rect(x + 1 + (i % 2), y + 3 + squash + i, 6, 1, pal.ink);
+    rect(x, y + 1 + squash, TS, 2, pal.hero);
+  } else {
+    const dir = (v === 7 ? 1 : -1) * mech.beltDir, off = Math.floor(time * (L.belt || 48) / 4) % 4;
+    rect(x, y, TS, TS, pal.ink);
+    for (let k = 0; k < 2; k++) {
+      const cx = x + ((dir > 0 ? off : 3 - off) + k * 4) % 8;
+      rect(cx, y + 2, 1, 1, pal.bg); rect(cx + (dir > 0 ? 1 : -1), y + 3, 1, 1, pal.bg); rect(cx, y + 4, 1, 1, pal.bg);
+    }
+  }
+}
+
+// Your own shadow, a few seconds behind you.
+function drawEcho() {
+  const e = echoAt();
+  if (!e || state === 'replay') return;
+  ctx.globalAlpha = 0.55 + 0.2 * Math.sin(time * 9);
+  const img = SPR.idle0;
+  drawSprite(img, e[0] - 1, e[1] + 7 - img.height, e[2] < 0);
+  ctx.globalAlpha = 1;
+  if (L.wrap && (e[0] < 8 || e[0] > W - 16)) drawSprite(img, e[0] - 1 + (e[0] < 8 ? W : -W), e[1] + 7 - img.height, e[2] < 0);
+}
+
+// The rising water: a band in the phase's hero color with a lit, rolling top.
+function drawFlood() {
+  if (mech.flood == null || mech.flood > ROWS * TS + 4) return;
+  const top = Math.round(mech.flood);
+  ctx.globalAlpha = 0.34;                                  // see-through, so you can still see what's under it
+  rect(0, top + 1, W, ROWS * TS - top + 8, pal.glow);
+  ctx.globalAlpha = 0.25;
+  rect(0, top + 3, W, 1, pal.ink);
+  ctx.globalAlpha = 1;
+  for (let x = 0; x < W; x += 2) { const wv = Math.round(Math.sin(x * 0.12 + time * 4) * 1.2); rect(x, top + wv, 2, 1, pal.glow); }
+}
+
+// Gusts: streaks racing across, and a warning just before one hits.
+function drawWind() {
+  const v = mech.windV;
+  if (Math.abs(v) < 6) return;
+  ctx.fillStyle = pal.glow;
+  for (let i = 0; i < 18; i++) {
+    const span = W + 60, x = (((i * 61 + time * v * 4) % span) + span) % span - 30, y = 8 + ((i * 37) % 150);
+    ctx.fillRect(Math.round(x), y, Math.max(2, Math.round(Math.abs(v) / 6)), 1);
+  }
+}
+
+// Lights out: darkness everywhere but a circle round you (and a dim glow at the door). A flash now and then.
+let darkC = null, darkCtx = null, darkImg = null;
+function drawDark() {
+  if (!mech.dark || state === 'replay' || !L.dark) return;
+  const f = L.dark.flash;
+  if (f && (levelTime % f) < 0.14 && levelTime > 0.2) return;            // lightning: see it all, for a moment
+  if (!darkC) { darkC = document.createElement('canvas'); darkC.width = W; darkC.height = H; darkCtx = darkC.getContext('2d'); darkImg = darkCtx.createImageData(W, H); }
+  const lum = c => { const n = parseInt(c.slice(1), 16); return (n >> 16) * 0.3 + ((n >> 8) & 255) * 0.59 + (n & 255) * 0.11; };
+  const dk = [pal.bg, pal.deco, pal.ink, pal.hero, pal.glow].reduce((a, b) => (lum(b) < lum(a) ? b : a));
+  const n = parseInt(dk.slice(1), 16), R0 = n >> 16, G0 = (n >> 8) & 255, B0 = n & 255;
+  const p = player, lights = [];
+  if (p && (p.alive || state === 'exit')) lights.push([p.x + p.w / 2, p.y + p.h / 2 + OY, L.dark.r || 30]);
+  else if (p) lights.push([p.x + p.w / 2, p.y + p.h / 2 + OY, (L.dark.r || 30) * 0.6]);
+  if (door) lights.push([door.x + 4, door.y + 8 + OY, 9 + Math.sin(time * 3) * 1.5]);
+  const d = darkImg.data;
+  for (let y = 0, i = 0; y < H; y++) for (let x = 0; x < W; x++, i += 4) {
+    let a = 255;
+    for (const [lx, ly, r] of lights) {
+      const q = Math.hypot(x + 0.5 - lx, y + 0.5 - ly);
+      if (q < r) { a = 0; break; }
+      if (q < r + 7) { const th = BAYER4[((y & 3) << 2) | (x & 3)]; if ((q - r) / 7 < th) { a = 0; break; } }
+    }
+    d[i] = R0; d[i + 1] = G0; d[i + 2] = B0; d[i + 3] = a;
+  }
+  darkCtx.putImageData(darkImg, 0, 0);
+  ctx.drawImage(darkC, 0, 0);
+}
+const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + 0.5) / 16);
 
 function drawPlayer() {
   const p = player;
@@ -1685,6 +2703,7 @@ function drawPlayer() {
   const img = SPR[frame];
   const w = Math.max(1, Math.round(img.width * sx)), h = Math.max(1, Math.round(img.height * sy));
   drawSprite(img, cx - w / 2, by - h, p.face < 0, w, h);
+  if (L.wrap && (cx < 8 || cx > W - 8)) drawSprite(img, cx - w / 2 + (cx < 8 ? W : -W), by - h, p.face < 0, w, h);
 }
 // Hero sprites can be taller than 8px (hats), so menus place them by their feet.
 function drawHero(frame, x, bottom, flip = false) { const img = SPR[frame]; drawSprite(img, x, bottom - img.height, flip); }
@@ -1734,6 +2753,11 @@ function drawHUD() {
   text(narrN >= narr.length ? full : '"' + narr.slice(0, narrN), Math.round(W / 2 - textW(full) / 2), 13, pal.ink);
   if (state === 'play' && msgT > 0 && levelTime < 1.6) text(msg, W / 2, 21, pal.hero, 1, 'center');
   if (reverseT > 0 && (time * 8 | 0) % 2 === 0) text('< CONTROLS REVERSED >', W / 2, 29, pal.hero, 1, 'center');
+  if (state === 'play' && L.wind) {
+    const w = windNow(levelTime);
+    if (w.warn && (time * 10 | 0) % 2 === 0) text(w.nextDir > 0 ? 'GUST >>>' : '<<< GUST', W / 2, 29, pal.hero, 1, 'center');
+  }
+  if (mech.grav !== 1 && state === 'play') text(mech.grav < 1 ? 'LOW GRAVITY' : 'HEAVY GRAVITY', W - 4, 13, pal.hero, 1, 'right');
   if (introT > 0 && levelDeaths === 0 && state === 'play') {
     band(bannerY, 34);
     text((L.custom ? 'CUSTOM LEVEL' : 'LEVEL ' + levelLabel(L)) + '   ' + PHASES[L.phase].name, W / 2, bannerY + 6, pal.bg, 1, 'center');
@@ -1801,6 +2825,9 @@ const sfx = {
   nope:    () => tone(140, 110, 0.12, 'square', 0.06),
   win:     () => [523, 659, 784, 1047].forEach((f, i) => tone(f, f, 0.12, 'square', 0.06, i * 0.07)),
   poof:    () => tone(320, 90, 0.06, 'square', 0.035),
+  boing:   () => { tone(180, 720, 0.12, 'triangle', 0.1); tone(720, 360, 0.08, 'square', 0.03, 0.1); },
+  flood:   () => { noise(0.6, 0.18, 900); tone(110, 70, 0.4, 'triangle', 0.08); },
+  gust:    () => noise(0.5, 0.12, 2200),
 };
 
 /* ---- music: one little loop per phase (same order as PHASES). Steps are eighth notes, 8 per bar.
@@ -1820,6 +2847,18 @@ const SONGS = [
   { bpm: 96,  root: 72, scale: 'pent', chords: [0, 3, 4, 0], bass: 'x.......', lead: '4-3-2-0- 1-2-3--- 4-5-6-5- 4---....' },
   { bpm: 168, root: 64, scale: 'min',  chords: [0, 5, 6, 4], bass: 'x.x.x.x.', lead: '0.0.3.0. 4.0.3.2. 0.0.3.0. 6.5.4.2.', hat: 1 },
   { bpm: 84,  root: 60, scale: 'min',  chords: [0, 5, 2, 6], bass: 'x...x...', lead: '4---3--- 2-1-0--- 4---5--- 4-------' },
+  // phases 11-20
+  { bpm: 112, root: 67, scale: 'dor',  chords: [0, 3, 4, 3], bass: 'x..x..x.', lead: '0.2.4.2. 0.2.4.5. 4.2.0.2. 4---....' },
+  { bpm: 96,  root: 76, scale: 'pent', chords: [0, 3, 1, 4], bass: 'x.......', lead: '4.6.5.4. 2------- 4.6.7.6. 5---....' },
+  { bpm: 132, root: 62, scale: 'mix',  chords: [0, 6, 3, 4], bass: 'x.x..x.x', lead: '0-2-4-5- 6.5.4.2. 0-2-4-6- 5---....', hat: 1 },
+  { bpm: 100, root: 60, scale: 'min',  chords: [0, 5, 3, 6], bass: 'x..x.x..', lead: '0...3... 2.1.0... 4...3... 2-------' },
+  { bpm: 80,  root: 57, scale: 'phr',  chords: [0, 1, 0, 6], bass: 'x.......', lead: '0---1--- 0---.... 4---3--- 1-------' },
+  { bpm: 108, root: 64, scale: 'min',  chords: [0, 0, 5, 4], bass: 'x...x...', lead: '0.0.2.2. 4.4.2... 0.0.2.2. 1.1.0...' },
+  { bpm: 144, root: 72, scale: 'maj',  chords: [0, 3, 4, 0], bass: 'x.x.x.x.', lead: '0.4.2.5. 4.7.5... 0.4.2.5. 7-6-5-4-', hat: 1 },
+  { bpm: 120, root: 55, scale: 'min',  chords: [0, 0, 3, 4], bass: 'xx.xx.x.', lead: '0.0.0.2. 3.3.2... 0.0.0.4. 3.2.1.0.', hat: 1 },
+  { bpm: 72,  root: 69, scale: 'pent', chords: [0, 2, 3, 1], bass: 'x.......', lead: '0---2--- 4---6--- 5---4--- 2-------' },
+  { bpm: 150, root: 62, scale: 'hij',  chords: [0, 1, 5, 4], bass: 'x.xx.x.x', lead: '0.1.4.5. 4.1.0... 0.1.4.5. 7-6-5-4-', hat: 1 },
+  // the bonus phase
   { bpm: 126, root: 62, scale: 'min',  chords: [0, 0, 5, 4], bass: 'x.xx.x.x', lead: '0.0.0.3. 2.0..... 0.0.0.5. 4.3.2.1.', hat: 1 },
 ];
 const hz = m => 440 * Math.pow(2, (m - 69) / 12);
@@ -2012,6 +3051,10 @@ function edBlank() {
   return { grid, theme: 0, grudge: false, name: 'MY LEVEL', hint: 'TOTALLY SAFE. TRUST ME.' };
 }
 
+// Links made before phases 11-20 call the bonus phase theme 10; keep that meaning, and number the new ones after it.
+const BONUS = () => PHASES.length - 1;
+const themeToLink = i => (i < 10 ? i : i === BONUS() ? 10 : i + 1);
+const linkToTheme = n => (n < 10 ? n : n === 10 ? BONUS() : n - 1);
 // Level <-> link code: "G1|theme|grudge|name|hint|run-length map", base64url so it survives any chat app
 function edEncode(lv) {
   const flat = lv.grid.map(r => r.join('')).join('');
@@ -2021,7 +3064,7 @@ function edEncode(lv) {
     rle += j - i > 2 ? (j - i) + flat[i] : flat.slice(i, j);
     i = j;
   }
-  return btoa(['G1', lv.theme, lv.grudge ? 1 : 0, lv.name, lv.hint, rle].join('|'))
+  return btoa(['G1', themeToLink(lv.theme), lv.grudge ? 1 : 0, lv.name, lv.hint, rle].join('|'))
     .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 function edDecode(code) {
@@ -2033,7 +3076,7 @@ function edDecode(code) {
     if (flat.length !== ED_ROWS * COLS || /[^.#^vPDF]/.test(flat.replace(/[fcsgpmk]/g, ''))) return null;
     const grid = [];
     for (let y = 0; y < ED_ROWS; y++) grid.push([...flat.slice(y * COLS, (y + 1) * COLS)]);
-    const th = Math.floor(+theme);
+    const th = linkToTheme(Math.floor(+theme));
     return { grid, theme: th >= 0 && th < PHASES.length ? th : 0, grudge: grudge === '1',
              name: cleanText(name, 16) || 'A LEVEL', hint: cleanText(hint, 44) || '...' };
   } catch (_) { return null; }
@@ -2256,7 +3299,8 @@ function updatePhases(dt) {
   const pr = input.presses, N = PHASES.length;
   if (pr.has('left')) { phaseSel = (phaseSel + N - 1) % N; sfx.move(); }
   if (pr.has('right')) { phaseSel = (phaseSel + 1) % N; sfx.move(); }
-  if (pr.has('up') || pr.has('down')) { phaseSel = phaseSel < 6 ? Math.min(N - 1, phaseSel + 6) : phaseSel - 6; sfx.move(); }
+  if (pr.has('up')) { phaseSel = phaseSel >= 7 ? phaseSel - 7 : Math.min(N - 1, phaseSel + 14); sfx.move(); }
+  if (pr.has('down')) { phaseSel = phaseSel + 7 < N ? phaseSel + 7 : phaseSel % 7; sfx.move(); }
   const tap = hitAt(input.tap);
   if (pr.has('back') || tap === 'back') { sfx.back(); return fadeTo(goHome); }
   let pick = pr.has('ok') ? phaseSel : null;
@@ -2270,34 +3314,32 @@ function drawPhases() {
   drawBackdrop(PHASES[palPhase].motif, menuT);
   text('< BACK', 6, 6, pal.ink); hit(0, 0, 40, 16, 'back');
   text('CHOOSE A PHASE', W / 2, 8, pal.ink, 2, 'center');
-  const cw = 44, ch = 58, gap = 6, x0 = (W - (cw * 6 + gap * 5)) / 2;
+  const cw = 38, ch = 38, gap = 5, x0 = Math.round((W - (cw * 7 + gap * 6)) / 2);
   let sxh = 0;
   if (shakeT > 0) sxh = Math.round((Math.random() * 2 - 1) * shakeMag * 0.5);
   PHASES.forEach((ph, i) => {
     const [bg, deco, ink, hero, glow] = ph.pal;
     const sel = i === phaseSel, open = phaseUnlocked(i);
-    const x = x0 + (i % 6) * (cw + gap) + (sel ? sxh : 0), y = 30 + Math.floor(i / 6) * (ch + 14) - (sel ? 3 : 0);
+    const x = x0 + (i % 7) * (cw + gap) + (sel ? sxh : 0), y = 26 + Math.floor(i / 7) * (ch + 6) - (sel ? 3 : 0);
     if (sel) rect(x + 2, y + 3, cw, ch, pal.hero);
     if (open) {
       rect(x, y, cw, ch, bg);
-      disc(x + cw - 9, y + 10, 5, deco);
-      text(String(i + 1), x + 5, y + 5, ink, 3);
-      for (let k = 0; k < 5; k++) rect(x + 5 + k * 7, y + 28, 5, 5, isCleared(i * 5 + k) ? ink : deco);
-      rect(x, y + ch - 16, cw, 16, ink);
-      const words = ph.name.split(' ');
-      if (words.length > 1 && textW(ph.name) > cw - 4) {
-        text(words[0], x + cw / 2, y + ch - 14, bg, 1, 'center'); text(words.slice(1).join(' '), x + cw / 2, y + ch - 7, bg, 1, 'center');
-      } else text(ph.name, x + cw / 2, y + ch - 10, bg, 1, 'center');
+      disc(x + cw - 8, y + 9, 5, deco);
+      text(String(i + 1), x + 4, y + 5, ink, 2);
+      rect(x, y + ch - 11, cw, 11, ink);
+      for (let k = 0; k < 5; k++) rect(x + 5 + k * 6, y + ch - 7, 4, 4, isCleared(i * 5 + k) ? glow : deco);
+      if (i === PHASES.length - 1) ctx.drawImage(SPR.star, x + cw - 11, y + 19);     // the bonus phase
     } else {
       rect(x, y, cw, ch, ink);
-      ctx.drawImage(bakeLock(bg), Math.round(x + cw / 2 - 5), y + 16, 10, 14);
-      text(String(i + 1), x + cw / 2, y + ch - 12, deco, 1, 'center');
+      ctx.drawImage(bakeLock(bg), Math.round(x + cw / 2 - 5), y + 9, 10, 14);
+      text(String(i + 1), x + cw / 2, y + ch - 9, deco, 1, 'center');
     }
     if (sel) drawHero('idle0', x + cw / 2 - 4, y);
     hit(x, y, cw, ch, 'ph:' + i);
   });
-  const ph = PHASES[phaseSel];
-  text(phaseUnlocked(phaseSel) ? ph.tag : 'CLEAR THE PHASE BEFORE IT TO UNLOCK.', W / 2, 168, pal.ink, 1, 'center');
+  const ph = PHASES[phaseSel], open = phaseUnlocked(phaseSel);
+  text((phaseSel === PHASES.length - 1 ? 'BONUS  ' : 'PHASE ' + (phaseSel + 1) + '  ') + (open ? ph.name : '? ? ?'), W / 2, 160, pal.ink, 1, 'center');
+  text(open ? ph.tag : 'CLEAR THE PHASE BEFORE IT TO UNLOCK.', W / 2, 170, open ? pal.ink : pal.hero, 1, 'center');
 }
 const lockCache = {};
 function bakeLock(color) { return lockCache[color] || (lockCache[color] = bakeSprite(LOCK, { 1: color })); }
@@ -2373,13 +3415,31 @@ function drawEnding() {
   text(endBonus ? 'YOU GOT OUT. AGAIN.' : 'YOU GOT OUT.', 20, 22, pal.ink, endBonus ? 2 : 3);
   text(clearedCount() + ' LEVELS CLEARED. TOTAL DEATHS', 20, 54, pal.ink, 1);
   text(String(deaths), 20, 63, pal.hero, 4);
-  const rank = deaths <= 60 ? 'THE LEVEL IS AFRAID OF YOU.' : deaths <= 150 ? 'A RESPECTABLE AMOUNT OF SPITE.'
-             : deaths <= 300 ? 'THE LEVEL HAD A WONDERFUL TIME.' : 'THE LEVEL WOULD LIKE TO KEEP YOU.';
+  const rank = deaths <= 120 ? 'THE LEVEL IS AFRAID OF YOU.' : deaths <= 300 ? 'A RESPECTABLE AMOUNT OF SPITE.'
+             : deaths <= 600 ? 'THE LEVEL HAD A WONDERFUL TIME.' : 'THE LEVEL WOULD LIKE TO KEEP YOU.';
   text(rank, 20, 92, pal.ink, 1);
   text('IT WILL REMEMBER YOU.', 20, 101, pal.ink, 1);
   text('TIME ' + fmtTime(save.playT) + '    DEATHLESS ' + deathlessCount(), 20, 112, pal.ink, 1);
   if (endT > 0.8 && (endT * 2 | 0) % 2 === 0) text('PRESS JUMP FOR THE MENU', 20, 124, pal.hero, 1);
-  if (!endBonus && !isCleared(LEVELS.length - 1)) text('PHASE 11 IS OPEN. IT REMEMBERS YOU.', 20, 136, pal.ink, 1);
+  if (!endBonus && !isCleared(LEVELS.length - 1)) text('PHASE ' + PHASES.length + ' IS OPEN. IT REMEMBERS YOU.', 20, 136, pal.ink, 1);
+}
+
+// After THE HEART: it looks like the ending. It is not.
+let fakeT = 0;
+function drawFakeout() {
+  const t = fakeT, glitch = t > 1.5 && t < 1.85;
+  drawBackdrop(glitch && (t * 30 | 0) % 2 ? 'eyes' : 'heart', t);
+  const gy = H - 24;
+  rect(0, gy, W, 24, pal.ink);
+  drawHero(t > 1.85 ? ((t * 3 | 0) % 2 ? 'idle0' : 'idle1') : 'idle0', 40, gy);
+  if (t < 1.5 || (glitch && (t * 20 | 0) % 2)) { text('YOU GOT OUT.', 20, 22, pal.ink, 3); return; }
+  if (glitch) return;
+  text('YOU GOT OUT.', 20, 22, pal.ink, 3);
+  rect(18, 30, 150, 3, pal.hero);
+  text('...OR NOT.', 20, 50, pal.hero, 3);
+  if (t > 2.3) text('THE LAST DOOR LIED. IT DOES THAT.', 20, 84, pal.ink, 1);
+  if (t > 2.9) text('TEN MORE PHASES. THE LEVEL IS JUST GETTING STARTED.', 20, 94, pal.ink, 1);
+  if (t > 3.4 && (t * 2 | 0) % 2 === 0) text('PRESS JUMP', 20, 116, pal.hero, 1);
 }
 
 /* ===================== 12. GAME STATES + LOOP ====================== */
@@ -2406,6 +3466,7 @@ function update(dt) {
   }
   if (shakeT > 0) shakeT -= dt;
   updateParticles(dt);
+  fxUpdate(dt);
   if (fade.dir <= 0) {
     const inLevel = state === 'play' || state === 'dead';
     if (inLevel && (input.presses.has('back') || (input.tap && hitAt(input.tap) === 'menu'))) {
@@ -2434,7 +3495,7 @@ function update(dt) {
         break;
       case 'exit':
         exitT += dt;
-        if (exitT > 0.45 && !exitDone) {
+        if (!fx.trans && exitT > 0.45 && !exitDone) {
           exitDone = true;
           recordClear();
           if (runs.length >= 3) startReplay(); else leaveLevel();
@@ -2444,6 +3505,10 @@ function update(dt) {
         replayT += dt; updateReplay();
         if (replayT > replayDur || (replayT > 0.4 && (input.jumpPressed || input.presses.has('ok') || input.presses.has('back') || input.tap)))
           leaveLevel();
+        break;
+      case 'fakeout':
+        fakeT += dt;
+        if (fakeT > 3.4 && (input.jumpPressed || input.presses.has('ok') || input.tap)) { fakeT = -99; fadeTo(() => goCard(MAIN_PHASES / 2 * 5)); }
         break;
       case 'ending':
         endT += dt;
@@ -2470,18 +3535,22 @@ function startReplay() {
   replayDur = longest / replaySpeed + 1;
   replayT = 0; state = 'replay';
 }
-function leaveLevel() {
+function leaveLevel(covered) {                       // covered: an iris already hides the screen, no fade needed
+  const go = cb => (covered ? cb() : fadeTo(cb));
   if (L.custom) {
     const tries = levelDeaths + 1, fromEditor = L.fromEditor;
-    return fadeTo(() => {
+    return go(() => {
       if (fromEditor) { goEditor(); ed.verified = true; edSaveDraft(); showToast('BEATEN! NOW YOU CAN SHARE IT.'); }
       else { goHome(); showToast(tries > 1 ? `YOU BEAT IT IN ${tries} TRIES.` : 'BEATEN ON THE FIRST TRY!'); }
     });
   }
   const next = li + 1;
-  fadeTo(() => {
+  go(() => {
     if (li === MAIN_LEVELS - 1 || next >= LEVELS.length) {
       state = 'ending'; endT = 0; endBonus = li >= MAIN_LEVELS; setPalette(endBonus ? PHASES.length - 1 : MAIN_PHASES - 1);
+    }
+    else if (next === MAIN_PHASES / 2 * 5 && !save.fakeoutSeen) {   // finishing THE HEART for the first time
+      save.fakeoutSeen = true; writeSave(); state = 'fakeout'; fakeT = 0; setPalette(L.phase);
     }
     else if (LEVELS[next].phase !== L.phase) goCard(next);
     else loadLevel(next);
@@ -2506,6 +3575,8 @@ function updatePlay(dt) {
   updateGroups(dt);
   updateDoor(dt);
   if (!player.alive) return;
+  updateMech(dt);
+  if (!player.alive) return;
   checkHazards();
   if (!player.alive) return;
   updateTraps(dt);
@@ -2513,6 +3584,7 @@ function updatePlay(dt) {
   if (door && overlap(player, { x: door.x + 2, y: door.y + 6, w: 4, h: 10 })) {
     state = 'exit'; exitT = 0; exitDone = false; sfx.win(); buzz([15, 50, 15]);
     burst(door.x + 4, door.y + 8, pal.glow, 14, 80, 0.6);
+    fxExit(() => { exitDone = true; recordClear(); if (runs.length >= 3) startReplay(); else leaveLevel(true); });
   }
 }
 
