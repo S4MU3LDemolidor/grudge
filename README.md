@@ -10,7 +10,7 @@ The first ten phases end at THE LAST DOOR, which promises it is the last door. I
 |---|---|
 | 11 THE LOOP | No side walls: walk off one edge, come in at the other. |
 | 12 FROSTBITE | Ice. You can't stop. |
-| 13 THE GALE | Gusts that push you around, announced a moment before they hit. |
+| 13 THE GALE | Gusts that push you around, announced a moment before they hit. Push against one with your feet on the ground and you stand firm. |
 | 14 THE FLOOD | The water rises. Climb. |
 | 15 LIGHTS OUT | You only see a circle around you, and the odd flash of lightning. |
 | 16 THE ECHO | Your own shadow walks your path a few seconds behind you. Don't be where you were. |
