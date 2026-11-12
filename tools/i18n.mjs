@@ -29,13 +29,11 @@ function collect() {
   for (const ph of G.PHASES) {
     add(ph.name, "title"); add(ph.tag, "line");
     for (const lv of ph.levels) {
-      add(lv.name, "title"); add(lv.hint, "narrator"); add(lv.pity, "narrator");
+      add(lv.name, "title");                          // (a level's hint, pity and trap lines are the narrator's: not shown)
       for (const q of lv.quips || []) add(q, "death");
-      for (const t of lv.traps || []) add(t.say, "narrator");
     }
   }
-  for (const list of Object.values(run("QUIPS"))) for (const q of list) add(q, q.length > 24 ? "narrator" : "death");
-  for (const gr of run("GREETINGS")) add(gr, "narrator");
+  for (const list of Object.values(run("QUIPS"))) for (const q of list) add(q, "death");
   for (const sk of run("SKINS")) { add(sk.name, "line"); if (sk.need) add(sk.need.text, "line"); }
   // ...and every tr('...') written in the code
   const html = readFileSync(join(ROOT, "index.html"), "utf8");
@@ -52,11 +50,6 @@ function collect() {
 // How wide a string is in the game's 3x5 font (4 px per letter), and which letters it can draw
 const FONT_OK = /^[A-Z0-9 .,!?'"\-:\/()<>+#=_¡¿ÁÀÂÃÄÇÉÈÊËÍÌÎÏÑÓÒÔÕÖÚÙÛÜŸ{}]*$/;
 const width = (s) => [...s.replace(/\{\w+\}/g, "00")].length * 4 - 1;
-function wrapCount(s, maxW = 312) {
-  let lines = 1, cur = "";
-  for (const w of s.split(" ")) { const t = cur ? cur + " " + w : w; if (cur && width(t) > maxW) { lines++; cur = w; } else cur = t; }
-  return lines;
-}
 // Lines with less room than the usual 300px: the ending screens start at x=20, and two lines there sit beside the pile of stones
 const ROOM = {
   "PHASE {n} IS OPEN. IT REMEMBERS YOU.": 176, "PRESS JUMP FOR THE MENU": 184,
@@ -71,8 +64,7 @@ function problems(en, t, kind) {
   if (!FONT_OK.test(bare)) out.push(`letters the font can't draw: ${[...bare].filter((c) => !FONT_OK.test(c)).join("")}`);
   const vars = (s) => [...s.matchAll(/\{\w+\}/g)].map((m) => m[0]).sort().join();
   if (vars(en) !== vars(t)) out.push(`placeholders differ (${vars(en)} vs ${vars(t)})`);
-  if (kind === "narrator" && wrapCount('"' + t + '"') > 2) out.push(`too long: ${wrapCount('"' + t + '"')} lines on screen (2 max)`);
-  if (kind !== "narrator" && width(t) > 300) out.push(`too wide: ${width(t)} px (300 max)`);
+  if (width(t) > 300) out.push(`too wide: ${width(t)} px (300 max)`);
   if (kind === "title" && [...t].length > 38) out.push(`title too long: ${[...t].length} letters (38 max)`);
   return out;
 }
