@@ -36,11 +36,11 @@ Every phase also has its own weather, drawn with [pixelfx](https://github.com/pa
 
 The game scales up to fill the whole window. Press F for full screen, where your browser allows it.
 
-## Make your own levels
+## Languages
 
-Pick **MAKE A LEVEL** on the home screen. Paint ground, spikes, the start and the door, then add traps: crumbling floors, drop blocks, shy spikes, ghost blocks, fake blocks, lifts and chasers. Give it a name and a narrator line (a good lie works best), pick a theme, and press **TEST**.
+English, Português, Español, Français and Deutsch. The game starts in your browser's language (English if it isn't one of these); change it under **OPTIONS > LANGUAGE**, and it remembers your choice.
 
-Once you've beaten your own level, **SHARE** makes a link. Anyone who opens it plays your level straight away, with no account and no server: the whole level lives inside the link. Links made before phases 11-20 still open with the theme they were made with.
+The level editor is taking a break and will come back in a later version. Until then, level links made with it open the home screen with a note saying so.
 
 ## On phones
 
@@ -58,6 +58,7 @@ The `tools` folder runs the game's own code in Node, with no browser:
 
 - `node tools/solve.mjs` searches for a way through every level and says which ones it beat (`node tools/solve.mjs 51-100` for a range, `--show` for the winning inputs). A level that needs the solver to take a particular route can list waypoints in `solve: { via: [[x, row], ...] }`; one that needs you to die first can start with `solve: { stones, deaths }`.
 - `node tools/snap.mjs 11-20 --out snaps` takes pictures of each phase's levels being beaten, one sheet per phase.
+- `node tools/i18n.mjs check` says which lines each language is missing, and which ones don't fit on screen in the pixel font. After changing any text in the game: `node tools/i18n.mjs extract` lists every English line in `tools/i18n/en.txt`, add the new lines to `tools/i18n/<lang>.json` (English on the left, translation on the right), then `node tools/i18n.mjs build` packs them into `index.html`. A line nobody has translated yet shows in English.
 - `node tools/build-fx.mjs path/to/pixelfx` repacks the pixelfx effects into `index.html` (needs [Deno](https://deno.com)). Only needed if you change which effects the game uses.
 
 Saves from before phases 11-20 carry over: anything you won in the bonus phase moves with it, and if you had already seen the ending, the bonus phase stays open.
