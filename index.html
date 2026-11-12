@@ -1142,15 +1142,15 @@ const PHASES = [
     traps: [] },
   { name: 'TAILWIND', hint: 'THE WIND IS ON YOUR SIDE.', pity: 'IN A GUST, HOLD LEFT TO STAY PUT. HOP ONLY IN THE CALM.',
     quips: ['BLOWN AWAY.'], wind: { speed: 55, on: 1.2, off: 1.4, dir: 1 },
-    map: ['..P.....^^^..^^^..^^^..^^^..^^^......D..',
+    map: ['..P..^^^...^^^...^^^...^^^...^^^.....D..',
           G40, G40],
     traps: [] },
   { name: 'CROSSWIND', hint: 'IT ONLY BLOWS ONE WAY.', pity: 'IT SWAPS SIDES EVERY GUST. LEAN INTO IT ON EACH PILLAR.',
-    quips: ['WHICH WAY NOW?'], wind: { speed: 50, on: 1.1, off: 1.2, dir: 'alt' },
+    quips: ['WHICH WAY NOW?'], wind: { speed: 50, on: 1.1, off: 1.4, dir: 'alt' },
     map: ['..P.................................D...',
-          '#####...##....##....##....##....########',
-          '#####...##....##....##....##....########',
-          '........##....##....##....##............'],
+          '#####...###...###...###...###...########',
+          '#####...###...###...###...###...########',
+          '........###...###...###...###...........'],
     traps: [] },
   { name: 'KITE', hint: 'TOO WIDE. GIVE UP.', pity: 'WAIT FOR THE GUST. JUMP WITH IT. IT CARRIES YOU OVER.',
     quips: ['NOT QUITE A BIRD.'], wind: { speed: 60, on: 1.4, off: 2.0, dir: 1, phase: 2.3 },
@@ -1876,7 +1876,7 @@ function updatePlayer(dt) {
   p.vy = Math.min(p.vy + PH.grav * mech.grav * dt, PH.maxFall * Math.sqrt(mech.grav));
 
   const wasGround = p.onGround, fallV = p.vy;
-  moveX((p.vx + mech.windV) * dt);                              // the wind pushes, whatever you do
+  moveX((brace(p, mx, icy) ? 0 : p.vx + mech.windV) * dt);     // the wind pushes, unless you dig in
   if (L.wrap) { if (p.x + p.w / 2 < 0) p.x += W; else if (p.x + p.w / 2 >= W) p.x -= W; }
   p.onGround = false; p.ground = null;
   moveY(p.vy * dt);
@@ -1927,17 +1927,29 @@ let mech = { windV: 0, grav: 1, beltDir: 1, flood: null, floodSpeed: 0, gustT: 0
 function mechReset() {
   const f = L.flood;
   mech = {
-    windV: 0, grav: L.grav || 1, beltDir: 1, gustT: 0, gustDir: 0, gustSpeed: 0, boingT: 0, boingX: 0,
+    windV: 0, grav: L.grav || 1, beltDir: 1, gustT: 0, gustDir: 0, gustSpeed: 0, braceT: 0, braceDir: 0, boingT: 0, boingX: 0,
     flood: f ? (f.from != null ? f.from : ROWS * TS + 6) : null,            // water surface, in level pixels
     floodSpeed: f && !f.trigger ? f.speed : 0, floodDelay: f ? (f.delay || 0) : 0,
     echo: L.echo ? [] : null, dark: !!L.dark && !L.dark.lit, sig: '',
   };
 }
+// Push against a gust with your feet on solid ground and you hold your ground: from the moment it's announced (unless
+// you were already running that way) until a moment after it dies down. Not on ice, and not in the air: there the wind has its way.
+function brace(p, mx, icy) {
+  if (mx !== mech.braceDir) mech.braceT = 0;                    // let go (or turn round) and the brace is over
+  if (!p.onGround || icy || !mx) return false;
+  if (!L.wind && !mech.gustT && !mech.windV) return false;
+  const w = windNow(levelTime), g = Math.sign(w.v || mech.windV);
+  const ready = !g && w.warn && w.nextDir === -mx && (p.vx * mx < 30 || mech.braceT > 0);   // bracing for the next one (unless already running into it)
+  if ((g && mx === -g) || ready) { mech.braceT = 0.25; mech.braceDir = mx; return true; }
+  if (mech.braceT > 0) { mech.braceT -= DT; return true; }      // the gust just died: a moment to stand up again
+  return false;
+}
 function mechSnap() {
   const e = mech.echo;
   let ek = '';
   if (e && e.length) for (let q = 0; q < 4; q++) { const s = e[Math.floor((e.length - 1) * q / 4)]; ek += Math.round(s[0] / 5) + ':' + Math.round(s[1] / 5) + ';'; }
-  mech.sig = `${mech.flood == null ? '' : Math.round(mech.flood / 3)},${mech.beltDir},${mech.grav},${Math.round(mech.windV / 8)},${mech.gustT > 0 ? 1 : 0},${ek}`;
+  mech.sig = `${mech.flood == null ? '' : Math.round(mech.flood / 3)},${mech.beltDir},${mech.grav},${Math.round(mech.windV / 8)},${mech.gustT > 0 ? 1 : 0},${mech.braceT > 0 ? mech.braceDir : 0},${ek}`;
   return { ...mech, echo: e && e.slice() };
 }
 function mechRestore(m) { mech = { ...m, echo: m.echo && m.echo.slice() }; }
