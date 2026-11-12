@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
-/* Layout: one integer-scaled 320x180 canvas centered on a page that takes the current phase's background color. */
+/* Layout: one 320x180 canvas, scaled up to fill the window, centered on a page in the current phase's background color. */
 :root {
   --bg: #e9a23b;     /* current phase background (set from JS) */
   --ink: #3a2213;    /* current phase ink: ground, spikes, doors */
@@ -31,9 +31,7 @@ body {
   justify-content: center;
   overflow: hidden;
   box-sizing: border-box;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 12px;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
@@ -101,7 +99,7 @@ body.land #bF { left: calc(10px + env(safe-area-inset-left, 0px)); top: calc(62p
 @media (prefers-reduced-motion: reduce) { body { transition: none; } }
 </style>
 
-<canvas id="game" width="320" height="180" tabindex="0" aria-label="Grudge, a troll platformer. Arrow keys or WASD to move, Space to jump, R to restart, Escape for menu, M to mute."></canvas>
+<canvas id="game" width="320" height="180" tabindex="0" aria-label="Grudge, a troll platformer. Arrow keys or WASD to move, Space to jump, R to restart, Escape for menu, M to mute, F for full screen."></canvas>
 <p id="turn" hidden>TURN YOUR PHONE SIDEWAYS<br>FOR A BIGGER SCREEN</p>
 <div id="pad" hidden>
   <div id="dpad" role="group" aria-label="Move. Hold an arrow, or slide your thumb between them.">
@@ -172,6 +170,7 @@ addEventListener('keydown', e => {
   if (!e.repeat && MENUKEYS[e.code]) input.presses.add(MENUKEYS[e.code]);
   if (e.code === 'KeyR' && !e.repeat) input.restartPressed = true;
   if (e.code === 'KeyM' && !e.repeat) cycleSound();
+  if (e.code === 'KeyF' && !e.repeat) toggleFullscreen();
 });
 addEventListener('keyup', e => { const k = KEYMAP[e.code]; if (k) input[k] = false; });
 addEventListener('blur', () => { input.left = input.right = input.jump = false; });
@@ -217,14 +216,17 @@ const dpadOff = e => { if (e.pointerId === dpadId) { dpadId = null; dpadSet(0); 
 for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) dpad.addEventListener(t, dpadOff);
 dpad.addEventListener('contextmenu', e => e.preventDefault());
 
-// Full screen where the browser allows it (Android); on iPhone, Add to Home Screen does the same job
-bF.hidden = !(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+// Full screen where the browser allows it (computers, Android); on iPhone, Add to Home Screen does the same job
+const canFullscreen = !!(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+const isFullscreen = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+bF.hidden = !canFullscreen;
 function toggleFullscreen() {
   const d = document, el = d.documentElement;
-  if (d.fullscreenElement || d.webkitFullscreenElement) return (d.exitFullscreen || d.webkitExitFullscreen).call(d);
+  if (!canFullscreen) return showToast('ON IPHONE: SHARE, THEN ADD TO HOME SCREEN');
+  if (isFullscreen()) return (d.exitFullscreen || d.webkitExitFullscreen).call(d);
   const p = (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
-  if (p && p.then) p.then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape'))
-                   .catch(() => {});
+  if (p && p.then) p.then(() => { if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {}); },
+                         () => showToast('THIS BROWSER SAID NO TO FULL SCREEN'));
 }
 // A short buzz on phones that can (follows the SHAKE setting)
 const buzz = pattern => {
@@ -405,7 +407,7 @@ function bakeSprites() {
       when: x (player tile x >=), xl (<=), up (tiles above spawn >=), low (tiles above spawn <=), touch:'a', stand:'a' (on top of it), jump:true,
             deaths:n, t:secs, after:trapIndex
       do:   fall | pop | move(dx,dy,speed) | chase(speed) | show | vanish | say
-            door(x, dy, speed, blink: vanish and reappear) | flee(speed, max) | reverse(time)
+            door(x, dy, speed, hop: leap over you, n tiles high | blink: vanish and reappear) | flee(speed, max) | reverse(time)
             flood(speed) | gust(dir, speed, time) | gravity(k) | belts | lights(on)
     Level-wide tricks (phases 11-20):
       wrap: true                      walk off one side, come in the other (no side walls)
@@ -423,28 +425,34 @@ const PHASES = [
  { name: 'THE LOBBY', tag: 'THE FLOOR HAS OPINIONS.', motif: 'sun',
    pal: ['#e9a23b', '#df9631', '#3a2213', '#140b06', '#fbe7c0'],
    levels: [
-  { name: 'WALK RIGHT', hint: 'JUST WALK RIGHT. EASY.', pity: 'STOP AT THE EDGE. THEN JUMP.',
+  { name: 'WALK RIGHT', hint: 'JUST WALK RIGHT. EASY.', pity: 'THE FLOOR WOBBLES BEFORE IT DROPS. STOP AT THE EDGE. THEN JUMP.',
     quips: ['THE FLOOR WAS ON BREAK.'],
     map: ['...P...............................D....',
           '#########################aaaa###########',
           '#########################aaaa###########'],
-    traps: [ { when: { x: 23 }, g: 'a', do: 'fall', shake: 0.06, say: 'WELL. MOSTLY RIGHT.' } ] },
-  { name: 'DROP ZONE', hint: 'TWO TINY SPIKES. YOU GOT THIS.', pity: 'SMALL JUMP OVER THE SPIKES. LAND EARLY.',
-    quips: ['OVERACHIEVER.'],
-    map: ['..P...........^^.....................D..',
-          '##################aaaa##################',
-          '##################aaaa##################'],
-    traps: [ { when: { x: 16 }, g: 'a', do: 'fall', say: 'SHOULD HAVE LANDED SOONER.' } ] },
+    traps: [
+      { when: { x: 22 }, g: 'a', do: 'fall', shake: 0.3, say: 'WELL. MOSTLY RIGHT.' },
+      { when: { x: 31 }, do: 'say', say: 'FINE. YOU WIN THIS ONE.' },
+    ] },
+  { name: 'DROP ZONE', hint: 'TWO TINY SPIKES. YOU GOT THIS.', pity: 'SHORT HOPS OVER THE SPIKES. LAND ON THE STRIP BEFORE THE TRAPDOOR.',
+    quips: ['OVERACHIEVER.', 'TOO FAR. AGAIN.'],
+    map: ['..P...........^^...........^^........D..',
+          '##################aaaa#########bbbb#####',
+          '##################aaaa#########bbbb#####'],
+    traps: [
+      { when: { x: 16 }, g: 'a', do: 'fall', say: 'SHOULD HAVE LANDED SOONER.' },
+      { when: { x: 29 }, g: 'b', do: 'fall', say: 'STILL LANDING LATE?' },
+    ] },
   { name: 'STAIRS', hint: 'STAIRS. YOU KNOW STAIRS.', pity: 'SKIP THE LAST STEP. JUMP STRAIGHT TO THE TOP.',
     quips: ['THAT STEP WAS TEMPORARY.'],
     map: ['..............................D.........',
-          '....................aaaa########........',
-          '................####aaaa########........',
-          '..P.........########aaaa########........',
-          '####################aaaa################',
-          '####################aaaa################'],
+          '....................aaa#########........',
+          '................####aaa#########........',
+          '..P.........########aaa#########........',
+          '####################aaa#################',
+          '####################aaa#################'],
     traps: [ { when: { touch: 'a' }, g: 'a', do: 'fall', shake: 0.3, say: 'MIND THE STEP.' } ] },
-  { name: 'DOMINOES', hint: 'A LONG, SAFE FLOOR.', pity: 'NEVER STOP RUNNING. JUMP THE LAST GAP.',
+  { name: 'DOMINOES', hint: 'A LONG, SAFE FLOOR.', pity: 'NEVER STOP RUNNING. THE LAST BIT WOBBLES. JUMP IT.',
     quips: ['TOO SLOW.'],
     map: ['...P..................................D.',
           '########aaaabbbbccccddddeeeeffff##gg####',
@@ -456,15 +464,15 @@ const PHASES = [
       { when: { x: 9 }, g: 'd', do: 'fall', delay: 1.5 },
       { when: { x: 9 }, g: 'e', do: 'fall', delay: 1.9 },
       { when: { x: 9 }, g: 'f', do: 'fall', delay: 2.3 },
-      { when: { x: 33 }, g: 'g', do: 'fall', say: 'ONE MORE.' },
+      { when: { x: 31 }, g: 'g', do: 'fall', shake: 0.2, say: 'ONE MORE.' },
     ] },
-  { name: 'FLOOR IS LAVA', hint: 'JUST SOME ISLAND HOPPING.', pity: 'DO NOT LINGER ON THE MIDDLE ISLAND.',
+  { name: 'FLOOR IS LAVA', hint: 'JUST SOME ISLAND HOPPING.', pity: 'THE MIDDLE ISLAND SINKS. BOUNCE OFF IT. THE LAST JUMP IS LONGER.',
     quips: ['HOT FEET.'],
     map: ['..P..................................D..',
           '#######...###...aaa...###...###...c#####',
           '#######...###...aaa...###...###...c#####'],
     traps: [
-      { when: { touch: 'a' }, g: 'a', do: 'fall', shake: 0.18, say: 'THAT ONE WAS LAVA.' },
+      { when: { touch: 'a' }, g: 'a', do: 'fall', shake: 0.25, say: 'THAT ONE WAS LAVA.' },
       { when: { x: 31 }, g: 'c', do: 'fall', say: 'SO WAS THAT.' },
     ] },
  ] },
@@ -478,53 +486,53 @@ const PHASES = [
     map: ['...P.........^^...bbb............c..D...', G40, G40],
     traps: [
       { when: { x: 15 }, g: 'b', do: 'pop' },
-      { when: { x: 30 }, g: 'c', do: 'pop', say: 'OKAY, THREE SPIKES.' },
+      { when: { x: 29 }, g: 'c', do: 'pop', say: 'OKAY, THREE SPIKES.' },
     ] },
-  { name: 'WELCOME MAT', hint: 'NO SPIKES HERE. LOOK.', pity: 'LAND BEFORE THE DOORMAT. SMALL JUMP.',
+  { name: 'WELCOME MAT', hint: 'NO SPIKES HERE. LOOK.', pity: 'JUMP THE MAT, LAND SHORT, THEN HOP THE LAST ONE.',
     quips: ['WIPE YOUR FEET.'],
     groups: { a: { spike: 1, hide: 1 }, b: { spike: 1, hide: 1 } },
     map: ['..P...........................aaaa..b.D.', G40, G40],
     traps: [
-      { when: { x: 28 }, g: 'a', do: 'pop', say: 'WELCOME!' },
+      { when: { x: 27 }, g: 'a', do: 'pop', say: 'WELCOME!' },
       { when: { jump: true, after: 0 }, g: 'b', do: 'pop', say: 'MIND THE MAT.' },
     ] },
-  { name: 'PEEKABOO', hint: 'THEY ARE ASLEEP. PROBABLY.', pity: 'WATCH THE RHYTHM. OR JUST JUMP THEM.',
+  { name: 'PEEKABOO', hint: 'THEY ARE ASLEEP. PROBABLY.', pity: 'TOO WIDE TO JUMP. WAIT TILL THEY DUCK, THEN RUN. THE LAST ONE NEVER DUCKS.',
     quips: ['PEEKABOO.'],
-    groups: { a: { spike: 1, hide: 1, blink: [1.6, 0] }, b: { spike: 1, hide: 1, blink: [1.6, 0.8] },
-              c: { spike: 1, hide: 1, blink: [1.2, 0.3] }, d: { spike: 1, hide: 1 } },
-    map: ['..P......aaa......bbb......ccc....d..D..', G40, G40],
-    traps: [ { when: { x: 32 }, g: 'd', do: 'pop', say: 'THAT ONE DOES NOT BLINK.' } ] },
-  { name: 'LOW HANGING', hint: 'PLENTY OF HEADROOM.', pity: 'SMALL HOPS UNDER THE CEILING SPIKES.',
+    groups: { a: { spike: 1, hide: 1, blink: [1.8, 0] }, b: { spike: 1, hide: 1, blink: [1.8, 0.9] },
+              c: { spike: 1, hide: 1, blink: [1.4, 0.35] }, d: { spike: 1, hide: 1 } },
+    map: ['..P.....aaaaaa.....bbbbbb....ccccc..d.D.', G40, G40],
+    traps: [ { when: { x: 33 }, g: 'd', do: 'pop', say: 'THAT ONE DOES NOT BLINK.' } ] },
+  { name: 'LOW HANGING', hint: 'PLENTY OF HEADROOM.', pity: 'SMALL HOPS UNDER THE CEILING SPIKES. THE LAST PAIR IS WIDER.',
     quips: ['LOW HANGING FRUIT.'],
     groups: { a: { spike: 1, down: 1, hide: 1 } },
     map: [G40, G40,
           '..........aaaaaaaaaaaaaaaaaaaa..........',
           E40, E40,
-          '..P.........^.....^.....^.....^.....D...',
+          '..P.........^.....^.....^.....^^....D...',
           G40, G40],
-    traps: [ { when: { x: 10 }, g: 'a', do: 'pop', say: 'HEADS UP.' } ] },
+    traps: [ { when: { x: 8 }, g: 'a', do: 'pop', say: 'HEADS UP.' } ] },
   { name: 'BLOOM', hint: 'THE GARDEN IS IN BLOOM.', pity: 'STOP BEFORE EACH PATCH. COUNT. GO.',
     quips: ['FLOWER POWER.'],
     groups: { a: { spike: 1, hide: 1 }, b: { spike: 1, hide: 1, blink: [1.4, 0] },
               c: { spike: 1, hide: 1, blink: [2, 0.5] }, d: { spike: 1, hide: 1 } },
     map: ['..P....aaa...^^...bbb....ccccc...dd..D..', G40, G40],
     traps: [
-      { when: { x: 5 }, g: 'a', do: 'pop', say: 'SPRING!' },
-      { when: { x: 31 }, g: 'd', do: 'pop', say: 'AND SUMMER.' },
+      { when: { x: 4 }, g: 'a', do: 'pop', say: 'SPRING!' },
+      { when: { x: 30 }, g: 'd', do: 'pop', say: 'AND SUMMER.' },
     ] },
  ] },
 
  { name: 'RUNAWAY ROW', tag: 'THE DOORS HAVE LEGS.', motif: 'city',
    pal: ['#e0705a', '#d4634e', '#3f1712', '#150605', '#fde2d6'],
    levels: [
-  { name: 'THE DOOR HAS LEGS', hint: 'THE DOOR IS RIGHT THERE.', pity: 'IT RUNS WHEN YOU GET CLOSE. IT COMES BACK.',
+  { name: 'THE DOOR HAS LEGS', hint: 'THE DOOR IS RIGHT THERE.', pity: 'IT LEAPS OVER YOU WHEN YOU GET CLOSE. FOLLOW IT BACK. TWICE.',
     quips: ['THE DOOR SAYS HI.'],
     map: ['..P.............................D.......',
           '##################...##aaaa#############',
           '##################...##aaaa#############'],
     traps: [
-      { when: { x: 27 }, do: 'door', x: 5, speed: 35, say: 'NOPE.' },
-      { when: { xl: 12, after: 0 }, do: 'door', x: 36, speed: 35, say: 'MADE YOU LOOK.' },
+      { when: { x: 27 }, do: 'door', x: 5, speed: 30, hop: 4, say: 'NOPE.' },
+      { when: { xl: 12, after: 0 }, do: 'door', x: 36, speed: 30, hop: 4, say: 'MADE YOU LOOK.' },
       { when: { x: 21, after: 1 }, g: 'a', do: 'fall', say: 'THE FLOOR LEFT TOO.' },
     ] },
   { name: 'UP HERE', hint: 'THE DOOR IS RIGHT THERE. AGAIN.', pity: 'IT MOVES TWICE. FOLLOW IT.',
@@ -537,23 +545,24 @@ const PHASES = [
       { when: { x: 22 }, do: 'door', x: 33, dy: -2, speed: 25, say: 'UP HERE.' },
       { when: { x: 31, after: 0 }, do: 'door', x: 38, speed: 25, say: 'NO, DOWN HERE.' },
     ] },
-  { name: 'IMPOSTOR', hint: 'TWO DOORS. TAKE THE CLOSE ONE.', pity: 'JUMP OVER THE FIRST DOOR. IT IS A LIE.',
+  { name: 'IMPOSTOR', hint: 'TWO DOORS. TAKE THE CLOSE ONE.', pity: 'THE CLOSE ONE BITES. GO FAR, THEN BACK. JUMP THE LIAR AND THE SPIKE.',
     quips: ['THAT DOOR BITES.'],
     groups: { a: { spike: 1, hide: 1 } },
     map: ['..P......a....F..................D......', G40, G40],
     traps: [
-      { when: { x: 29 }, do: 'door', x: 6, speed: 30, say: 'WRONG ONE. GO BACK.' },
+      { when: { x: 29 }, do: 'door', x: 6, speed: 30, hop: 4, say: 'WRONG ONE. GO BACK.' },
       { when: { xl: 12, after: 0 }, g: 'a', do: 'pop' },
     ] },
-  { name: 'ON A LEASH', hint: 'THE DOOR IS VERY CLOSE.', pity: 'CHASE IT TO THE WALL. THEN RUN BACK.',
+  { name: 'ON A LEASH', hint: 'THE DOOR IS VERY CLOSE.', pity: 'CHASE IT TO THE WALL. IT LEAPS BACK TO THE START. RUN BACK.',
     quips: ['IT IS FASTER THAN IT LOOKS.'],
     map: ['.........................#..............',
           '..P...........D....^.....#....^^........',
           G40, G40],
     traps: [
       { when: { x: 9 }, do: 'flee', speed: 12, max: 37, say: 'IT IS SHY.' },
-      { when: { x: 35 }, do: 'door', x: 3, speed: 45, say: 'HA. BEHIND YOU.' },
-    ] },
+      { when: { x: 35 }, do: 'door', x: 3, speed: 40, hop: 5, say: 'HA. BEHIND YOU.' },
+    ],
+    solve: { via: [[36, 1]] } },
   { name: 'GREAT ESCAPE', hint: 'THE EXIT IS JUST AHEAD.', pity: 'IT ENDS UP ON THE LEDGE. MEET IT THERE.',
     quips: ['THE DOOR WINS AGAIN.'],
     map: ['.................................####...',
@@ -592,16 +601,17 @@ const PHASES = [
           '..P..................................D..',
           G40, G40],
     traps: [ { when: { x: 32 }, g: 'd', do: 'fall', shake: 0.05, say: 'THAT ONE WAS NOT A PRESS.' } ] },
-  { name: 'HAIL', hint: 'CLEAR SKIES TODAY.', pity: 'PAUSE BEFORE EACH BLOCK FALLS. THEN HOP IT.',
+  { name: 'HAIL', hint: 'SOLID STONE CEILING. NOT A CRACK IN IT.', pity: 'PAUSE BEFORE EACH LOOSE STONE FALLS. THEN HOP IT.',
     quips: ['HAILSTONE.'],
-    map: ['............aa......bb...........cc.....',
-          E40, E40, E40, E40, E40, E40,
+    map: [G40,
+          '############aa######bb###########cc#####',
+          E40, E40, E40, E40, E40,
           '..P..................................D..',
           G40, G40],
     traps: [
-      { when: { x: 9 }, g: 'a', do: 'fall', say: 'HAIL.' },
-      { when: { x: 17 }, g: 'b', do: 'fall' },
-      { when: { x: 30 }, g: 'c', do: 'fall', say: 'HEAVY HAIL.' },
+      { when: { x: 9 }, g: 'a', do: 'fall', shake: 0.1, say: 'HAIL.' },
+      { when: { x: 17 }, g: 'b', do: 'fall', shake: 0.1 },
+      { when: { x: 30 }, g: 'c', do: 'fall', shake: 0.1, say: 'HEAVY HAIL.' },
     ] },
   { name: 'SQUEEZE', hint: 'A ROOMY CORRIDOR.', pity: 'HURRY. OR LEARN VERY SMALL HOPS.',
     quips: ['SQUISHED.'],
@@ -633,11 +643,13 @@ const PHASES = [
   { name: 'CORPSE BRIDGE', hint: 'IMPOSSIBLE. JUST GIVE UP.', pity: 'YOUR BODY STAYS WHERE YOU DIE. WALK ON IT.',
     quips: ['SEE? YOU ARE USEFUL NOW.', 'A FINE STEPPING STONE.'],
     map: ['..P...........^^^^^^^...............D...', G40, G40],
-    traps: [ { when: { x: 22 }, do: 'say', say: '...WAIT. HOW?' } ] },
+    traps: [ { when: { x: 22 }, do: 'say', say: '...WAIT. HOW?' } ],
+    solve: { stones: [[17, 0]], deaths: 1 } },
   { name: 'STEPPING STONES', hint: 'TWO PITS. ZERO HOPE.', pity: 'ONE STONE IN EACH PIT. THEN HOP ACROSS.',
     quips: ['BUILDING MATERIAL.'],
     map: ['..P.....^^^^^^.....^^^^^^........D......', G40, G40],
-    traps: [ { when: { x: 26 }, do: 'say', say: 'STOP DOING THAT.' } ] },
+    traps: [ { when: { x: 26 }, do: 'say', say: 'STOP DOING THAT.' } ],
+    solve: { stones: [[10, 0], [21, 0]], deaths: 2 } },
   { name: 'STAIRWAY', hint: 'THERE IS NO WAY UP. TRUST ME.', pity: 'DIE ON A SPIKE. STAND ON YOURSELF. CLIMB.',
     quips: ['ONE MORE STEP.', 'THE STAIRS ARE YOU.'],
     map: ['....................................D...',
@@ -648,12 +660,14 @@ const PHASES = [
           '..................######################',
           '..P..............^######################',
           G40, G40],
-    traps: [ { when: { x: 19 }, do: 'say', say: 'OKAY, THAT IS CHEATING.' } ] },
+    traps: [ { when: { x: 19 }, do: 'say', say: 'OKAY, THAT IS CHEATING.' } ],
+    solve: { stones: [[17, 6], [26, 3]], deaths: 2 } },
   { name: 'RECYCLING', hint: 'TOO WIDE. GO HOME.', pity: 'DIE FAR IN. THEN FARTHER. THEN WALK ON YOURSELF.',
     quips: ['REDUCE, REUSE, RESPAWN.'],
     groups: { a: { spike: 1, hide: 1 } },
     map: ['..P.........^^^^^^^^^^^^........a...D...', G40, G40],
-    traps: [ { when: { x: 30 }, g: 'a', do: 'pop', say: 'RECYCLING IS IMPORTANT.' } ] },
+    traps: [ { when: { x: 30 }, g: 'a', do: 'pop', say: 'RECYCLING IS IMPORTANT.' } ],
+    solve: { stones: [[15, 0], [19, 0], [22, 0]], deaths: 3 } },
   { name: 'MAUSOLEUM', hint: 'NO ONE LEAVES THE MAUSOLEUM.', pity: 'A STONE IN THE PIT. A STONE BY THE WALL.',
     quips: ['REST IN PIECES.'],
     map: ['....................................D...',
@@ -661,7 +675,8 @@ const PHASES = [
           '............................############',
           '..P......^^^^^^............^############',
           G40, G40],
-    traps: [ { when: { x: 29 }, do: 'say', say: 'THAT IS DISRESPECTFUL.' } ] },
+    traps: [ { when: { x: 29 }, do: 'say', say: 'THAT IS DISRESPECTFUL.' } ],
+    solve: { stones: [[11, 3], [27, 3]], deaths: 2 } },
  ] },
 
  { name: 'MIRAGE', tag: 'SEEING IS NOT BELIEVING.', motif: 'dunes',
@@ -743,12 +758,12 @@ const PHASES = [
       { when: { jump: true }, do: 'reverse', time: 0.6, repeat: true },
       { when: { jump: true }, do: 'say', say: 'JUMPING IS CONFUSING.' },
     ] },
-  { name: 'FLIP FLOP', hint: 'A NICE SIMPLE STROLL.', pity: 'WHEN THE WARNING BLINKS, PRESS THE OPPOSITE WAY.',
+  { name: 'FLIP FLOP', hint: 'A NICE SIMPLE STROLL.', pity: 'WHEN IT BLINKS, PRESS THE OTHER WAY. THE DOOR LEAPS BACK. FOLLOW IT.',
     quips: ['WRONG WAY.'],
     map: ['..P.........^...........^........D......', G40, G40],
     traps: [
       { when: { x: 14 }, do: 'reverse', time: 2.5, say: 'UPSIDE... SIDEWAYS.' },
-      { when: { x: 28 }, do: 'door', x: 6, speed: 30, say: 'OTHER WAY.' },
+      { when: { x: 28 }, do: 'door', x: 6, speed: 30, hop: 4, say: 'OTHER WAY.' },
       { when: { xl: 22, after: 1 }, do: 'reverse', time: 2.2, say: 'AND BACK AGAIN.' },
     ] },
   { name: 'STUTTER', hint: 'STEADY HANDS.', pity: 'IT FLIPS EVERY SECOND. JUMP RIGHT AFTER IT ENDS.',
@@ -760,7 +775,7 @@ const PHASES = [
       { when: { x: 10 }, do: 'reverse', time: 0.35, delay: 0.9, repeat: true },
       { when: { x: 10 }, do: 'say', say: 'HIC.' },
     ] },
-  { name: 'HOUSE OF MIRRORS', hint: 'THE LAST ROOM OF THE HALL.', pity: 'AFTER THE FIRST FLIP, EVERY JUMP FLIPS YOU TOO.',
+  { name: 'HOUSE OF MIRRORS', hint: 'THE LAST ROOM OF THE HALL.', pity: 'AFTER THE FIRST FLIP, EVERY JUMP FLIPS YOU TOO. THE DOOR LEAPS BACK TO THE MIDDLE.',
     quips: ['REFLECT ON THAT.'],
     groups: { a: { spike: 1, hide: 1 } },
     map: ['..P......^^.....^^^.....^^.....a......D.', G40, G40],
@@ -768,7 +783,7 @@ const PHASES = [
       { when: { x: 12 }, do: 'reverse', time: 1.2, say: 'MIRROR.' },
       { when: { jump: true, after: 0 }, do: 'reverse', time: 0.5, repeat: true },
       { when: { x: 29 }, g: 'a', do: 'pop' },
-      { when: { x: 35 }, do: 'door', x: 20, speed: 30, say: 'BACK THERE. SORRY.' },
+      { when: { x: 35 }, do: 'door', x: 20, speed: 30, hop: 4, say: 'BACK THERE. SORRY.' },
     ] },
  ] },
 
@@ -809,13 +824,16 @@ const PHASES = [
       { when: { touch: 'd' }, g: 'd', do: 'fall', shake: 0.12, say: 'THAT ONE WAS IMPATIENT.' },
       { when: { touch: 'e' }, g: 'e', do: 'fall', shake: 0.4 },
     ] },
-  { name: 'UPDRAFT', hint: 'TAKE THE STAIRS.', pity: 'RIDE THE LIFT. HOP THE GAP AT THE TOP.',
-    quips: ['GOING DOWN.'],
-    groups: { a: { plat: 1, patrol: { dy: -6, speed: 3, wait: 1 } } },
+  { name: 'UPDRAFT', hint: 'TAKE THE STAIRS.', pity: 'THE STAIRS ARE FAKE. RIDE THE LIFT. HOP THE GAP AT THE TOP.',
+    quips: ['GOING DOWN.', 'THOSE WERE DECORATIVE.'],
+    groups: { a: { plat: 1, patrol: { dy: -6, speed: 3, wait: 1 } }, p: { phantom: 1 } },
     map: ['.....................D..................',
           '.............###ccc####.................',
-          E40, E40, E40, E40,
-          '..P.....................................',
+          '........................pp..............',
+          '..........................pp............',
+          '............................pp..........',
+          '..............................pp........',
+          '..P.......................^^^^^^........',
           '##########aaa###########################',
           '##########...###########################'],
     traps: [ { when: { x: 15, up: 4 }, g: 'c', do: 'fall', say: 'GAPS UP HERE TOO.' } ] },
@@ -887,7 +905,7 @@ const PHASES = [
           '############################cccc########'],
     traps: [
       { when: { x: 5 }, g: 'a', do: 'chase', speed: 8.5, say: 'STAMPEDE!' },
-      { when: { x: 21 }, g: 'b', do: 'pop' },
+      { when: { x: 20 }, g: 'b', do: 'pop' },
       { when: { x: 26 }, g: 'c', do: 'fall' },
       { when: { x: 33 }, do: 'reverse', time: 1.0, say: 'OH NO.' },
     ] },
@@ -944,7 +962,7 @@ const PHASES = [
       { when: { x: 6 }, g: 'a', do: 'pop', say: 'HELLO AGAIN.' },
       { when: { x: 12.5 }, g: 'b', do: 'fall', say: 'HEADS UP, OLD FRIEND.' },
     ] },
-  { name: 'THE LAST DOOR', hint: 'LAST ONE. NO TRICKS. CROSS MY HEART.', pity: 'FLOOR. SPIKES. WALL. MIRROR. DOOR. YOU KNOW THEM.',
+  { name: 'THE LAST DOOR', hint: 'LAST ONE. NO TRICKS. CROSS MY HEART.', pity: 'FLOOR. SPIKES. WALL. MIRROR. THEN IT LEAPS BACK. MIND THE HOLE ON THE WAY.',
     quips: ['SO CLOSE. NOT REALLY.'],
     groups: { c: { spike: 1, hide: 1 }, g: { ghost: 1 } },
     map: ['ccP...................g.............D...',
@@ -954,7 +972,7 @@ const PHASES = [
       { when: { x: 6 }, g: 'a', do: 'fall', say: 'CLASSIC.' },
       { when: { x: 12 }, g: 'c', do: 'chase', speed: 7, say: 'AND NOW, CARDIO.' },
       { when: { x: 26 }, do: 'reverse', time: 1.1, say: 'MIRROR, MIRROR.' },
-      { when: { x: 33 }, do: 'door', x: 4, speed: 40, say: 'BEHIND YOU. ALWAYS.' },
+      { when: { x: 33 }, do: 'door', x: 4, speed: 40, hop: 5, say: 'BEHIND YOU. ALWAYS.' },
       { when: { x: 33 }, g: 'c', do: 'vanish' },
     ] },
  ] },
@@ -1986,9 +2004,14 @@ function updateGroups(dt) {
 function updateDoor(dt) {
   if (!door) return;
   if (door.moving) {
-    const dx = door.tx - door.x, dy = door.ty - door.y, d = Math.hypot(dx, dy), step = door.speed * dt;
-    if (d <= step) { door.x = door.tx; door.y = door.ty; door.moving = false; dust(door.x + 4, door.y + 16, 3); }
-    else { door.x += dx / d * step; door.y += dy / d * step; if (Math.random() < 0.5) dust(door.x + 4, door.y + 16, 1); }
+    if (door.lx == null) { door.lx = door.x; door.ly = door.y; }
+    const dx = door.tx - door.lx, dy = door.ty - door.ly, d = Math.hypot(dx, dy), step = door.speed * dt;
+    if (d <= step) { door.lx = door.tx; door.ly = door.ty; door.moving = false; dust(door.tx + 4, door.ty + 16, 3); }
+    else { door.lx += dx / d * step; door.ly += dy / d * step; if (!door.hop && Math.random() < 0.5) dust(door.lx + 4, door.ly + 16, 1); }
+    // a leap rises fast and comes down at the far end, so it clears you even when it starts right next to you
+    const u = door.dist ? clamp(1 - Math.hypot(door.tx - door.lx, door.ty - door.ly) / door.dist, 0, 1) : 1;
+    door.x = door.lx; door.y = door.ly - (door.moving && door.hop ? door.hop * TS * Math.pow(Math.sin(Math.PI * u), 0.4) : 0);
+    if (!door.moving) door.hop = 0;
   } else if (door.flee && player.alive) {                    // keeps its distance until cornered
     const dist = door.x + 4 - (player.x + player.w / 2);
     if (dist > -4 && dist < 44 && door.x < door.flee.max) {
@@ -2070,7 +2093,9 @@ function fire(t) {
         door.x = door.tx; door.y = door.ty; door.moving = false;
         burst(door.x + 4, door.y + 8, pal.glow, 12, 70, 0.5); sfx.door(); break;
       }
-      door.speed = (t.speed || 20) * TS; door.moving = true; sfx.door(); break;
+      // hop: it leaps over your head in an arc (tiles high) instead of running through you; untouchable until it lands
+      door.lx = door.x; door.ly = door.y; door.hop = t.hop || 0; door.dist = Math.hypot(door.tx - door.x, door.ty - door.y);
+      door.speed = (t.speed || 20) * TS; door.moving = true; sfx.door(); if (door.hop) sfx.jump(); break;
     case 'flee':
       door.flee = { speed: (t.speed || 8) * TS, max: (t.max || 37) * TS }; sfx.door(); break;
     case 'reverse':
@@ -2174,8 +2199,8 @@ function resize() {
   const cs = getComputedStyle(document.body), px = k => parseFloat(cs[k]) || 0;
   const aw = innerWidth - px('paddingLeft') - px('paddingRight');
   const ah = innerHeight - px('paddingTop') - px('paddingBottom') - (turnHint.hidden ? 0 : turnHint.offsetHeight + 12);
-  let s = Math.min(Math.max(160, aw) / W, Math.max(90, ah) / H);
-  if (s >= 2) s = Math.floor(s);                      // integer scaling keeps pixels square
+  let s = Math.min(Math.max(160, aw) / W, Math.max(90, ah) / H);   // as big as the window allows
+  if (s >= 2 && s - Math.floor(s) < 0.05 * s) s = Math.floor(s);   // a whole-number size when it costs almost nothing
   cv.style.width = Math.round(W * s) + 'px';
   cv.style.height = Math.round(H * s) + 'px';
 }
@@ -2566,7 +2591,16 @@ function drawGame() {
 
   // Trap groups first, so hidden spikes tuck behind the ground drawn over them
   for (const g of groups) {
-    if (g.gone || (g.ghost && !g.revealed)) continue;
+    if (g.gone) continue;
+    if (g.ghost && !g.revealed) {                    // invisible, but a rare glint gives it away to a sharp eye
+      for (const [tx, ty] of g.tiles) {
+        const k = (time + ((tx * 7 + ty * 13) % 17) / 17 * 4) % 4;
+        if (k >= 0.16) continue;
+        const x = tx * TS + 4, y = ty * TS + 4;
+        if (k > 0.04 && k < 0.12) { rect(x - 1, y, 3, 1, pal.glow); rect(x, y - 1, 1, 3, pal.glow); } else rect(x, y, 1, 1, pal.glow);
+      }
+      continue;
+    }
     const jx = g.shake > 0 ? (Math.random() * 3 | 0) - 1 : 0;
     for (const [tx, ty] of g.tiles) {
       const x = Math.round(tx * TS + g.ox + jx), y = Math.round(ty * TS + g.oy);
@@ -2889,6 +2923,7 @@ let homeOpts = false;                              // showing the OPTIONS sub-me
 const homeItems = () => homeOpts ? [
   { label: ['SOUND  OFF', 'SFX ONLY', 'MUSIC + SFX'][save.sound], id: 'sound' },
   { label: save.shake ? 'SHAKE  ON' : 'SHAKE  OFF', id: 'shake' },
+  { label: isFullscreen() ? 'FULL SCREEN  ON' : 'FULL SCREEN  OFF', id: 'full' },
   { label: 'BACK', id: 'back' },
 ] : [
   { label: clearedCount() ? 'CONTINUE' : 'PLAY', id: 'play' },
@@ -2933,6 +2968,7 @@ function updateHome(dt) {
   const id = items[pick].id;
   if (id === 'sound') { cycleSound(); sfx.ok(); return; }
   if (id === 'shake') { save.shake = !save.shake; writeSave(); sfx.ok(); shake(3, 0.2); return; }
+  if (id === 'full') { toggleFullscreen(); sfx.ok(); return; }
   if (id === 'options') { homeOpts = true; homeSel = 0; sfx.ok(); return; }
   if (id === 'back') { homeOpts = false; homeSel = 4; sfx.back(); return; }
   sfx.ok();
@@ -2965,7 +3001,7 @@ function drawHome() {
   const fr = demo.wait > 0 ? 'idle0' : RUN_CYCLE[Math.floor(demo.anim) % 4];
   drawHero(fr, demo.x, gy, demo.dir < 0);
   text(`DEATHS ${deaths}     CLEARED ${clearedCount()} / ${LEVELS.length}`, W / 2, gy + 6, pal.glow, 1, 'center');
-  text('ARROWS / WASD MOVE   SPACE JUMP   R RESTART   ESC MENU   M SOUND', W / 2, gy + 16, pal.bg, 1, 'center');
+  text('ARROWS MOVE  SPACE JUMP  R RESTART  ESC MENU  M SOUND  F FULL SCREEN', W / 2, gy + 16, pal.bg, 1, 'center');
 }
 
 /* ---- skins ---- */
@@ -3581,7 +3617,7 @@ function updatePlay(dt) {
   if (!player.alive) return;
   updateTraps(dt);
   if (player.y > ROWS * TS + 16) return kill('pit');
-  if (door && overlap(player, { x: door.x + 2, y: door.y + 6, w: 4, h: 10 })) {
+  if (door && !(door.moving && door.hop) && overlap(player, { x: door.x + 2, y: door.y + 6, w: 4, h: 10 })) {
     state = 'exit'; exitT = 0; exitDone = false; sfx.win(); buzz([15, 50, 15]);
     burst(door.x + 4, door.y + 8, pal.glow, 14, 80, 0.6);
     fxExit(() => { exitDone = true; recordClear(); if (runs.length >= 3) startReplay(); else leaveLevel(true); });

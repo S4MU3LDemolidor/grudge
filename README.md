@@ -32,6 +32,9 @@ Every phase also has its own weather, drawn with [pixelfx](https://github.com/pa
 | Restart | R                   | X / Y        |
 | Menu    | Esc                 | B / Select   |
 | Sound   | M                   |              |
+| Full screen | F (or OPTIONS)  |              |
+
+The game scales up to fill the whole window. Press F for full screen, where your browser allows it.
 
 ## Make your own levels
 
