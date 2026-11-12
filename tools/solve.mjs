@@ -26,7 +26,9 @@ export function setup(i) {
   G.loadLevel(i);
   const pre = G.LEVELS[i].solve || {};
   if (pre.deaths) G.levelDeaths = pre.deaths;
-  if (pre.stones) G.stones = pre.stones.map(([tx, ty]) => ({ tx, ty, born: -9 }));
+  // stones are written in map rows; the map sits centered on screen, like the game places it
+  const top = Math.max(0, Math.min(4 + Math.floor((G.ROWS - 4 - G.LEVELS[i].map.length) / 2), Math.max(0, G.ROWS - G.LEVELS[i].map.length)));
+  if (pre.stones) G.stones = pre.stones.map(([tx, my]) => ({ tx, ty: my + top, born: -9 }));
   G.startAttempt();
   G.introT = 0;
 }
