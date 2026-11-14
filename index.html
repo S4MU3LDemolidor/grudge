@@ -1680,8 +1680,8 @@ const firstOpenLevel = () => { for (let i = 0; i < LEVELS.length; i++) if (!isCl
 const themePhase = () => { const i = firstOpenLevel(); return i < 0 ? PHASES.length - 1 : LEVELS[i].phase; };
 const phaseCleared = p => { let n = 0; for (let k = 0; k < 5; k++) n += isCleared(p * 5 + k) ? 1 : 0; return n; };
 const deathlessCount = () => Object.values(save.best).filter(b => b.d === 0).length;
-// Speedruns (open once you've beaten the game): progress starts over and a clock runs, menus and all, until the
-// ending. save.run = { t } while one is going (it survives a reload); save.speedBest is the best finish, in seconds.
+// Speedruns (open once you've beaten the game): progress starts over and a clock runs while you're in a level
+// (playing, dying, walking out the door; menus, phase cards and replays don't count), until the ending. save.run = { t } while one is going (it survives a reload); save.speedBest is the best finish, in seconds.
 let runSaveT = 0, runResult = null;
 function fmtRun(s) {
   s = Math.max(0, s || 0);
@@ -3558,7 +3558,7 @@ function fadeTo(cb) { if (fade.dir > 0) return; fade.dir = 1; fade.cb = cb; }
 
 function update(dt) {
   time += dt;
-  if (save.run && state !== 'ending') {
+  if (save.run && (state === 'play' || state === 'dead' || state === 'exit')) {   // only while you're in a level
     save.run.t += dt;
     if ((runSaveT += dt) > 5) { runSaveT = 0; writeSave(); }       // so a reload doesn't lose the run
   }
