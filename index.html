@@ -1689,6 +1689,18 @@ function fmtRun(s) {
   return (h ? h + ':' + pad2(m) : String(m)) + ':' + pad2(sec) + '.' + d;
 }
 function startSpeedrun() { resetProgress(); save.run = { t: 0 }; runResult = null; writeSave(); }
+
+// For testing, from the browser console: grudge.beat() clears all 20 phases as if you'd seen the ending, so the
+// bonus phase and SPEEDRUN open. It calls off a speedrun in progress, so no record can come of it.
+window.grudge = {
+  beat() {
+    for (let i = 0; i < MAIN_LEVELS; i++) save.cleared[i] = true;
+    save.beaten = true; save.fakeoutSeen = true; save.run = null; runResult = null;
+    checkUnlocks(true); writeSave();
+    if (state === 'title' || state === 'phases' || state === 'levels' || state === 'skins' || state === 'card') goHome();
+    return 'GRUDGE: beaten. The bonus phase and SPEEDRUN are open.';
+  },
+};
 function finishRun() {
   const t = save.run.t, before = save.speedBest;
   runResult = { t, record: before == null || t < before };
