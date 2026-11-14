@@ -4,6 +4,8 @@
 
 A tiny troll platformer in a single HTML file. 20 phases of 5 levels, plus a bonus phase that remembers where you jumped. When you die on spikes you leave a solid grave stone behind, and you can stand on it next time.
 
+Your little brother walked through a door that wasn't there the day before, and it tore the red scarf you shared in two. Behind it is the Level: it's alive, it never forgets, and it holds a grudge against anyone who gets through. So do you. Each phase's title card picks up his trail; the first time you press PLAY, a short story sets it up.
+
 The first ten phases end at THE LAST DOOR, which promises it is the last door. It lies. Ten more phases follow, each with a new trick:
 
 | Phase | Trick |
