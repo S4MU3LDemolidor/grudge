@@ -44,7 +44,9 @@ The level editor is taking a break and will come back in a later version. Until 
 
 ## Speedruns
 
-Once you've beaten the game (seen the ending), the home screen gets a **SPEEDRUN** button. It starts you over from level 1-1 with a clock in the top corner. The clock only runs while you're in a level (it stops in the menus) and finishes when you reach the ending again. Your best time stays on the home screen. Your settings, your best time and the button itself survive **OPTIONS > RESET PROGRESS**.
+Once you've beaten the game (seen the ending), the home screen gets a **SPEEDRUN** button. A speedrun is a game of its own: it starts a fresh run at level 1-1 with a clock in the top corner that runs the whole way to the ending, title cards and replays included. Your own game is set aside meanwhile, untouched.
+
+Press Esc (or the back arrow) twice in a level to leave the run; the first press only asks. Leaving, finishing, or reloading the page brings your own game back exactly where you left it. Your best time shows on the home screen.
 
 ## On phones
 
