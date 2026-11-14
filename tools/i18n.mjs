@@ -27,7 +27,7 @@ function collect() {
   const out = new Map();
   const add = (s, kind) => { if (s && !out.has(s)) out.set(s, kind); };
   for (const ph of G.PHASES) {
-    add(ph.name, "title"); add(ph.tag, "line");
+    add(ph.name, "title"); add(ph.tag, "line"); add(ph.story, "line");
     for (const lv of ph.levels) {
       add(lv.name, "title");                          // (a level's hint, pity and trap lines are the narrator's: not shown)
       for (const q of lv.quips || []) add(q, "death");
@@ -35,6 +35,9 @@ function collect() {
   }
   for (const list of Object.values(run("QUIPS"))) for (const q of list) add(q, "death");
   for (const sk of run("SKINS")) { add(sk.name, "line"); if (sk.need) add(sk.need.text, "line"); }
+  // the story's intro and the fake ending's line wrap onto several lines, so they may run long
+  for (const l of run("STORY_INTRO")) add(l, "story");
+  add("HE IS NOT HERE. JUST HIS SCARF, TIED TO A DOOR THAT GOES DEEPER.", "story");
   // ...and every tr('...') written in the code
   const html = readFileSync(join(ROOT, "index.html"), "utf8");
   const game = html.slice(html.lastIndexOf("<script>"));
@@ -64,7 +67,7 @@ function problems(en, t, kind) {
   if (!FONT_OK.test(bare)) out.push(`letters the font can't draw: ${[...bare].filter((c) => !FONT_OK.test(c)).join("")}`);
   const vars = (s) => [...s.matchAll(/\{\w+\}/g)].map((m) => m[0]).sort().join();
   if (vars(en) !== vars(t)) out.push(`placeholders differ (${vars(en)} vs ${vars(t)})`);
-  if (width(t) > 300) out.push(`too wide: ${width(t)} px (300 max)`);
+  if (width(t) > 300 && kind !== "story") out.push(`too wide: ${width(t)} px (300 max)`);   // story lines wrap
   if (kind === "title" && [...t].length > 38) out.push(`title too long: ${[...t].length} letters (38 max)`);
   return out;
 }
