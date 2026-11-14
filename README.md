@@ -42,6 +42,10 @@ English, Português, Español, Français and Deutsch. The game starts in your br
 
 The level editor is taking a break and will come back in a later version. Until then, level links made with it open the home screen with a note saying so.
 
+## Speedruns
+
+Once you've beaten the game (seen the ending), the home screen gets a **SPEEDRUN** button. It starts you over from level 1-1 with a clock in the top corner, menus and all, that stops when you reach the ending again. Your best time stays on the home screen. Your settings, your best time and the button itself survive **OPTIONS > RESET PROGRESS**.
+
 ## On phones
 
 On-screen controls appear automatically. Hold the phone sideways for the biggest view. The arrows are one strip, so you can slide your thumb between them without lifting it. Back and restart are in the top corners, away from JUMP.
