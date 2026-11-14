@@ -2,7 +2,7 @@
 <html lang="en">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Grudge</title>
+<title>Grudge: Half a Scarf</title>
 <meta name="theme-color" content="#e9a23b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -97,7 +97,7 @@ body.land #bF { left: calc(10px + env(safe-area-inset-left, 0px)); top: calc(62p
 @media (prefers-reduced-motion: reduce) { body { transition: none; } }
 </style>
 
-<canvas id="game" width="320" height="180" tabindex="0" aria-label="Grudge, a troll platformer. Arrow keys or WASD to move, Space to jump, R to restart, Escape for menu, M to mute, F for full screen."></canvas>
+<canvas id="game" width="320" height="180" tabindex="0" aria-label="Grudge: Half a Scarf, a troll platformer. Arrow keys or WASD to move, Space to jump, R to restart, Escape for menu, M to mute, F for full screen."></canvas>
 <p id="turn" hidden>TURN YOUR PHONE SIDEWAYS<br>FOR A BIGGER SCREEN</p>
 <div id="pad" hidden>
   <div id="dpad" role="group" aria-label="Move. Hold an arrow, or slide your thumb between them.">
@@ -121,8 +121,9 @@ body.land #bF { left: calc(10px + env(safe-area-inset-left, 0px)); top: calc(62p
 <script>
 'use strict';
 /* =====================================================================
-   GRUDGE  -  a tiny troll platformer
+   GRUDGE: HALF A SCARF  -  a tiny troll platformer
    "The level never forgets. Neither do you."
+   Your little brother walked through a door that wasn't there the day before. Go and get him back.
    20 phases x 5 levels, plus a bonus phase. Each phase has its own palette, backdrop, weather and trick.
 
    Sections:
@@ -3475,17 +3476,25 @@ function drawHome() {
   drawBackdrop(PHASES[palPhase].motif, menuT);
   const gy = H - 26;
   drawGroundStrip(gy, 26);
-  // The title: a deep drop shadow, a lit top edge on every stroke
-  text('GRUDGE', W / 2 + 2, 10, pal.hero, 7, 'center');
-  text('GRUDGE', W / 2, 7, uiT.hi, 7, 'center');
-  text('GRUDGE', W / 2, 8, pal.ink, 7, 'center');
-  text(tr('THE LEVEL NEVER FORGETS. NEITHER DO YOU.'), W / 2, 50, pal.ink, 1, 'center');
+  // The title: a deep drop shadow, a lit top edge on every stroke; the subtitle in the scarf's red (a name: never translated)
+  text('GRUDGE', W / 2 + 2, 7, pal.hero, 6, 'center');
+  text('GRUDGE', W / 2, 4, uiT.hi, 6, 'center');
+  text('GRUDGE', W / 2, 5, pal.ink, 6, 'center');
+  // the subtitle on a strip of the red scarf, its ends cut like a ribbon, so it reads on any sky
+  const sub = 'HALF A SCARF', rw = textW(sub, 2) + 18, rx = Math.round(W / 2 - rw / 2), ry = 38, rh = 14;
+  for (let y = 0; y < rh; y++) {
+    const cut = Math.max(0, 4 - Math.abs(y - (rh - 1) / 2) | 0);            // a V notch cut into each end
+    rect(rx + cut + 1, ry + y + 1, rw - cut * 2, 1, pal.hero);              // its shadow
+    rect(rx + cut, ry + y, rw - cut * 2, 1, y >= rh - 2 ? SCARF_DEEP : SCARF);
+  }
+  text(sub, W / 2, ry + 3, '#fff6ea', 2, 'center');
+  text(tr('THE LEVEL NEVER FORGETS. NEITHER DO YOU.'), W / 2, 56, pal.ink, 1, 'center');
   if (!save.run && save.speedBest != null) text(tr('BEST RUN {t}', { t: fmtRun(save.speedBest) }), W - 4, 2, pal.ink, 1, 'right');
   // Menu buttons, as wide as the longest label needs
-  const items = homeItems(), many = items.length > 4, h = many ? 13 : 14, step = items.length > 5 ? 15 : many ? 16 : 18;
+  const items = homeItems(), many = items.length > 4, h = many ? 13 : 14, step = items.length > 5 ? 14 : many ? 16 : 18;
   const bw = Math.max(116, ...items.map(it => textW(it.label) + 36)), x = Math.round(W / 2 - bw / 2);
   items.forEach((it, i) => {
-    const y = 60 + i * step, sel = i === homeSel, top = button(x, y, bw, h, it.label, sel, it.icon);
+    const y = 65 + i * step, sel = i === homeSel, top = button(x, y, bw, h, it.label, sel, it.icon);
     if (sel) drawHero((menuT * 3 | 0) % 2 ? 'idle0' : 'jump', x - 14, top + h);
     hit(x, y - 2, bw, h + 4, 'home:' + i);
   });
