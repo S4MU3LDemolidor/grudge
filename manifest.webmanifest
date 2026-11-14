@@ -1,7 +1,7 @@
 {
-  "name": "Grudge",
+  "name": "Grudge: Half a Scarf",
   "short_name": "Grudge",
-  "description": "A tiny troll platformer. The level never forgets. Neither do you.",
+  "description": "A tiny troll platformer about finding your little brother. The level never forgets. Neither do you.",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",

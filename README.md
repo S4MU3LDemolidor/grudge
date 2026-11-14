@@ -1,4 +1,4 @@
-# Grudge
+# Grudge: Half a Scarf
 
 *The level never forgets. Neither do you.*
 
