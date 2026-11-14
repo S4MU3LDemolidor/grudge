@@ -585,15 +585,18 @@ const PHASES = [
       { when: { xl: 12, after: 0 }, do: 'door', x: 36, speed: 30, hop: 4, say: 'MADE YOU LOOK.' },
       { when: { x: 21, after: 1 }, g: 'a', do: 'fall', say: 'THE FLOOR LEFT TOO.' },
     ] },
-  { name: 'UP HERE', hint: 'THE DOOR IS RIGHT THERE. AGAIN.', pity: 'IT MOVES TWICE. FOLLOW IT.',
-    quips: ['IT WAS UP. THEN DOWN.'],
+  { name: 'UP HERE', hint: 'THE DOOR IS RIGHT THERE. AGAIN.', pity: 'HOP THE SPIKE, THEN JUMP THE WALL AS IT COMES AT YOU. FOLLOW THE DOOR UP, THEN DOWN, OVER THE LAST SPIKE.',
+    quips: ['IT WAS UP. THEN DOWN.', 'PUSHED AROUND.'],
+    groups: { w: {} },
     map: [E40,
-          '..............................######....',
-          '..P......................D....######....',
+          '...............w..............######....',
+          '..P.....^......w.........D....######.^..',
           G40, G40],
     traps: [
       { when: { x: 22 }, do: 'door', x: 33, dy: -2, speed: 25, say: 'UP HERE.' },
       { when: { x: 31, after: 0 }, do: 'door', x: 38, speed: 25, say: 'NO, DOWN HERE.' },
+      { when: { x: 7 }, g: 'w', do: 'move', dx: -6, speed: 7, say: 'MIND THE WALL.' },            // all the way to the spike
+      { when: { x: 16, after: 2 }, g: 'w', do: 'move', dx: -6, dy: 2, speed: 6 },          // sinks into the floor behind you
     ] },
   { name: 'IMPOSTOR', hint: 'TWO DOORS. TAKE THE CLOSE ONE.', pity: 'THE CLOSE ONE BITES. GO FAR, THEN BACK. JUMP THE LIAR AND THE SPIKE.',
     quips: ['THAT DOOR BITES.'],
@@ -603,14 +606,19 @@ const PHASES = [
       { when: { x: 29 }, do: 'door', x: 6, speed: 30, hop: 4, say: 'WRONG ONE. GO BACK.' },
       { when: { xl: 12, after: 0 }, g: 'a', do: 'pop' },
     ] },
-  { name: 'ON A LEASH', hint: 'THE DOOR IS VERY CLOSE.', pity: 'CHASE IT TO THE WALL. IT LEAPS BACK TO THE START. RUN BACK.',
+  { name: 'ON A LEASH', hint: 'THE DOOR IS VERY CLOSE.', pity: 'CHASE IT. THE WALL SHOVES YOU AT THE SPIKE: JUMP IT AS IT COMES. IT LEAPS BACK TO THE START. THE WALL SHOVES AGAIN. RUN BACK.',
     quips: ['IT IS FASTER THAN IT LOOKS.'],
-    map: ['.........................#..............',
-          '..P...........D....^.....#....^^........',
+    groups: { w: {} },
+    map: ['.........................w..............',
+          '..P...........D....^.....w....^^........',
           G40, G40],
     traps: [
       { when: { x: 9 }, do: 'flee', speed: 12, max: 37, say: 'IT IS SHY.' },
       { when: { x: 35 }, do: 'door', x: 3, speed: 40, hop: 5, say: 'HA. BEHIND YOU.' },
+      { when: { x: 16 }, g: 'w', do: 'move', dx: -5, speed: 6, say: 'THE WALL DISAGREES.' },     // shoves you back at the spike
+      { when: { x: 27, after: 2 }, g: 'w', do: 'move', dx: 0, speed: 5 },                      // and slides home
+      { when: { xl: 31, after: 1 }, g: 'w', do: 'move', dx: 5, speed: 6, say: 'STILL DISAGREES.' },   // on the way back, at the other spikes
+      { when: { xl: 23, after: 4 }, g: 'w', do: 'move', dx: 0, speed: 5 },
     ],
     solve: { via: [[36, 1]] } },
   { name: 'GREAT ESCAPE', hint: 'THE EXIT IS JUST AHEAD.', pity: 'IT ENDS UP ON THE LEDGE. MEET IT THERE.',
@@ -910,16 +918,18 @@ const PHASES = [
    motif: 'peaks',
    pal: ['#e2884a', '#d77b3e', '#40200b', '#140902', '#fde6d2'],
    levels: [
-  { name: 'RUN', hint: 'TAKE YOUR TIME. NO RUSH.', pity: 'THEY ARE SLOWER THAN YOU. NEVER STOP.',
+  { name: 'RUN', hint: 'TAKE YOUR TIME. NO RUSH.', pity: 'THEY ARE SLOWER THAN YOU. JUMP THE WALL AS IT COMES AT YOU. NEVER STOP.',
     quips: ['THEY CAUGHT UP.', 'YOU STOPPED. WHY?'],
-    groups: { a: { spike: 1, hide: 1 } },
-    map: ['............#...........................',
-          'aa.P........#..............#......D.....',
+    groups: { a: { spike: 1, hide: 1 }, w: {} },
+    map: ['............w...........................',
+          'aa.P........w..............#......D.....',
           '###################...##################',
           '###################...##################'],
     traps: [
       { when: { x: 6 }, g: 'a', do: 'chase', speed: 9, say: 'RUN.' },
       { when: { x: 31 }, do: 'door', x: 38, speed: 20, say: 'A LITTLE FURTHER.' },
+      { when: { x: 5 }, g: 'w', do: 'move', dx: -4, speed: 8, say: 'NOT THAT WAY.' },        // shoves you back into them
+      { when: { x: 13, after: 2 }, g: 'w', do: 'move', dx: -4, dy: 2, speed: 6 },          // then sinks into the floor
     ] },
   { name: 'AVALANCHE', hint: 'A QUIET TUNNEL.', pity: 'RUN AND NEVER STOP. JUMP WITHOUT SLOWING DOWN.',
     quips: ['BURIED.'],
@@ -2960,9 +2970,10 @@ function buildGround() {
   groundT = groundTones();
   groundLook = new Uint8Array(COLS * ROWS);
   for (let i = 0; i < grid.length; i++) groundLook[i] = grid[i] === 1 || grid[i] >= 4 ? 1 : 0;
+  const movers = new Set((L.traps || []).filter(t => t.do === 'move').map(t => t.g || ''));   // walls that lunge
   for (const g of groups) {
     g.own = new Set(g.tiles.map(([a, b]) => a + ',' + b));
-    if (!g.spike && !g.plat && !g.ghost && !g.d.ice) for (const [tx, ty] of g.tiles) groundLook[ty * COLS + tx] = 1;
+    if (!g.spike && !g.plat && !g.ghost && !g.d.ice && !movers.has(g.id)) for (const [tx, ty] of g.tiles) groundLook[ty * COLS + tx] = 1;
   }
   if (!groundCv) { groundCv = document.createElement('canvas'); groundCv.width = COLS * TS; groundCv.height = ROWS * TS; }
   const c2 = groundCv.getContext('2d');
